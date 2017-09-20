@@ -20,17 +20,17 @@ int PCFit::DeNoiseKNN()
 		mesh.vn, DeNoise_MaxIteration, DeNoise_MaxNeighbors, DeNoise_DisRatioOfOutlier);
 	//[[----
 
-	// 1. 构造Kd-tree
+	// 1. Build Kd-tree
 	vcg::VertexConstDataWrapper<CMeshO> ww(mesh);
 	vcg::KdTree<float> KDTree(ww);
 	vcg::KdTree<float>::PriorityQueue queue;
 
-	// 2. 迭代去噪
+	// 2. Iterations
 	const int nIter = DeNoise_MaxIteration <= 0 ? 100 : DeNoise_MaxIteration;
 	for (int i = 0; i<nIter; i++) {
 		bool hasOutlier = false;
 
-		// 1)更新阈值
+		// 1)Update Threshold
 		vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 		double DX = mesh.bbox.DimX();
 		double DY = mesh.bbox.DimY();
@@ -42,7 +42,7 @@ int PCFit::DeNoiseKNN()
 		printf("[%d]-%.3f ", i + 1, Gap);
 		//----
 
-		// 2)遍历去点
+		// 2)Point Check
 		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 			if (!(*vi).IsD()) {
 				KDTree.doQueryK((*vi).cP(), DeNoise_MaxNeighbors, queue);
@@ -63,7 +63,7 @@ int PCFit::DeNoiseKNN()
 			break;
 	}
 
-	// 3. 移除噪点
+	// 3. Delete Noise Pts
 	int nNoise = 0;
 	CMeshO::PerVertexAttributeHandle<SatePtType> type_hi = 
 		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
@@ -74,7 +74,7 @@ int PCFit::DeNoiseKNN()
 		}
 	}
 
-	// 4. 更新
+	// 4. Update Box Size
 	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 
 	//----]]
@@ -94,27 +94,27 @@ int RegionGrow(
 	assert(dis >= 0);
 	assert(stepn >= 3);
 
-	// 0. 构造KD树
+	// 0. Bulid KD-Tree
 	vcg::VertexConstDataWrapper<CMeshO> ww(mesh);
 	vcg::KdTree<float> KDTree(ww);
 	vcg::KdTree<float>::PriorityQueue queue;
 	
-	// 2. 迭代去噪
+	// 2. Iteration
 	nums.clear();
-	int nCluster = 0;    // 类群个数
-	long maxCount = 0;   // 最大类群点数
-	int maxCluster = 0;	 // 最大类群ID
+	int nCluster = 0;    // No. of Clusters
+	long maxCount = 0;   // Size of The Largest Cluster
+	int maxCluster = 0;	 // Index of the Largest Cluster
 	CMeshO::PerVertexAttributeHandle<SatePtType> type_hi =
 		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
 	for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 		if ( !(vi->IsD()) && type_hi[vi] == Pt_Undefined) {
-			// 种子点
+			// Seed Point
 			nCluster++;
 			long count = 1;
 			type_hi[vi] = Pt_Reserve + nCluster;
 			std::vector<CMeshO::VertexIterator> dump;
 			dump.push_back(vi);
-			// 生长
+			// Grow by KNN
 			while (!dump.empty()) {
 				CMeshO::VertexIterator curSeed = *(dump.end() - 1);
 				dump.pop_back();
@@ -169,14 +169,14 @@ int PCFit::DeNoiseRegGrw()
 		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
 	for (int _iter = 0; _iter<nIter; _iter++) {
 
-		// 1)更新距离阈值
+		// 1)Update Threshold
 		vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 		double DX = mesh.bbox.DimX();
 		double DY = mesh.bbox.DimY();
 		double DZ = mesh.bbox.DimZ();
 		double Gap = DX<DY ? (DX<DZ ? DX : DZ) : (DY<DZ ? DY : DZ);
 		Gap *= DeNoise_DisRatioOfOutlier;
-		// 2)区域生长聚类
+		// 2)Region Growing
 		std::vector<int> Nums;
 		long maxN = 0;
 		int maxCluster = 0;
@@ -257,7 +257,7 @@ bool PCFit::PCADimensionAna(
 		++Count;
 	}
 	assert(Count == N);
-	double *PC, V[3];//V[3]无用
+	double *PC, V[3];//V[3] useless
 	PC = new double[9];
 	int ret = PCA(data, row, col, PC, V);
 	delete[] data;
