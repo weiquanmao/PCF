@@ -167,7 +167,7 @@ int HoughPlane(
 
 	vcg::Point4f P[3];
 	int N[3];
-//#pragma omp parallel for
+#pragma omp parallel for
 	for (int i = 0; i < 3; i++) {
 		N[i] = HoughPlaneOne(P[i], FixedAxis(i), PointList, NormList, _intercept, _a, _s);
 	}
@@ -267,14 +267,14 @@ void PicMaxRegion(
 
 	while (!index.empty())
 	{
-		//每一类
+		// Each Cluster
 		seedStack.clear();
 		seedStack.push_back(PointList.at(index.at(0)));
 		tempLoc->clear();
 		tempLoc->push_back(index.at(0));
 
 		index.erase(index.begin());
-		//区域生长
+		// Growing
 		while (!seedStack.empty())
 		{
 			seed = seedStack.at(0);
