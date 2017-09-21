@@ -29,7 +29,6 @@ int HoughPlaneOne(
 	QTime time;
 	time.start();
 
-
 	Plane.SetZero();
 
 	const bool bHasNorm = (NormList.size() > 0) ? true : false;
@@ -56,11 +55,9 @@ int HoughPlaneOne(
 	for (int i = 0; i<C; i++)
 		facPlane[i] = houghBuf + i*A*B;
 
-	int count = 0;
 	int a, b, c;
 	double fa, fb, fc;
 	double x, y, z;
-	int num = PointList.size();
 	auto iterP = PointList.begin();
 	auto iterN = NormList.begin();
 	for (iterP = PointList.begin(); iterP != PointList.end(); iterP++)
@@ -78,6 +75,7 @@ int HoughPlaneOne(
 			double nx = (*iterN).V(index1);
 			double ny = (*iterN).V(index2);
 			double nz = (*iterN).V(index3);
+			iterN++;
 			ny = ny / nx;
 			nz = nz / nx;
 			if (abs(ny) - 1.0>0.3 || abs(nz) - 1.0>0.3)
@@ -87,17 +85,14 @@ int HoughPlaneOne(
 			b_begin = nz - 0.3;
 			b_end = nz + 0.3;
 
-			iterN++;
+			if (a_begin<-1) a_begin = -1;
+			if (a_end>1) a_end = 1;
+			if (b_begin<-1) b_begin = -1;
+			if (b_end>1) b_end = 1;			
 		}
-		if (a_begin<-1) a_begin = -1;
-		if (a_end>1) a_end = 1;
-		if (b_begin<-1) b_begin = -1;
-		if (b_end>1) b_end = 1;
-
-		for (fa = a_begin; fa<a_end; fa += scale1)
-		{
-			for (fb = b_begin; fb<b_end; fb += scale1)
-			{
+		
+		for (fa = a_begin; fa<a_end; fa += scale1) {
+			for (fb = b_begin; fb<b_end; fb += scale1) {
 				fc = -x - fa*y - fb*z;
 				c = fc / scale2 + C / 2;
 				if (c >= 0 && c<C)
@@ -105,7 +100,6 @@ int HoughPlaneOne(
 					a = (fa / scale1 + A / 2);
 					b = (fb / scale1 + B / 2);
 					(facPlane[c])[a*A + b] += 1;
-					count++;
 				}	
 			}
 		}
@@ -149,8 +143,9 @@ int HoughPlaneOne(
 	}
 
 	printf(
-		"      | [#Time-%7.4f]-[%d-Seted] : %7.4f %7.4f %7.4f %77.4f  #nPts-< %d >\n",
-		time.elapsed() / 1000.0, fix+1, 
+		"      | [#Time-%7.4f]-[%d-Seted] : %7.4f %7.4f %7.4f %7.4f  #nPts-< %d >\n",
+		time.elapsed() / 1000.0, 
+		fix == FixedAxis_X ? 'X' : ( fix == FixedAxis_Y ? 'Y' : 'Z') ,
 		Plane.X(), Plane.Y(), Plane.Z(), Plane.W(),
 		vote);
 
@@ -167,12 +162,12 @@ int HoughPlane(
 	QTime time;
 	time.start();
 	printf(
-		"    [--Plane_HT--]: #nPts-%d \n",
+		"      [--Plane_HT--]: #nPts-%d \n",
 		PointList.size());
 
 	vcg::Point4f P[3];
 	int N[3];
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int i = 0; i < 3; i++) {
 		N[i] = HoughPlaneOne(P[i], FixedAxis(i), PointList, NormList, _intercept, _a, _s);
 	}
@@ -184,29 +179,22 @@ int HoughPlane(
 		retIdx = (N[1]>N[2]) ? 1 : 2;
 	
 	printf(
-		"      | [+][Checked] : [%d] #nPts-< %d > \n"
-		"    [--Plane_HT--]: Done in %.4f seconds \n",
+		"        | [+][Checked] : [%d] #nPts-< %d > \n"
+		"      [--Plane_HT--]: Done in %.4f seconds \n",
 		retIdx + 1, N[retIdx], time.elapsed() / 1000.0);
 
 	Plane = P[retIdx];
 	return N[retIdx];
 }
 
+
 // [2] Surface Points Verification
-inline vcg::Point4f P3TOP4(const vcg::Point3f P3) {
-	vcg::Point4f P4;
-	P4.X() = P3.X();
-	P4.Y() = P3.Y();
-	P4.Z() = P3.Z();
-	P4.W() = 1.0;
-	return P4;
-}
 std::vector<int> AttachToPlane(
 	const std::vector<vcg::Point3f> &PointList,
 	const std::vector<vcg::Point3f> &NormList,
 	const vcg::Point4f &plane,
 	const double _TDis, const double _TAng)
-{//判断是否属于平面点
+{
 	QTime time;
 	time.start();
 
@@ -218,9 +206,9 @@ std::vector<int> AttachToPlane(
 	const double TDis = _TDis * sqrt(plane.V(0)*plane.V(0) + plane.V(1)*plane.V(1) + plane.V(2)*plane.V(2));
 	std::vector<int> OnPlaneList;
 	for (int i = 0; i<PointList.size(); i++) {
-		vcg::Point4f pt = P3TOP4(PointList[i]);
-		double d = abs(pt*plane);
-		if (d<TDis)
+		const vcg::Point3f &pt3 = PointList[i];
+		vcg::Point4f pt4(pt3.X(), pt3.Y(), pt3.Z(), 1.0);
+		if (abs(pt4*plane)<TDis)
 			OnPlaneList.push_back(i);
 	}
 
@@ -229,20 +217,20 @@ std::vector<int> AttachToPlane(
 	{
 		vcg::Point3f NP = vcg::Point3f(plane.V(0), plane.V(1), plane.V(2));
 		NP.Normalize();
-		std::vector<int> ReReMoved;
+		std::vector<int> ReMoved;
 		for (int i = 0; i<OnPlaneList.size(); ++i) {
 			vcg::Point3f npt = NormList.at(OnPlaneList.at(i));
 			npt.Normalize();
 			double ang = 90 - abs(90 - vcg::AngleN(NP, npt)*_R2D);
 			if (ang>_TAng)
-				ReReMoved.push_back(i);
+				ReMoved.push_back(i);
 		}
 
-		if (!ReReMoved.empty()) {
-			for (int i = ReReMoved.size() - 1; i >= 0; --i)
-				OnPlaneList.erase(OnPlaneList.begin() + ReReMoved.at(i));
+		if (!ReMoved.empty()) {
+			for (int i = ReMoved.size() - 1; i >= 0; --i)
+				OnPlaneList.erase(OnPlaneList.begin() + ReMoved.at(i));
 		}
-		ReReMoved.clear();
+		ReMoved.clear();
 	}
 
 	printf(
@@ -256,6 +244,7 @@ std::vector<int> AttachToPlane(
 
 	return OnPlaneList;
 }
+
 
 // [3] Coplanar Separation
 void PicMaxRegion(
@@ -328,6 +317,7 @@ void PicMaxRegion(
 		PointList.size(), _2TDis, index.size(), time.elapsed() / 1000.0);
 }
 
+
 // [4] LS Fit
 float EvalPlane(vcg::Plane3f &pl, std::vector<vcg::Point3f> posVec)
 {
@@ -349,7 +339,6 @@ double FineFit(
 	time.start();
 
 	std::vector<vcg::Point3f> ExactVec;
-	std::vector<float> WeightVec;
 	vcg::Plane3f ple;
 	for (int j = 0; j<planeVerList.size(); ++j)
 	{
@@ -415,16 +404,16 @@ double PatchDimensions(
 
 	return lx*ly;
 }
-void GetMBR(
+void ExtractMBR(
 	CMeshO &mesh,
-	const vcg::Point4f &Plane,
 	Sailboard *ABord,
+	const vcg::Point4f &Plane,
 	const std::vector<int> &PlaneVerList,	
 	std::vector<int> &IndexList,
 	std::vector<vcg::Point3f> &PointList,
 	std::vector<vcg::Point3f> &NormList
 )
-{//提出数据+分析平面
+{
 	QTime time;
 	time.start();
 
@@ -485,7 +474,7 @@ void GetMBR(
 		data[2 * N + i] = OnPPt.at(i).Z();
 	}
 	int row = 3, col = N;
-	double *PC, V[3];//V[3]无用
+	double *PC, V[3];//V[3] useless
 	PC = new double[9];
 	int ret = PCA(data, row, col, PC, V);
 	delete[] data;
@@ -503,7 +492,7 @@ void GetMBR(
 	vcg::Point3f O, DX, DY;
 	double confidenceX, confidenceY;
 	double SA = PatchDimensions(OnPPt, NX_0, NY_0, O, DX, DY, confidenceX, confidenceY);
-	for (int i = -29; i < 30; i += 2) { // 并没想想中的慢,挺快的
+	for (int i = -29; i < 30; i += 2) { // Not too slow
 		double k = tan(i *_D2R);
 		vcg::Point3f nx = NX_0 + NY_0*k;
 		nx.Normalize();
@@ -580,7 +569,7 @@ std::vector<Sailboard*> PCFit::DetectPlanes(const int expPN)
 	int index;
 	for (index = 0, vi = mesh.vert.begin(); vi != mesh.vert.end(); ++index, ++vi)
 	{
-		if (type_hi[vi] == Pt_Undefined) {
+		if (type_hi[vi] == Pt_Undefined && !(vi->IsD())) {
 			indexList.push_back(index);
 			pointList.push_back((*vi).cP() - center);
 			if (normalSupportted)
@@ -592,10 +581,10 @@ std::vector<Sailboard*> PCFit::DetectPlanes(const int expPN)
 	// -- Calculate intercept
 	double candicate1 = mesh.bbox.Diag() * sqrt(3.0) / 2.0;
 	double candicate2 = mesh.bbox.DimX() + mesh.bbox.DimY() + mesh.bbox.DimZ();
-	double intercept = candicate1 < candicate2 ? candicate1 : candicate2;
+	double intercept = (candicate1 < candicate2) ? candicate1 : candicate2;
 
 	const double _planeDisThreshold = m_refa*Threshold_DisToPlane;
-	const double _planeAngThreshold = m_refa*Threshold_AngToPlane;
+	const double _planeAngThreshold = Threshold_AngToPlane;
 	const int _planeNThreshold = pointList.size()*Threshold_NPtsPlane;
 	int planeNum = 0;
 	for (planeNum = 0; planeNum<expPN; planeNum++)
@@ -603,9 +592,9 @@ std::vector<Sailboard*> PCFit::DetectPlanes(const int expPN)
 		// HT Detection
 		vcg::Point4f plane;
 #if 0
-		double _planeNT = _planeNThreshold;
+		int _planeNT = _planeNThreshold;
 #else
-		double _planeNT = pointList.size()*Threshold_NPtsPlane;
+		int _planeNT = pointList.size()*Threshold_NPtsPlane;
 #endif
 		if (normalSupportted)
 			_planeNT *= 0.5;
@@ -628,8 +617,8 @@ std::vector<Sailboard*> PCFit::DetectPlanes(const int expPN)
 		// planeVerList = AttachToPlane(pointList,directionList,plane,_planeDThreshold); // AGAIN!
 		oneBord->m_varN = err;
 
-		// Get Minimum-Bounding-Rectangle
-		GetMBR(mesh, plane, oneBord, planeVerList, indexList, pointList, directionList);
+		// Extract the Minimum-Bounding-Rectangle
+		ExtractMBR(mesh, oneBord, plane, planeVerList, indexList, pointList, directionList);
 
 		sailbords.push_back(oneBord);
 		planeVerList.clear();

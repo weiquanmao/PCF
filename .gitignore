@@ -244,3 +244,4 @@ ModelManifest.xml
 # My File
 /Src/vcglib
 *.ini
+*.xml

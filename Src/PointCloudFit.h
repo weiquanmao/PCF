@@ -46,6 +46,7 @@ public:
 	int recolorPts(const int mask, const unsigned char R, const unsigned char G, const unsigned char B, const unsigned char A = 255);
 
 	bool Fit_Sate(bool keepAttribute = true);
+	Satellite *getSate() { return m_sate; }
 private:
 	MeshDocument m_meshDoc;
 	Satellite *m_sate;

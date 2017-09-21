@@ -24,9 +24,11 @@ int main(int argc, char *argv[])
 			if ((fileinfo.attrib & _A_ARCH))
 			{
 				const string FileName = fileinfo.name;
-				const string FilePath = ModelDir + "/" + FileName;
-				const string FileNameOpt = ResultDir + "/" + FileName + "_Opt.ply";
-				const string FileNameRej = ResultDir + "/" + FileName + "_Rej.ply";
+				const string BaseName = FileName.substr(0, FileName.rfind('.'));
+				const string FilePath = ModelDir + "/" + FileName;			
+				const string FileNameOpt = ResultDir + "/" + BaseName + "_Opt.ply";
+				const string FileNameRej = ResultDir + "/" + BaseName + "_Rej.ply";
+				const string SateStruct = ResultDir + "/" + BaseName + ".struct";
 
 				cout
 					<< "===============================\n"
@@ -34,6 +36,7 @@ int main(int argc, char *argv[])
 					<< "[+] " << FilePath << endl
 					<< "[-] " << FileNameOpt << endl
 					<< "[-] " << FileNameRej << endl
+					<< "[-] " << SateStruct << endl
 					<< "===============================\n";
 
 				DWORD t1, t2;
@@ -48,7 +51,7 @@ int main(int argc, char *argv[])
 				Fit.savePly(FileNameOpt.c_str());
 				Fit.keepPts(Pt_Noise);
 				Fit.savePly(FileNameRej.c_str());
-
+				SaveSatellite(Fit.getSate(), SateStruct.c_str());
 				cout << "\n--------------------------------------------------------------------------------------------\n";
 				t2 = timeGetTime();
 				cout << "\n\n"
