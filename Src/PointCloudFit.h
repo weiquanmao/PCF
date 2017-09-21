@@ -12,12 +12,11 @@
 #define _MySatePtAttri "PerVerAttri_SatePt"
 typedef int SatePtType;
 enum _SatePtType {
-	Pt_Undefined = 0x00,
-	Pt_Noise = 0x01,
-	Pt_OnMBCylinder = 0x8,
-	Pt_OnMBCube = 0x04,
-	Pt_OnPlane = 0x02,
-	Pt_Reserve = 0xF0
+	Pt_Undefined = 0x000,
+	Pt_Noise = 0x100,
+	Pt_OnMBCylinder = 0x800,
+	Pt_OnMBCube = 0x600,
+	Pt_OnPlane = 0x0200
 };
 
 class PCFit

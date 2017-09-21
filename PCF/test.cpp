@@ -24,6 +24,8 @@ int main(int argc, char *argv[])
 			if ((fileinfo.attrib & _A_ARCH))
 			{
 				const string FileName = fileinfo.name;
+				if (FileName != "[C]SZ.ply")
+					continue;
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));
 				const string FilePath = ModelDir + "/" + FileName;			
 				const string FileNameOpt = ResultDir + "/" + BaseName + "_Opt.ply";

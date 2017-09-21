@@ -111,7 +111,7 @@ int RegionGrow(
 			// Seed Point
 			nCluster++;
 			long count = 1;
-			type_hi[vi] = Pt_Reserve + nCluster;
+			type_hi[vi] = nCluster;
 			std::vector<CMeshO::VertexIterator> dump;
 			dump.push_back(vi);
 			// Grow by KNN
@@ -126,7 +126,7 @@ int RegionGrow(
 					if (!(nbor->IsD()) &&
 						type_hi[nbor] == Pt_Undefined &&
 						Distance(curSeed->cP(), nbor->cP()) < dis) {
-						type_hi[nbor] = Pt_Reserve + nCluster;
+						type_hi[nbor] = nCluster;
 						dump.push_back(nbor);
 						count++;
 					}
@@ -135,7 +135,7 @@ int RegionGrow(
 			nums.push_back(count);
 			if (count > maxCount) {
 				maxCount = count;
-				maxCluster = Pt_Reserve + nCluster;
+				maxCluster = nCluster;
 			}
 		}
 	}
@@ -183,7 +183,7 @@ int PCFit::DeNoiseRegGrw()
 		RegionGrow(mesh, Gap, _K, Nums, &maxCluster, &maxN);
 		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 		{
-			if (type_hi[vi] > Pt_Reserve) {
+			if ((type_hi[vi] & 0x0FF) > 0) {
 				if (type_hi[vi] != maxCluster)
 					vcg::tri::Allocator<CMeshO>::DeleteVertex(mesh, *vi);
 				type_hi[vi] = Pt_Undefined;

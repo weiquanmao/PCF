@@ -375,6 +375,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		printf("[=PCASize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
 
+	return true;
 		
 	// -- 2. Find All Planes
 	std::vector<Sailboard*> planes;
