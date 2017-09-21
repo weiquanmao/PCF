@@ -6,7 +6,7 @@
 void SaveSatellite(Satellite *sate, const char *file)
 {
 	if (sate != 0 && (sate->m_Mainbody != 0 || !sate->m_SailboradList.empty()) &&
-		!file) {
+		file != 0) {
 		std::ofstream out(file, std::ios::out);
 		out << std::fixed << std::setprecision(10);
 		out << "#SateStruct 1.0" << '\n'
