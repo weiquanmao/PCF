@@ -7,6 +7,26 @@
 #include <QTime>
 #include <wrap/io_trimesh/io_mask.h>
 
+const unsigned int  nColorChannel = 3;
+const unsigned char Color_Gray[nColorChannel] = { 100, 100, 100 };
+const unsigned char Color_MainBody[nColorChannel] = { 255,   0,   0 };
+const unsigned char Color_MainBody_Cube[nColorChannel] = { 255,   0,   0 };
+const unsigned char Color_MainBody_Cylinder[nColorChannel] = { 255,   0,   0 };
+const unsigned char Color_Noise[nColorChannel] = { 0, 255,   0 };
+const unsigned char Color_Plane[10][nColorChannel] =
+{
+	{ 215,  55, 101 },
+	{ 255, 245,  55 },
+	{ 97,  54, 130 },
+	{ 194,  85,  38 },
+	{ 0, 192, 210 },
+	{ 0, 178, 111 },
+	{ 250, 202,  87 },
+	{ 255,  95,  61 },
+	{ 128,  88, 189 },
+	{ 149,  85,  66 }
+};
+
 void doFailure() {
 	system("pause");
 	exit(1);
@@ -308,6 +328,37 @@ int PCFit::recolorPts(const int mask, const unsigned char R, const unsigned char
 	return cnt;
 }
 
+void PCFit::autoColor()
+{
+	CMeshO &mesh = m_meshDoc.mesh->cm;
+	if (vcg::tri::HasPerVertexAttribute(mesh, _MySatePtAttri)) {
+		CMeshO::PerVertexAttributeHandle<SatePtType> type_hi = 
+			vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+		unsigned char PlaneColor[3];
+		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
+		{
+			if (type_hi[vi] == Pt_Undefined || vi->IsD())
+				continue;
+
+			const unsigned char* pColor = Color_Gray;
+			if (type_hi[vi] == Pt_OnMBCube)
+				pColor = Color_MainBody_Cube;
+			else if (type_hi[vi] == Pt_OnMBCylinder)
+				pColor = Color_MainBody_Cylinder;
+			else if (type_hi[vi] == Pt_Noise)
+				pColor = Color_Noise;
+			else if (type_hi[vi] >= Pt_OnPlane) {
+				PlaneColor[0] = Color_Plane[type_hi[vi] % 10][0];
+				PlaneColor[1] = Color_Plane[type_hi[vi] % 10][1];
+				PlaneColor[2] = Color_Plane[type_hi[vi] % 10][2];
+				pColor = PlaneColor;
+			}
+			for (int i = 0; i<nColorChannel; i++)
+				(*vi).C().V(i) = pColor[i];
+		}
+
+	}
+}
 
 bool PCFit::Fit_Sate(bool keepAttribute)
 {
@@ -386,7 +437,8 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		printf("[=PlaneFit_HT=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
 	}
 
-return true;
+	m_sate->m_SailboradList = planes;
+	return true;
 
 	// -- 3. Judge Cube Planes
 	MainBodyCube *cubeMain = 0;

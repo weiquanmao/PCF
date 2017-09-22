@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 				Fit.clearD();
 				Fit.recolorPts(Pt_Noise, 255, 0, 0);
 				Fit.savePly(FileNameOpt.c_str());
-				Fit.keepPts(Pt_Noise);
+				Fit.autoColor();
 				Fit.savePly(FileNameRej.c_str());
 				SaveSatellite(Fit.getSate(), SateStruct.c_str());
 				cout << "\n--------------------------------------------------------------------------------------------\n";

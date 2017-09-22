@@ -143,7 +143,7 @@ int HoughPlaneOne(
 	}
 
 	printf(
-		"      | [#Time-%7.4f]-[%d-Seted] : %7.4f %7.4f %7.4f %7.4f  #nPts-< %d >\n",
+		"        | [#Time-%7.4f]-[%d-Seted] : %7.4f %7.4f %7.4f %7.4f  #nPts-< %d >\n",
 		time.elapsed() / 1000.0, 
 		fix == FixedAxis_X ? 'X' : ( fix == FixedAxis_Y ? 'Y' : 'Z') ,
 		Plane.X(), Plane.Y(), Plane.Z(), Plane.W(),
@@ -586,25 +586,28 @@ std::vector<Sailboard*> PCFit::DetectPlanes(const int expPN)
 	const double _planeDisThreshold = m_refa*Threshold_DisToPlane;
 	const double _planeAngThreshold = Threshold_AngToPlane;
 	const int _planeNThreshold = pointList.size()*Threshold_NPtsPlane;
+	const int _THard = fmax(500, pointList.size()*0.01);
+
 	int planeNum = 0;
 	for (planeNum = 0; planeNum<expPN; planeNum++)
 	{
 		// HT Detection
 		vcg::Point4f plane;
-#if 0
-		int _planeNT = _planeNThreshold;
-#else
-		int _planeNT = pointList.size()*Threshold_NPtsPlane;
-#endif
+
+		// int _planeNT = _planeNThreshold;
+		// int _planeNT = pointList.size()*Threshold_NPtsPlane;
+		int _planeNT = fmax(pointList.size()*Threshold_NPtsPlane, _THard);
+
 		if (normalSupportted)
 			_planeNT *= 0.5;
+
 		printf("    >> Detecting the [ No.%d ] plane with #Minimum - [ %d ] ...\n", planeNum + 1, _planeNT);
 		int NP = HoughPlane(plane, pointList, directionList, intercept, m_refa, Precision_HT); // Center At (0,0,0)
 		if (plane == _NON_PLANE || NP <= _planeNT)
 			break;
 
 		// Surface Points Verification
-		std::vector<int> planeVerList = AttachToPlane(pointList, directionList, plane, _planeDisThreshold, _planeAngThreshold);
+		std::vector<int> planeVerList = AttachToPlane(pointList, directionList, plane, _planeDisThreshold*1.5, _planeAngThreshold);
 
 		// Coplanar Separation
 		PicMaxRegion(pointList, planeVerList, _planeDisThreshold*2.0);

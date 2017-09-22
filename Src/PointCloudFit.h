@@ -43,6 +43,7 @@ public:
 	int deletePts(const int mask);
 	int keepPts(const int mask);
 	int recolorPts(const int mask, const unsigned char R, const unsigned char G, const unsigned char B, const unsigned char A = 255);
+	void autoColor();
 
 	bool Fit_Sate(bool keepAttribute = true);
 	Satellite *getSate() { return m_sate; }
