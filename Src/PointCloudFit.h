@@ -73,7 +73,8 @@ private:
 	int DeNoiseRegGrw();
 	double GetMeshSizeAlongN(const vcg::Point3f n);
 	bool PCADimensionAna(vcg::Point3f &PSize, std::vector<vcg::Point3f> &PDirections, bool leftNoisePts);
-	
+	double RoughnessAna(bool leftNoisePts);
+
 	// Detect Plane
 	std::vector<Sailboard*> DetectPlanes(const int expPN);
 	

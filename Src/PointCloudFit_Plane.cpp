@@ -319,17 +319,6 @@ void PicMaxRegion(
 
 
 // [4] LS Fit
-float EvalPlane(vcg::Plane3f &pl, std::vector<vcg::Point3f> posVec)
-{
-	float off = 0;
-	for (size_t i = 0; i < posVec.size(); ++i) {
-		float d = vcg::SignedDistancePlanePoint(pl, posVec[i]);
-		off += d*d;
-	}
-
-	off = sqrt(off / float(posVec.size()));
-	return off;
-}
 double FineFit(
 	const std::vector<vcg::Point3f> &pointList,
 	const std::vector<int> &planeVerList,
@@ -351,8 +340,13 @@ double FineFit(
 	plane.Y() = ple.Direction().Y();
 	plane.Z() = ple.Direction().Z();
 	plane.W() = -ple.Offset();
-	double fitError = EvalPlane(ple, ExactVec);
-
+	float fitError = 0;
+	for (int i = 0; i < ExactVec.size(); ++i) {
+		float d = vcg::SignedDistancePlanePoint(ple, ExactVec[i]);
+		fitError += d*d;
+	}
+	fitError = sqrt(fitError / ExactVec.size());
+	
 	printf(
 		"      [--Fit_LS--]: #Pts-%d\n"
 		"        | #Plane    : < %.4f, %.4f, %.4f, %.4f> \n"
@@ -586,7 +580,7 @@ std::vector<Sailboard*> PCFit::DetectPlanes(const int expPN)
 	const double _planeDisThreshold = m_refa*Threshold_DisToPlane;
 	const double _planeAngThreshold = Threshold_AngToPlane;
 	const int _planeNThreshold = pointList.size()*Threshold_NPtsPlane;
-	const int _THard = fmax(500, pointList.size()*0.01);
+	const int _THard = fmax(300, pointList.size()*0.01);
 
 	int planeNum = 0;
 	for (planeNum = 0; planeNum<expPN; planeNum++)
@@ -607,7 +601,7 @@ std::vector<Sailboard*> PCFit::DetectPlanes(const int expPN)
 			break;
 
 		// Surface Points Verification
-		std::vector<int> planeVerList = AttachToPlane(pointList, directionList, plane, _planeDisThreshold*1.5, _planeAngThreshold);
+		std::vector<int> planeVerList = AttachToPlane(pointList, directionList, plane, _planeDisThreshold, _planeAngThreshold);
 
 		// Coplanar Separation
 		PicMaxRegion(pointList, planeVerList, _planeDisThreshold*2.0);

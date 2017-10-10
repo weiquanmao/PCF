@@ -414,16 +414,19 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		printf("[=DeNoise=]: Done, %d outlier(s) were removed in %.4f seconds.\n", nNoise, time.elapsed()/1000.0);
 
 
-		// [1.2] Get PCA Dimension
+		// [1.2] Get Dimension Reference Unit
 		time.restart();
-		printf("\n\n[=PCASize=]: -->> PCA Dimension Ana. <<--  \n");	
+		printf("\n\n[=RefSize=]: -->> Dimension Reference Unit Ana. <<--  \n");	
 		//[[----
 		vcg::Point3f PSize;
 		std::vector<vcg::Point3f> PDirection;
-		PCADimensionAna(PSize, PDirection, true);
-		m_refa = PSize.V(2)*RefA_Ratio;
+
+		// PCADimensionAna(PSize, PDirection, true);
+		// m_refa = PSize.V(2)*RefA_Ratio;
+		m_refa = RoughnessAna(true);
+
 		//----]]
-		printf("[=PCASize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
+		printf("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
 		
 	// -- 2. Find All Planes

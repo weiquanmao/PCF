@@ -4,6 +4,7 @@
 #include <QTime>
 #include <vcg/complex/algorithms/update/bounding.h>
 #include <vcg/space/index/kdtree/kdtree.h>
+#include <vcg/space/fitting3.h>
 
 int PCFit::DeNoiseKNN()
 {
@@ -298,4 +299,57 @@ bool PCFit::PCADimensionAna(
 		time.elapsed() / 1000.0);
 
 	return true;
+}
+
+double PCFit::RoughnessAna(bool leftNoisePts)
+{
+	CMeshO &mesh = m_meshDoc.mesh->cm;
+
+	QTime time;
+	time.start();
+
+	vcg::VertexConstDataWrapper<CMeshO> ww(mesh);
+	vcg::KdTree<float> KDTree(ww);
+	vcg::KdTree<float>::PriorityQueue queue;
+
+	const int knn = 20;
+	const int a = 1.0;
+	const int b = 1.0;
+	const int N = leftNoisePts ? mesh.vn : mesh.vert.size();
+	
+	int Count = 0;
+	double R = 0;
+	for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
+	{
+		if (leftNoisePts && (*vi).IsD())
+			continue;
+		KDTree.doQueryK((*vi).cP(), knn, queue);
+		int neighbours = queue.getNofElements();
+		
+		std::vector<vcg::Point3f> Pts;
+		vcg::Plane3f ple;
+		for (int i = 0; i < neighbours; i++) {
+			int neightId = queue.getIndex(i);
+			Pts.push_back(mesh.vert[neightId].cP());
+		}
+		vcg::FitPlaneToPointSet(Pts, ple);
+		double miu = 0.0;
+		double sigma = 0.0;
+		for (int i = 0; i < neighbours; ++i) {
+			float d = vcg::SignedDistancePlanePoint(ple, Pts[i]);
+			miu += abs(d);
+			sigma += d*d;
+		}
+		R += a * (miu / neighbours) + b * sqrt(sigma / neighbours);
+		++Count;
+	}
+	assert(Count == N);
+	double roughness = R / Count;
+	printf(
+		"    [--RoughnessAna--] #bPts - %d/%d \n"
+		"       | RoughnessA - <%7.4f> \n"
+		"    [--RoughnessAna--]: Done in %.4f seconds.\n",
+		Count, N, roughness, time.elapsed() / 1000.0);
+
+	return roughness;
 }
