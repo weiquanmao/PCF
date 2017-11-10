@@ -11,9 +11,9 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-	const string ResultDir = "../../Result";
-	const string ModelDir = "../../3DModels";
-	const string szPath = ModelDir + "/*.ply";
+	const string InputDir = "../../../Data/3DModels";
+	const string OutputDir = "../../../Data/Result";
+	const string szPath = InputDir + "/*.ply";
 
 	intptr_t hFile = 0;
 	struct _finddata_t fileinfo;	
@@ -27,10 +27,10 @@ int main(int argc, char *argv[])
 				//if (FileName != "[B]Spot5.ply")
 				//	continue;
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));
-				const string FilePath = ModelDir + "/" + FileName;			
-				const string FileNameOpt = ResultDir + "/" + BaseName + "_Opt.ply";
-				const string FileNameRej = ResultDir + "/" + BaseName + "_Rej.ply";
-				const string SateStruct = ResultDir + "/" + BaseName + ".struct";
+				const string FilePath = InputDir + "/" + FileName;
+				const string FileNameOpt = OutputDir + "/" + BaseName + "_Opt.ply";
+				const string FileNameRej = OutputDir + "/" + BaseName + "_Rej.ply";
+				const string SateStruct = OutputDir + "/" + BaseName + ".struct";
 
 				cout
 					<< "===============================\n"

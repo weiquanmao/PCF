@@ -157,7 +157,7 @@ void PCFit::initMParams(const char *iniFile)
 {
 	Threshold_NPts = 100;
 	RefA_Ratio = 0.01;
-	PlaneNum_Expected = 12;
+	PlaneNum_Expected = 20;
 
 	DeNoise_MaxIteration = 0;
 	DeNoise_MaxNeighbors = 50;	
