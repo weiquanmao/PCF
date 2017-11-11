@@ -43,6 +43,9 @@
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="SRC\GCO">
+      <UniqueIdentifier>{2bea59a4-24c1-4b05-aa4a-96a7ea81013d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -75,6 +78,27 @@
     <ClCompile Include="..\Src\vcglib\wrap\ply\plylib.cpp">
       <Filter>SRC\PLY\VCG</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\PointCloudFitUtil_Cube.cpp">
+      <Filter>SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\PointCloudFitUtil_Cylinder.cpp">
+      <Filter>SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\PointCloudFitUtil_Plane.cpp">
+      <Filter>SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\gco\GCoptimization.cpp">
+      <Filter>SRC\GCO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\gco\LinkedBlockList.cpp">
+      <Filter>SRC\GCO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\gco\graph.cpp">
+      <Filter>SRC\GCO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\gco\maxflow.cpp">
+      <Filter>SRC\GCO</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\PointCloudFit.h">
@@ -95,10 +119,33 @@
     <ClInclude Include="..\Src\vcglib\wrap\ply\plylib.h">
       <Filter>SRC\PLY\VCG</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\PointCloudFitUtil.h">
+      <Filter>SRC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\gco\GCoptimization.h">
+      <Filter>SRC\GCO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\gco\LinkedBlockList.h">
+      <Filter>SRC\GCO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\gco\energy.h">
+      <Filter>SRC\GCO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\gco\graph.h">
+      <Filter>SRC\GCO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\gco\block.h">
+      <Filter>SRC\GCO</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\Src\MeshDoc.h">
       <Filter>SRC\PLY</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Src\gco\GCO_README.TXT">
+      <Filter>SRC\GCO</Filter>
+    </Text>
   </ItemGroup>
 </Project>

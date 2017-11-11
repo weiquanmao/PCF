@@ -1,8 +1,4 @@
 #include "PointCloudFit.h"
-#ifdef _USE_OPENMP_
-#include <omp.h>
-#endif
-
 #include <QSettings> 
 #include <QTime>
 #include <wrap/io_trimesh/io_mask.h>
@@ -30,43 +26,6 @@ const unsigned char Color_Plane[10][nColorChannel] =
 void doFailure() {
 	system("pause");
 	exit(1);
-}
-double EIConfidence(const std::vector<int> &list)
-{
-	const int Num = list.size();
-	const double MaxEI = -log(1.0 / Num);
-	double Sumnlogn = 0.0;
-	double Sumn = 0.0;
-	for (int i = 0; i<Num; ++i) {
-		int n = list.at(i);
-		if (n>0) {
-			Sumnlogn += n*log(n);
-			Sumn += n;
-		}
-	}
-	double EI = (Sumn*log(Sumn) - Sumnlogn) / (Sumn*1.0);
-	return EI / MaxEI;
-}
-double EIConfidence(const std::vector<std::pair<double, int>> &list)
-{
-	const int BinNum = 10;
-	const int N = list.size();
-	const double min = list.at(0).first;
-	const double max = list.at(N - 1).first;
-	const double BinStep = (max - min) / (BinNum - 1);
-	const double BeginVal = min - BinStep*0.5;
-	std::vector<int> NList;
-	for (int i = 0; i<BinNum; i++)
-		NList.push_back(0);
-	for (int i = 0; i<N; ++i) {
-		double v = list.at(i).first;
-		int n = (v - BeginVal) / BinStep;
-		NList[n]++;
-	}
-	double conf = EIConfidence(NList);
-	NList.clear();
-
-	return conf;
 }
 
 
@@ -117,12 +76,12 @@ void PCFit::printParams()
 		" | PARAMETERS IN USE:                                   |\n"
 		" |------------------------------------------------------|\n"
 		" | [Threshold_NPts              ]:       < %000008d >   |\n"
-		" | [RefA_Ratio                  ]:       < %0008.3f >   |\n"
+		//" | [RefA_Ratio                  ]:       < %0008.3f >   |\n"
 		" | [PlaneNum_Expected           ]:       < %000008d >   |\n"
 		" | [DeNoise_MaxIteration        ]:       < %000008d >   |\n"
-		" | [DeNoise_MaxNeighbors        ]:       < %000008d >   |\n"			
-		" | [DeNoise_DisRatioOfOutlier   ]:       < %0008.3f >   |\n"
-		" | [DeNoise_GrowNeighbors       ]:       < %000008d >   |\n"
+		" | [DeNoise_KNNNeighbors        ]:       < %000008d >   |\n"
+        " | [DeNoise_GrowNeighbors       ]:       < %000008d >   |\n"
+        " | [DeNoise_DisRatioOfOutlier   ]:       < %0008.3f >   |\n"
 		" | [Precision_HT                ]:       < %0008.3f >   |\n"
 		" | [Threshold_NPtsPlane         ]:       < %0008.3f >   |\n"
 		" | [Threshold_DisToPlane        ]:       < %0008.3f >   |\n"
@@ -131,8 +90,8 @@ void PCFit::printParams()
 		" | [Threshold_PRDis             ]:       < %0008.3f >   |\n"
 		" | [Threshold_NPtsCyl           ]:       < %0008.3f >   |\n"
 		" +------------------------------------------------------+\n",
-		Threshold_NPts, RefA_Ratio, PlaneNum_Expected,
-		DeNoise_MaxIteration, DeNoise_MaxNeighbors, DeNoise_DisRatioOfOutlier, DeNoise_GrowNeighbors,
+		Threshold_NPts, /*RefA_Ratio,*/ PlaneNum_Expected,
+		DeNoise_MaxIteration, DeNoise_KNNNeighbors, DeNoise_GrowNeighbors, DeNoise_DisRatioOfOutlier,
 		Precision_HT, Threshold_NPtsPlane,
 		Threshold_DisToPlane, Threshold_AngToPlane,
 		Threshold_PRAng, Threshold_PRDis,
@@ -156,13 +115,13 @@ void PCFit::setThreadNum(const int nThread)
 void PCFit::initMParams(const char *iniFile)
 {
 	Threshold_NPts = 100;
-	RefA_Ratio = 0.01;
+	//RefA_Ratio = 0.01;
 	PlaneNum_Expected = 20;
 
 	DeNoise_MaxIteration = 0;
-	DeNoise_MaxNeighbors = 50;	
-	DeNoise_DisRatioOfOutlier = 0.1;
-	DeNoise_GrowNeighbors = 20;
+	DeNoise_KNNNeighbors = 50;
+    DeNoise_GrowNeighbors = 20;
+    DeNoise_DisRatioOfOutlier = 0.1;
 
 	Precision_HT = 0.01;
 	Threshold_NPtsPlane = 0.04;
@@ -179,20 +138,20 @@ void PCFit::initMParams(const char *iniFile)
 		QStringList keys = conf.allKeys();
 		if (keys.contains("Threshold_NPts"))
 			Threshold_NPts = conf.value("Threshold_NPts").toInt();
-		if (keys.contains("RefA_Ratio"))
-			RefA_Ratio = conf.value("RefA_Ratio").toDouble();
+		//if (keys.contains("RefA_Ratio"))
+		//	RefA_Ratio = conf.value("RefA_Ratio").toDouble();
 		if (keys.contains("PlaneNum_Expected"))
 			PlaneNum_Expected = conf.value("PlaneNum_Expected").toInt();
 
 		if (keys.contains("DeNoise_MaxIteration"))
 			DeNoise_MaxIteration = conf.value("DeNoise_MaxIteration").toInt();
-		if (keys.contains("DeNoise_MaxNeighbors"))
-			DeNoise_MaxNeighbors = conf.value("DeNoise_MaxNeighbors").toInt();
+		if (keys.contains("DeNoise_KNNNeighbors"))
+			DeNoise_KNNNeighbors = conf.value("DeNoise_KNNNeighbors").toInt();
+        if (keys.contains("DeNoise_GrowNeighbors"))
+            DeNoise_GrowNeighbors = conf.value("DeNoise_GrowNeighbors").toInt();
 		if (keys.contains("DeNoise_DisRatioOfOutlier"))
 			DeNoise_DisRatioOfOutlier = conf.value("DeNoise_DisRatioOfOutlier").toDouble();
-		if (keys.contains("DeNoise_GrowNeighbors"))
-			DeNoise_GrowNeighbors = conf.value("DeNoise_GrowNeighbors").toInt();
-
+	
 		if (keys.contains("Precision_HT"))
 			Precision_HT = conf.value("Precision_HT").toDouble();
 		if (keys.contains("Threshold_NPtsPlane"))
@@ -316,7 +275,8 @@ int PCFit::recolorPts(const int mask, const unsigned char R, const unsigned char
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 		{
-			if ((type_hi[vi] & mask) != 0) {
+			if ( (mask == 0 && type_hi[vi] == 0) ||
+                (mask & type_hi[vi]) != 0) {
 				vi->C().X() = R;
 				vi->C().Y() = G;
 				vi->C().Z() = B;
@@ -428,14 +388,14 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		//----]]
 		printf("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
-		
 	// -- 2. Find All Planes
 	std::vector<Sailboard*> planes;
 	{
 		printf("\n\n[=PlaneFit_HT=]: -->> Try to Fit %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
 		time.restart();
 		//-------------------------------
-		planes = DetectPlanes(PlaneNum_Expected);
+		// planes = DetectPlanesHT(PlaneNum_Expected);
+        planes = DetectPlanesGCO_HT(PlaneNum_Expected, 3, 5);
 		//-------------------------------
 		printf("[=PlaneFit_HT=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
 	}

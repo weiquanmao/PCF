@@ -24,8 +24,8 @@ int main(int argc, char *argv[])
 			if ((fileinfo.attrib & _A_ARCH))
 			{
 				const string FileName = fileinfo.name;
-				//if (FileName != "[B]Spot5.ply")
-				//	continue;
+				if (FileName != "[B]Helios.ply")
+					continue;
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));
 				const string FilePath = InputDir + "/" + FileName;
 				const string FileNameOpt = OutputDir + "/" + BaseName + "_Opt.ply";
@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
 				Fit.recolorPts(Pt_Noise, 255, 0, 0);
 				Fit.savePly(FileNameOpt.c_str());
 				Fit.autoColor();
+                Fit.recolorPts(Pt_Undefined, 255, 0, 0);
 				Fit.savePly(FileNameRej.c_str());
 				SaveSatellite(Fit.getSate(), SateStruct.c_str());
 				cout << "\n--------------------------------------------------------------------------------------------\n";

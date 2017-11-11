@@ -4,13 +4,11 @@
 #include "MeshDoc.h"
 #include "Satellite.h"
 
-#ifndef _DRTrans
-#define _DRTrans
-#define _D2R 0.017453292
-#define _R2D 57.29577951
-#endif
+void doFailure();
+
 #define _MySatePtAttri "PerVerAttri_SatePt"
 typedef int SatePtType;
+#define MaxOlaneNum 256
 enum _SatePtType {
 	Pt_Undefined = 0x000,
 	Pt_Noise = 0x100,
@@ -19,12 +17,9 @@ enum _SatePtType {
 	Pt_OnPlane = 0x0200
 };
 
+
 class PCFit
 {
-	friend void doFailure();
-	friend double EIConfidence(const std::vector<int> &list);
-	friend double EIConfidence(const std::vector<std::pair<double, int>> &list);
-
 public:
 	PCFit(const int nThread = 0);
 	PCFit(const char *PlyFilePath, const int nThread = 0);
@@ -54,16 +49,19 @@ private:
 
 	// All Thresholds
 	int Threshold_NPts;                      // 整体点云数小于[Threshold_NPts]不进行处理
-	double RefA_Ratio;                       // 单位长度比例
+	// double RefA_Ratio;                       // 单位长度比例
 	int PlaneNum_Expected;                   // 期望平面个数
+
 	int DeNoise_MaxIteration;                // 去噪迭代阈值, 默认100(<=0)
-	int DeNoise_MaxNeighbors;                // 去噪时KNN最近邻个数
-	int DeNoise_GrowNeighbors;               // 去噪区域生长KNN个数
-	double DeNoise_DisRatioOfOutlier;        // 去噪区域生长距离比例阈值
+	int DeNoise_KNNNeighbors;                // 去噪时KNN最近邻个数(KNN)
+    int DeNoise_GrowNeighbors;               // 去噪时KNN最近邻个数(区域生长)
+	double DeNoise_DisRatioOfOutlier;        // 去噪距离比例阈值
+
 	double Precision_HT;                     // HT系数
 	double Threshold_NPtsPlane;              // 平面点个数比例阈值
 	double Threshold_DisToPlane;             // 平面检测距离阈值系数
 	double Threshold_AngToPlane;             // 平面检测角度阈值
+
 	double Threshold_PRAng;                  // 平面关系角度阈值
 	double Threshold_PRDis;                  // 平面关系距离阈值系数
 	double Threshold_NPtsCyl;                // 圆柱点个数阈值系数
@@ -73,10 +71,21 @@ private:
 	int DeNoiseRegGrw();
 	double GetMeshSizeAlongN(const vcg::Point3f n);
 	bool PCADimensionAna(vcg::Point3f &PSize, std::vector<vcg::Point3f> &PDirections, bool leftNoisePts);
-	double RoughnessAna(bool leftNoisePts);
+	double RoughnessAna(bool leftNoisePts = true);
+
+    vcg::Point3f GetPointList(
+        std::vector<int> &indexList,
+        std::vector<vcg::Point3f> &pointList,
+        std::vector<vcg::Point3f> &normList,
+        const bool bNormalize = false);
 
 	// Detect Plane
-	std::vector<Sailboard*> DetectPlanes(const int expPN);
+	std::vector<Sailboard*> DetectPlanesHT(const int expPN);
+    std::vector<Sailboard*> DetectPlanesGCO(const int expPN);
+    std::vector<Sailboard*> DetectPlanesGCO_HT(
+        const int expPN, 
+        const int numNeighbors,
+        const int iteration = -1);
 	
 	// Refer Cude
 	std::vector<Sailboard*> CuboidFaceInferring(const std::vector<Sailboard*> &planes);

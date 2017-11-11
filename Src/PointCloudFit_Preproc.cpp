@@ -2,6 +2,7 @@
 #include "PCA.h"
 
 #include <QTime>
+#include <wrap/io_trimesh/io_mask.h>
 #include <vcg/complex/algorithms/update/bounding.h>
 #include <vcg/space/index/kdtree/kdtree.h>
 #include <vcg/space/fitting3.h>
@@ -18,7 +19,7 @@ int PCFit::DeNoiseKNN()
 		"      | #NNeighbord : %d \n"
 		"      | #DisRatio   : %.3f \n"
 		"      | #Gap        : ",
-		mesh.vn, DeNoise_MaxIteration, DeNoise_MaxNeighbors, DeNoise_DisRatioOfOutlier);
+		mesh.vn, DeNoise_MaxIteration, DeNoise_KNNNeighbors, DeNoise_DisRatioOfOutlier);
 	//[[----
 
 	// 1. Build Kd-tree
@@ -46,7 +47,7 @@ int PCFit::DeNoiseKNN()
 		// 2)Point Check
 		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 			if (!(*vi).IsD()) {
-				KDTree.doQueryK((*vi).cP(), DeNoise_MaxNeighbors, queue);
+				KDTree.doQueryK((*vi).cP(), DeNoise_KNNNeighbors, queue);
 				int neighbours = queue.getNofElements();
 				float avgDist = 0;
 				for (int i = 0; i < neighbours; i++) {
@@ -87,10 +88,9 @@ int PCFit::DeNoiseKNN()
 }
 
 int RegionGrow(
-	CMeshO &mesh,
-	const double dis, const int stepn,
-	std::vector<int> &nums,
-	int *maxID, long *maxN)
+	CMeshO &mesh, 
+    const int stepn, const double dis, 
+    std::vector<int> &nums, int *maxID, long *maxN)
 {
 	assert(dis >= 0);
 	assert(stepn >= 3);
@@ -119,6 +119,7 @@ int RegionGrow(
 			while (!dump.empty()) {
 				CMeshO::VertexIterator curSeed = *(dump.end() - 1);
 				dump.pop_back();
+#if 1
 				KDTree.doQueryK(curSeed->cP(), stepn, queue);
 				int neighbours = queue.getNofElements();
 
@@ -132,6 +133,20 @@ int RegionGrow(
 						count++;
 					}
 				}
+#else // Query All at once
+                std::vector<unsigned int> neiPtIdx;
+                std::vector<float> neiPtSaureDis;
+                KDTree.doQueryDist(curSeed->cP(), dis*dis, neiPtIdx, neiPtSaureDis);
+                int neighbours = neiPtIdx.size();
+                for (int k = 0; k < neighbours; k++) {
+                    CMeshO::VertexIterator nbor = mesh.vert.begin() + neiPtIdx[k];
+                    if ( !(nbor->IsD()) && type_hi[nbor] == Pt_Undefined ) {
+                        type_hi[nbor] = nCluster;
+                        dump.push_back(nbor);
+                        count++;
+                    }
+                }
+#endif
 			}
 			nums.push_back(count);
 			if (count > maxCount) {
@@ -157,14 +172,13 @@ int PCFit::DeNoiseRegGrw()
 	printf(
 		"    [--DeNoiseRegGrw--]: #nPts-%d \n"
 		"      | #NIteration : %d \n"
-		"      | #NNeighbord : %d \n"
+        "      | #KNNStep    : %d \n"
 		"      | #DisRatio   : %.3f \n"
 		"      | #Gap        : ",
 		mesh.vn,
 		DeNoise_MaxIteration, DeNoise_GrowNeighbors, DeNoise_DisRatioOfOutlier);
 	//[[----
-
-	const int _K = DeNoise_GrowNeighbors;
+    const int nStep = DeNoise_GrowNeighbors;
 	const int nIter = DeNoise_MaxIteration <= 0 ? 100 : DeNoise_MaxIteration;
 	CMeshO::PerVertexAttributeHandle<SatePtType> type_hi = 
 		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
@@ -181,7 +195,7 @@ int PCFit::DeNoiseRegGrw()
 		std::vector<int> Nums;
 		long maxN = 0;
 		int maxCluster = 0;
-		RegionGrow(mesh, Gap, _K, Nums, &maxCluster, &maxN);
+		RegionGrow(mesh, nStep, Gap, Nums, &maxCluster, &maxN);
 		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 		{
 			if ((type_hi[vi] & 0x0FF) > 0) {
@@ -312,8 +326,8 @@ double PCFit::RoughnessAna(bool leftNoisePts)
 	vcg::KdTree<float> KDTree(ww);
 	vcg::KdTree<float>::PriorityQueue queue;
 
-	const int knn = 20;
     // Key Parameter
+	const int knn = 20;
 	const int a = 1.0;
 	const int b = 1.0;
 	const int N = leftNoisePts ? mesh.vn : mesh.vert.size();
@@ -353,4 +367,58 @@ double PCFit::RoughnessAna(bool leftNoisePts)
 		Count, N, roughness, time.elapsed() / 1000.0);
 
 	return roughness;
+}
+
+
+vcg::Point3f PCFit::GetPointList(
+    std::vector<int> &indexList,
+    std::vector<vcg::Point3f> &pointList,
+    std::vector<vcg::Point3f> &normList,
+    const bool bNormalize)
+{
+    CMeshO &mesh = m_meshDoc.mesh->cm;
+    bool normalSupportted = m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL);
+
+    vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
+    vcg::Point3f center(0.0, 0.0, 0.0);
+    if (bNormalize) {
+        center = mesh.bbox.Center();
+        printf(
+            "\n"
+            "    [--GetBorder--]: #nPts-%d \n"
+            "      | #MinPt  : < %7.3f, %7.3f, %7.3f > \n"
+            "      | #MaxPt  : < %7.3f, %7.3f, %7.3f > \n"
+            "      | #Center : < %7.3f, %7.3f, %7.3f > \n"
+            "    [--GetBorder--]: Done in %.4f seconds.\n",
+            mesh.VN(),
+            mesh.bbox.min.X(), mesh.bbox.min.Y(), mesh.bbox.min.Z(),
+            mesh.bbox.max.X(), mesh.bbox.max.Y(), mesh.bbox.max.Z(),
+            center.X(), center.Y(), center.X());
+    }
+    indexList.clear();
+    pointList.clear();
+    normList.clear();
+    // -- Get Point List And Normal List (If Exist)   
+    indexList.reserve(mesh.vn);
+    pointList.reserve(mesh.vn);
+    if (normalSupportted)
+        normList.reserve(mesh.vn);
+    CMeshO::PerVertexAttributeHandle<SatePtType> type_hi =
+        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+    CMeshO::VertexIterator vi;
+    int index;
+    for (index = 0, vi = mesh.vert.begin(); vi != mesh.vert.end(); ++index, ++vi)
+    {
+        if (type_hi[vi] == Pt_Undefined && !(vi->IsD())) {
+            indexList.push_back(index);
+            pointList.push_back((*vi).cP() - center);
+            if (normalSupportted)
+                normList.push_back((*vi).cN());
+        }
+    }
+    if (bNormalize)
+        printf("    >> Got #%d Normalized Pts.\n", pointList.size());
+    else
+        printf("    >> Got #%d Pts.\n", pointList.size());
+    return center;
 }

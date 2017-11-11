@@ -34,7 +34,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>../Src;../Src/vcglib;$(IncludePath)</IncludePath>
+    <IncludePath>../Src;../Src/vcglib;../Src/gco;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -59,7 +59,7 @@
       <PreprocessorDefinitions>UNICODE;WIN32;WIN64;QT_DLL;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;QT_OPENGL_LIB;QT_PRINTSUPPORT_LIB;_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS;_USE_OPENMP_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat />
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtOpenGL;$(QTDIR)\include\QtPrintSupport;../Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtOpenGL;$(QTDIR)\include\QtPrintSupport;../Src;../Src/gco;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -72,9 +72,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Src\gco\GCoptimization.cpp" />
+    <ClCompile Include="..\Src\gco\graph.cpp" />
+    <ClCompile Include="..\Src\gco\LinkedBlockList.cpp" />
+    <ClCompile Include="..\Src\gco\maxflow.cpp" />
     <ClCompile Include="..\Src\MeshDoc.cpp" />
     <ClCompile Include="..\Src\PCA.cpp" />
     <ClCompile Include="..\Src\PointCloudFit.cpp" />
+    <ClCompile Include="..\Src\PointCloudFitUtil_Cube.cpp" />
+    <ClCompile Include="..\Src\PointCloudFitUtil_Cylinder.cpp" />
+    <ClCompile Include="..\Src\PointCloudFitUtil_Plane.cpp" />
     <ClCompile Include="..\Src\PointCloudFit_Cube.cpp" />
     <ClCompile Include="..\Src\PointCloudFit_Cylinder.cpp" />
     <ClCompile Include="..\Src\PointCloudFit_Plane.cpp" />
@@ -84,6 +91,12 @@
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Src\gco\block.h" />
+    <ClInclude Include="..\Src\gco\energy.h" />
+    <ClInclude Include="..\Src\gco\GCoptimization.h" />
+    <ClInclude Include="..\Src\gco\graph.h" />
+    <ClInclude Include="..\Src\gco\LinkedBlockList.h" />
+    <ClInclude Include="..\Src\PointCloudFitUtil.h" />
     <ClInclude Include="..\Src\vcglib\wrap\io_trimesh\export.h" />
     <ClInclude Include="..\Src\vcglib\wrap\io_trimesh\import.h" />
     <ClInclude Include="..\Src\vcglib\wrap\ply\plylib.h" />
@@ -104,6 +117,9 @@
     <ClInclude Include="..\Src\PCA.h" />
     <ClInclude Include="..\Src\PointCloudFit.h" />
     <ClInclude Include="..\Src\Satellite.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Src\gco\GCO_README.TXT" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

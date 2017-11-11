@@ -1,4 +1,6 @@
 #include "PointCloudFit.h"
+#include "PointCloudFitUtil.h"
+
 #include <eigenlib/Eigen/Core>
 #include <eigenlib/Eigen/Eigenvalues>
 

@@ -1,4 +1,6 @@
 #include "PointCloudFit.h"
+#include "PointCloudFitUtil.h"
+
 #include "PCA.h"
 #include <fstream>
 #include <vcg/complex/algorithms/update/bounding.h>
