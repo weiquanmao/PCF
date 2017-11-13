@@ -44,15 +44,7 @@ std::vector<Sailboard*> PCFit::DetectPlanesHT(const int expPN)
 	return sailbords;
 }
 
-std::vector<Sailboard*> PCFit::DetectPlanesGCO(const int expPN)
-{
-    return std::vector<Sailboard*>();
-}
-
-std::vector<Sailboard*> PCFit::DetectPlanesGCO_HT(
-    const int expPN, 
-    const int numNeighbors, 
-    const int iteration)
+std::vector<Sailboard*> PCFit::DetectPlanesGCO(const int expPN, const int iteration)
 { 
     std::vector<Sailboard*> sailbords;
     CMeshO &mesh = m_meshDoc.mesh->cm;
@@ -82,10 +74,21 @@ std::vector<Sailboard*> PCFit::DetectPlanesGCO_HT(
         &errors);
 
     // -- Fit by GCO
-    
+    // E(f)       = Sigma_p{Dp(lp)} + lambda*Sigma_(pg:N){Vpg(lq,pq)} + labelEnergy*|L| .
+    // Dp(lp)     = ||p-lp||_2 / a + [¡Ï(p,lp)/ang]^2 , if lp != 0;
+    //            = noiseEnergy                      , otherwise (i.e. lp = 0).
+    // Vpq(lp,lq) = w_{p,q}*d_{lp,lq}.
+    // d_{lp,lq}  = 1 , if lp != lq;
+    //            = 0 , otherwise (i.e. lp = lq).
+    // w_{p,q}    = lambda * exp{ - (||p-q||_2) ^ 2 / 2*delta^2} .
+    // numNeighbors := KNN numbers of neighbor system N, i.e. |N| .
     int NoiseEnergy = 4;
-    int LabelEnergy = 100;
-   
+    int LabelEnergy = 200;
+    int lambda = 20;
+    int delta = 10;
+
+    int numNeighbors = 7;
+
     int *gcoResult = new int[pointList.size()];
 	try{
         int numSite = pointList.size();
@@ -94,7 +97,7 @@ std::vector<Sailboard*> PCFit::DetectPlanesGCO_HT(
         MPFGCOCost gcoCost = 
             MPFGCOGeneratCost(planes, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
         MPFGCONeighbors gcoNei = 
-            MPFGCOParseNeighbors(mesh, indexList, NoiseEnergy, NoiseEnergy, numNeighbors, m_refa);
+            MPFGCOParseNeighbors(mesh, indexList, lambda, delta, numNeighbors, m_refa);
         // -- Set [Data Energy]
         gco->setDataCost(gcoCost.dataCost);
         // -- Set [Smooth Energy]
@@ -104,7 +107,7 @@ std::vector<Sailboard*> PCFit::DetectPlanesGCO_HT(
         // -- Set Neighbors System
         gco->setAllNeighbors(gcoNei.neighborsCounts, gcoNei.neighborsIndexes, gcoNei.neighborsWeights);
 
-        // gco->setLabelOrder(true);
+        gco->setLabelOrder(true);
         gco->setVerbosity(1);
         gco->expansion(iteration);
         

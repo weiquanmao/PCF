@@ -1,5 +1,6 @@
 #ifndef _POINT_CLOUD_FIT_UTIL_H_FILE_
 #include "PointCloudFit.h"
+#include <fstream>
 
 #ifndef _DRTrans
 #define _DRTrans
@@ -8,6 +9,19 @@
 #define D2R(deg) (deg*_D2R)
 #define R2D(rad) (rad*_R2D)
 #endif
+
+template<class T>
+static void reportMat(T* mat, const int row, const int col, const char *file)
+{
+    std::ofstream fout(file);
+    for (int i = 0; i <row; ++i) {
+        for (int j = 0; j < col; ++j) {
+            fout << mat[i*col + j] << " ";
+        }
+        fout << std::endl;
+    }
+    fout.close();
+}
 
 inline double EIConfidence(const std::vector<int> &list)
 {

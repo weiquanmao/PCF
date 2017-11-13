@@ -81,11 +81,7 @@ private:
 
 	// Detect Plane
 	std::vector<Sailboard*> DetectPlanesHT(const int expPN);
-    std::vector<Sailboard*> DetectPlanesGCO(const int expPN);
-    std::vector<Sailboard*> DetectPlanesGCO_HT(
-        const int expPN, 
-        const int numNeighbors,
-        const int iteration = -1);
+    std::vector<Sailboard*> DetectPlanesGCO(const int expPN, const int iteration = -1);
 	
 	// Refer Cude
 	std::vector<Sailboard*> CuboidFaceInferring(const std::vector<Sailboard*> &planes);

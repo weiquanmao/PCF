@@ -371,7 +371,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		int nNoise = DeNoiseRegGrw();
 #endif
 		//----]]
-		printf("[=DeNoise=]: Done, %d outlier(s) were removed in %.4f seconds.\n", nNoise, time.elapsed()/1000.0);
+		printf("[=DeNoise=]: Done, %d outlier(s ) were removed in %.4f seconds.\n", nNoise, time.elapsed()/1000.0);
 
 
 		// [1.2] Get Dimension Reference Unit
@@ -391,14 +391,22 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	// -- 2. Find All Planes
 	std::vector<Sailboard*> planes;
 	{
+#if 1
 		printf("\n\n[=PlaneFit_HT=]: -->> Try to Fit %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
 		time.restart();
 		//-------------------------------
-		// planes = DetectPlanesHT(PlaneNum_Expected);
-        planes = DetectPlanesGCO_HT(PlaneNum_Expected, 3, 5);
+		planes = DetectPlanesHT(PlaneNum_Expected);
 		//-------------------------------
 		printf("[=PlaneFit_HT=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
-	}
+#else
+        printf("\n\n[=PlaneFit_MPFGCO=]: -->> Try to Fit by Multi-Planes Fitting in GCO with %d Expected Initial Planes <<--  \n", PlaneNum_Expected);
+        time.restart();
+        //-------------------------------
+        planes = DetectPlanesGCO(PlaneNum_Expected, 10);
+        //-------------------------------
+        printf("[=PlaneFit_MPFGCO=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);      
+#endif
+    }
 
 	m_sate->m_SailboradList = planes;
 	return true;

@@ -454,7 +454,7 @@ void ExtractMBR(
     vcg::Point3f O, DX, DY;
     double confidenceX, confidenceY;
     double SA = PatchDimensions(OnPPt, NX_0, NY_0, O, DX, DY, confidenceX, confidenceY);
-    for (int i = -29; i < 30; i += 2) { // Not too slow
+    for (int i = -45; i < 45; i += 1) { // Not too slow
         double k = tan(i *_D2R);
         vcg::Point3f nx = NX_0 + NY_0*k;
         nx.Normalize();
@@ -635,6 +635,7 @@ std::vector<Sailboard*> ExtractPlanes(
 
 // Plane Fitting with GCO
 // MPFGCO : Multi-Plane Fitting with GCO
+#define ReporCost 1
 MPFGCOCost MPFGCOGeneratCost(
     const std::vector<vcg::Point4f> &planes,
     const std::vector<vcg::Point3f> &points,
@@ -654,13 +655,12 @@ MPFGCOCost MPFGCOGeneratCost(
     const int NPlane = planes.size();
     const int NLabel = NPlane + 1;
     // Data Energy
-    // Dp(lp) = ||p-lp||_2 / a + [¡Ï(p,lp)/15]^2,
+    // Dp(lp) = ||p-lp||_2 / a + [¡Ï(p,lp)/ang]^2,
     // |p-lp||_2 / a : distance form p to lp (the plane) in unit a.
     int *DataCost = new int[NPts *NLabel];
     for (int i = 0; i < NPts; ++i)
         DataCost[i*NLabel] = cost_noise;
-    int k1 = 0;
-    int k2 = 0;
+
     for (int i = 1; i < NLabel; ++i) {
         vcg::Point4f ple = planes[i - 1];
         vcg::Point3f n(ple.X(), ple.Y(), ple.Z());
@@ -670,22 +670,18 @@ MPFGCOCost MPFGCOGeneratCost(
         for (int j = 0; j < NPts; ++j) {
             double d = abs(points[j] * n + w);
             DataCost[j*NLabel + i] = int(d / unit_a + 0.5);
-            if (DataCost[j*NLabel + i] < cost_noise)
-                k1++;
         }
         // Ang
         if (bHasNorm) {
             for (int j = 0; j < NPts; ++j) {
                 double ang = 90 - abs(90 - vcg::AngleN(n, norms[j])*_R2D);
                 DataCost[j*NLabel + i] += int(ang*ang*angr);
-                if (DataCost[j*NLabel + i] < cost_noise)
-                    k2++;
             }
         }
     }
     // Smooth Energy
     // Vpq(lp,lq) = w_{p,q}*d_{lp,lq}
-    // d_{lp,lp} = 1 if lp != l1, otherwise 0; 
+    // d_{lp,lq} = 1 if lp != lq, otherwise 0; 
     // w_{p,q} = lambda * exp{ - (||p-q||_2/a) ^ 2 / 2*delta^2}
     // (see implement of neighbor system in function MPFGCOParseNeighbors())
     int *SmoothCost = new int[NLabel*NLabel];
@@ -701,6 +697,11 @@ MPFGCOCost MPFGCOGeneratCost(
     gcoCost.dataCost   = DataCost;
     gcoCost.smoothCost = SmoothCost;
     gcoCost.labelCost  = cost_label;
+
+#if ReporCost
+    reportMat<int>(DataCost, NPts, NLabel, "../DataCost.txt");
+    reportMat<int>(SmoothCost, NLabel, NLabel, "../SmoothCost.txt");
+#endif
 
     return gcoCost;
 }
@@ -739,7 +740,7 @@ MPFGCONeighbors MPFGCOParseNeighbors(
     vcg::KdTree<float> KDTree(ww);
     vcg::KdTree<float>::PriorityQueue queue;
     const int knnNum = numNeighbors * 2 > 5 ? numNeighbors * 2 : 5;
-    const double _r = -1.0 / 2.0*(unit_a*unit_a)*(delta*delta);
+    const double _r = -1.0 / 2*(unit_a*unit_a)*(delta*delta);
     CMeshO::VertexIterator vi = mesh.vert.begin();
     for (int i = 0; i < NPts; ++i) {
         vcg::Point3f p = (vi + ptIndex[i])->cP();
@@ -751,11 +752,11 @@ MPFGCONeighbors MPFGCOParseNeighbors(
             if ((vi + neightId)->IsD())
                 continue;
             // Vpq(lp,lq) = w_{p,q}*d_{lp,lq}
-            // d_{lp,lp} = 1 if lp != l1, otherwise 0; 
+            // d_{lp,lq} = 1 if lp != lq, otherwise 0; 
             // (see implement of smooth cost in function MPFGCOGeneratCost())
             // w_{p,q} = lambda * exp{ - (||p-q||_2/a) ^ 2 / 2*delta^2}
             double w_pq = vcg::SquaredDistance(p, (vi+neightId)->cP());
-            w_pq = 0;lambda * exp(w_pq*_r);
+            w_pq = lambda *exp(w_pq*_r);
 
             assert(indexMap[neightId] != -1);
             NeiIndex[i][neiNum] = indexMap[neightId];
@@ -776,6 +777,11 @@ MPFGCONeighbors MPFGCOParseNeighbors(
     gcoNei.neighborsCounts = NeiCount;
     gcoNei.neighborsIndexes = NeiIndex;
     gcoNei.neighborsWeights = NeiWeight;
+
+#if ReporCost
+    reportMat<int>(_NeiWeight, NPts, numNeighbors, "../NeighborWeight.txt");
+#endif
+
     return gcoNei;
 }
 
