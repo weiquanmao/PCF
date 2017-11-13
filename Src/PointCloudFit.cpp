@@ -60,8 +60,8 @@ void PCFit::printLogo()
 	printf(
 		"\n\n"
 		"    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   \n"
-		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 1.0.0                \n"
-		"  / ____/ / /___   /__/  / ___/  / /    / /      |  September 2017 @ IPC.BUAA \n"
+		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.3.0                \n"
+		"  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA \n"
 		" /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  \n"
 		"                                                 |  Email: weiqm@buaa.edu.cn  \n"
 		"\n"
