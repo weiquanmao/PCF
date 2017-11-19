@@ -1,6 +1,11 @@
 #include "PointCloudFit.h"
+#ifdef _USE_OPENMP_
+#include <omp.h>
+#endif
+
 #include <QSettings> 
 #include <QTime>
+
 #include <wrap/io_trimesh/io_mask.h>
 
 const unsigned int  nColorChannel = 3;
@@ -13,10 +18,10 @@ const unsigned char Color_Plane[10][nColorChannel] =
 {
 	{ 215,  55, 101 },
 	{ 255, 245,  55 },
-	{ 97,  54, 130 },
+	{  97,  54, 130 },
 	{ 194,  85,  38 },
-	{ 0, 192, 210 },
-	{ 0, 178, 111 },
+	{   0, 192, 210 },
+	{   0, 178, 111 },
 	{ 250, 202,  87 },
 	{ 255,  95,  61 },
 	{ 128,  88, 189 },
@@ -179,7 +184,7 @@ bool PCFit::loadPly(const char * PlyFilePath)
 	QTime time;
 	time.start();
 	printf("\n\n[=LoadPly=]: -->> Loading Points from File: %s <<--  \n", PlyFilePath);	
-	//[----
+    //----[[
 	bool bOpen = false;
 	if (PlyFilePath) {		
 		bOpen = m_meshDoc.loadMesh(PlyFilePath);
@@ -202,7 +207,7 @@ bool PCFit::savePly(const char *PlyFilePath)
 	QTime time;
 	time.start();
 	printf("\n\n[=SavePly=]: -->> Svae Points as Ply File: %s <<--\n", PlyFilePath);	
-	//[[----
+    //----[[
 	bool bSave = m_meshDoc.saveMesh(PlyFilePath, false);
 	//----]]
 	if (bSave)
@@ -334,7 +339,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	{
 		time.restart();
 		printf("\n\n[=InitPtAttri=]: -->> Initialize Satellite Point Attribute <<--\n");		
-		//[[----
+        //----[[
 		CMeshO::PerVertexAttributeHandle<SatePtType> type_hi;
 		if (!vcg::tri::HasPerVertexAttribute(mesh, _MySatePtAttri))
 		{// Add It
@@ -364,7 +369,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		// [1.1] Remove Outliers
 		time.restart();
 		printf("\n\n[=DeNoise=]: -->> Remove Outliers <<--  \n");	
-		//[[----
+        //----[[
 #if 0 // DeNoise by KNN
 		int nNoise = DeNoiseKNN();
 #else // DeNoise by Region Grow
@@ -377,7 +382,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		// [1.2] Get Dimension Reference Unit
 		time.restart();
 		printf("\n\n[=RefSize=]: -->> Dimension Reference Unit Ana. <<--  \n");	
-		//[[----
+        //----[[
 		vcg::Point3f PSize;
 		std::vector<vcg::Point3f> PDirection;
 
@@ -388,6 +393,9 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		//----]]
 		printf("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
+
+
+
 	// -- 2. Find All Planes
 	std::vector<Sailboard*> planes;
 	{
@@ -411,6 +419,8 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	m_sate->m_SailboradList = planes;
 	return true;
 
+
+
 	// -- 3. Judge Cube Planes
 	MainBodyCube *cubeMain = 0;
 	if (planes.size() >= 2) {
@@ -427,6 +437,8 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 			printf("[=DetectMB_Cuboid=]: No Cuboid MB is detected, all the %d plane(s) are treated as sailbords. Elapsed %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
 		}
 	}
+
+
 
 	// -- 4. Find Cyclinde
 	if (m_sate->m_Mainbody == 0) {
@@ -448,6 +460,8 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 			printf("\n\n[=DetectMB_Cylinder=]: [ ): ] Normals Are Neederd To Detected Cylinder Mainbody. \n");
 		}
 	}
+
+
 
 	// -- 5. Set SailbordList
 	{

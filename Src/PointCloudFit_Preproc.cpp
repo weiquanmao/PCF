@@ -20,7 +20,7 @@ int PCFit::DeNoiseKNN()
 		"      | #DisRatio   : %.3f \n"
 		"      | #Gap        : ",
 		mesh.vn, DeNoise_MaxIteration, DeNoise_KNNNeighbors, DeNoise_DisRatioOfOutlier);
-	//[[----
+    //----[[
 
 	// 1. Build Kd-tree
 	vcg::VertexConstDataWrapper<CMeshO> ww(mesh);
@@ -177,7 +177,7 @@ int PCFit::DeNoiseRegGrw()
 		"      | #Gap        : ",
 		mesh.vn,
 		DeNoise_MaxIteration, DeNoise_GrowNeighbors, DeNoise_DisRatioOfOutlier);
-	//[[----
+    //----[[
     const int nStep = DeNoise_GrowNeighbors;
 	const int nIter = DeNoise_MaxIteration <= 0 ? 100 : DeNoise_MaxIteration;
 	CMeshO::PerVertexAttributeHandle<SatePtType> type_hi = 
