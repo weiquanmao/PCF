@@ -11,7 +11,7 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-#if 1 // Reconstructed Models
+#if 0 // Reconstructed Models
 	const string InputDir = "../../../Data/ModelPC";
 	const string OutputDir = "../../../Data/Result";
 #else // Synthesized Models
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 			{
 				const string FileName = fileinfo.name;
 #if 0 // Test Only One
-				if (FileName != "CY1.ply")
+				if (FileName != "GPS.ply")
 					continue;
 #endif
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));

@@ -1,5 +1,6 @@
 #include "PointCloudFitUtil.h"
 
+#include <QTime>
 
 #define VCGAngle(N1, N2) R2D(abs(vcg::Angle(N1, N2)))
 #define CheckParallel(ang) (90.0 - abs(90.0 - ang))
@@ -21,7 +22,7 @@ void RemovePlanes(
     for (int i = 0; i < planesTobeRemoved.size(); ++i) {
         ObjPlane* toBeRomeved = planesTobeRemoved.at(i);
         for (int j = 0; j < planes.size(); ++j) {
-            if (planes.at(i) == toBeRomeved) {
+            if (planes.at(j) == toBeRomeved) {
                 planes.erase(planes.begin() + j);
                 if (memRelease)
                     delete toBeRomeved;
@@ -137,6 +138,8 @@ std::vector<ObjPlane*> CubeFaceInferringOne(
             finalOut.swap(tempList);
     }
     tempList.clear();
+    if (finalOut.size() < 2)
+        finalOut.clear();
     return finalOut;
 }
 int CubeFaceInferring(
@@ -145,6 +148,9 @@ int CubeFaceInferring(
     const double TDis, const double TAng,
     const bool remove)
 {
+    QTime time;
+    time.start();
+
     std::vector<ObjPlane*> _planes = planes;
     std::vector< std::vector<ObjPlane*> > _cubefaces;
     while (_planes.size() > 1) {
@@ -157,12 +163,24 @@ int CubeFaceInferring(
             break;
     }
 
+    printf(
+        "      [--Cube_Infer--]: #Ple-%d\n"
+        "        | #TDis    : %.4f \n"
+        "        | #TAng    : %.4f \n"
+        "        | #Cube    : %d \n"
+        "        | #LeftPle : %d \n"
+        "      [--Cube_Infer--]: Done in %.4f seconds. \n",
+        planes.size(),
+        TDis, TAng,
+        _cubefaces.size(), _planes.size(),
+        time.elapsed() / 1000.0);
+
     if (remove) {
         for (int i=0; i<_cubefaces.size(); ++i)
             RemovePlanes(planes, _cubefaces.at(i), false);
     }
+    cubefaces.swap(_cubefaces); 
 
-    cubefaces.swap(_cubefaces);
     return cubefaces.size();
 }
 
@@ -309,6 +327,9 @@ void RobustOrientation(
     vcg::Point3f &NX, vcg::Point3f &NY, vcg::Point3f &NZ,
     const double TAng)
 {
+    QTime time;
+    time.start();
+
     ObjPlane *PP = CubePlanes.at(0);
     vcg::Point3f NXRef = PP->m_dX; NXRef.Normalize();
     vcg::Point3f NYRef = PP->m_dY; NYRef.Normalize();
@@ -396,6 +417,19 @@ void RobustOrientation(
     assert((FaceNY.size() + EdgeNY.size()) == CubePlanes.size());
     assert((FaceNZ.size() + EdgeNZ.size()) == CubePlanes.size());
     RobustDirections(FaceNX, FaceNY, FaceNZ, EdgeNX, EdgeNY, EdgeNZ, NX, NY, NZ);
+
+    printf(
+        "      [--Cube_Orientation--]: #Ple-%d\n"
+        "        | #TAng  : %.4f \n"
+        "        | #NX    : < %.4f, %.4f, %.4f > \n"
+        "        | #NY    : < %.4f, %.4f, %.4f > \n"
+        "        | #NZ    : < %.4f, %.4f, %.4f > \n"
+        "      [--Cube_Orientation--]: Done in %.4f seconds. \n",
+        CubePlanes.size(), TAng,
+        NX.X(), NX.Y(), NX.Z(),
+        NY.X(), NY.Y(), NY.Z(),
+        NZ.X(), NZ.Y(), NZ.Z(),
+        time.elapsed() / 1000.0);
 }
 
 
@@ -517,6 +551,9 @@ void RobustDimention(
     vcg::Point3f &OP, vcg::Point3f &SIZE, vcg::Point3f &WEIGHTS,
     const double TAng)
 {
+    QTime time;
+    time.start();
+
     // <Î»ÖÃ,È¨Öµ>
     std::vector< std::pair< double, double > > FaceInterX, FaceInterY, FaceInterZ;
     std::vector< std::pair< std::pair< double, double >, std::pair< double, double > > > EdgeInterX, EdgeInterY, EdgeInterZ;
@@ -620,6 +657,20 @@ void RobustDimention(
     WEIGHTS = vcg::Point3f(wx, wy, wz);
     OP = NX*minx + NY*miny + NZ*minz;
 
+    printf(
+        "      [--Cube_Dimention--]: #Ple-%d\n"
+        "        | #TAng  : %.4f \n"
+        "        | #OP    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"
+        "        | #NX    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"
+        "        | #NY    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"
+        "        | #NZ    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"
+        "      [--Cube_Dimention--]: Done in %.4f seconds. \n",
+        CubePlanes.size(), TAng,
+        OP.X(), OP.Y(), OP.Z(),
+        SIZE.X(), WEIGHTS.X(), NX.X(), NX.Y(), NX.Z(),
+        SIZE.Y(), WEIGHTS.Y(), NY.X(), NY.Y(), NY.Z(),
+        SIZE.Z(), WEIGHTS.Z(), NZ.X(), NZ.Y(), NZ.Z(),
+        time.elapsed() / 1000.0);
 }
 
 
@@ -704,11 +755,11 @@ int AttachToCube(
     std::vector<ObjPlane*> planesAdded;
     for (int i = 0; i < planes.size(); i++) {
         ObjPlane *ple = planes.at(i);
-        bool bCubeFace = false;
         for (int k = 0; k < cubes.size(); ++k) {
             if (BelongToCube(ple, cubes.at(k), TAng)) {
                 CubeFaces.at(k).push_back(ple);
                 planesAdded.push_back(ple);
+                break;
             }
         }
     }
