@@ -2,19 +2,20 @@
 #define _POINT_CLOUD_FIT_H_FILE_
 
 #include "MeshDoc.h"
-#include "Satellite.h"
+#include "GeometryObject.h"
 
 void doFailure();
 
-#define _MySatePtAttri "PerVerAttri_SatePt"
-typedef int SatePtType;
+#define _MyPtAttri "PerVerAttri_SatePt"
+typedef int PtType;
 #define MaxOlaneNum 256
-enum _SatePtType {
-	Pt_Undefined = 0x000,
-	Pt_Noise = 0x100,
-	Pt_OnMBCylinder = 0x800,
-	Pt_OnMBCube = 0x600,
-	Pt_OnPlane = 0x0200
+enum _PtType {
+	Pt_Undefined  = 0x0000, // 00000
+	Pt_Noise      = 0x0100, // 00001
+	Pt_OnPlane    = 0x0200, // 00010
+    Pt_OnCube     = 0x0600, // 00110
+    Pt_OnCylinder = 0x0800, // 01000
+    Pt_OnCone     = 0x1800  // 11000
 };
 
 
@@ -41,10 +42,10 @@ public:
 	void autoColor();
 
 	bool Fit_Sate(bool keepAttribute = true);
-	Satellite *getSate() { return m_sate; }
+	ObjSet *getGEOObjSet() { return m_GEOObjSet; }
 private:
 	MeshDocument m_meshDoc;
-	Satellite *m_sate;
+    ObjSet *m_GEOObjSet;
 	double m_refa;
 
 	// All Thresholds
@@ -80,16 +81,14 @@ private:
         const bool bNormalize = false);
 
 	// Detect Plane
-	std::vector<Sailboard*> DetectPlanesHT(const int expPN);
-    std::vector<Sailboard*> DetectPlanesGCO(const int expPN, const int iteration = -1);
+	std::vector<ObjPlane*> DetectPlanesHT(const int expPN);
+    std::vector<ObjPlane*> DetectPlanesGCO(const int expPN, const int iteration = -1);
 	
 	// Refer Cude
-	std::vector<Sailboard*> CuboidFaceInferring(const std::vector<Sailboard*> &planes);
-	MainBodyCube* CuboidMeasure(const std::vector<Sailboard*> &CubePlanes);
-	MainBodyCube* DetectCuboidFromPlanes(std::vector<Sailboard*> &planes);
+    std::vector<ObjCube*> DetectCubeFromPlanes(std::vector<ObjPlane*> &planes);
 	
 	// Detect Cylinder
-	MainBodyCylinder* DetectCylinder();    
+	ObjCylinder* DetectCylinderSymAxis();
 };
 
 #endif // !_POINT_CLOUD_FIT_H_FILE_

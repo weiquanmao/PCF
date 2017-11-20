@@ -159,7 +159,9 @@ int HoughPlane(
 
     vcg::Point4f P[3];
     int N[3];
+#ifdef _USE_OPENMP_
 #pragma omp parallel for
+#endif // !_USE_OPENMP_
     for (int i = 0; i < 3; i++) {
         N[i] = HoughPlaneOne(P[i], FixedAxis(i), PointList, NormList, _intercept, _a, _s);
     }
@@ -181,7 +183,8 @@ int HoughPlane(
 
 
 // [2] Surface Points Verification
-std::vector<int> AttachToPlane(
+int AttachToPlane(
+    std::vector<int> &PtOnPlane,
     const std::vector<vcg::Point3f> &PointList,
     const std::vector<vcg::Point3f> &NormList,
     const vcg::Point4f &plane,
@@ -234,7 +237,8 @@ std::vector<int> AttachToPlane(
         TDis, _TAng, bHasNorm,
         OnPlaneList.size(), time.elapsed() / 1000.0);
 
-    return OnPlaneList;
+    PtOnPlane.swap(OnPlaneList);
+    return PtOnPlane.size();
 }
 
 
@@ -386,7 +390,7 @@ double PatchDimensions(
 
 void ExtractMBR(
     CMeshO &mesh,
-    Sailboard &ABord,
+    ObjPlane &APlne,
     const vcg::Point4f &Plane,
     const std::vector<vcg::Point3f> &PointList,
     const std::vector<int> &IndexList,
@@ -405,16 +409,16 @@ void ExtractMBR(
     if (Plane.V(3)>0) NP = -NP;
     double offset = abs(Plane.V(3)) / NP.Norm();
     NP.Normalize();
-    ABord.m_N = NP;
+    APlne.m_N = NP;
 
     vcg::Plane3f VCGPLane = vcg::Plane3f();
     VCGPLane.SetDirection(NP);
     VCGPLane.SetOffset(offset);
-    CMeshO::PerVertexAttributeHandle<SatePtType> type_hi =
-        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+    CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
     std::vector<vcg::Point3f> OnPPt;
 
-    const int PlaneCode = ABord.m_PlaneIndex;
+    const int PlaneCode = APlne.m_PlaneIndex;
     for (int i = PlaneVerList.size() - 1; i >= 0; --i)
     {
         int index = PlaneVerList.at(i);
@@ -469,10 +473,10 @@ void ExtractMBR(
         }
     }
 
-    ABord.m_pO = O;
-    ABord.m_dX = DX;
-    ABord.m_dY = DY;
-    ABord.m_sizeConfidence = vcg::Point3f(confidenceX, confidenceY, 0);
+    APlne.m_pO = O;
+    APlne.m_dX = DX;
+    APlne.m_dY = DY;
+    APlne.m_sizeConfidence = vcg::Point3f(confidenceX, confidenceY, 0);
     //
     printf(
         "      [--PatchDim--]: #Pts-%d\n"
@@ -500,19 +504,19 @@ std::vector<vcg::Point4f> DetectHTPlanes(
     const double TNPtsRatio, const int TNPtsHard,
     const int ExpPlaneNum,
     std::vector<double> *errors,
-    std::vector<Sailboard*> *pSailboards,
+    std::vector<ObjPlane*> *pPlanes,
     CMeshO *pMesh, std::vector<int> *pIndexList)
 {
     assert(
-        (pSailboards == 0 && pMesh == 0 && pIndexList == 0) ||
-        (pSailboards != 0 && pMesh != 0 && pIndexList != 0)
+        (pPlanes == 0 && pMesh == 0 && pIndexList == 0) ||
+        (pPlanes != 0 && pMesh != 0 && pIndexList != 0)
     );
     const bool bHasNorm = (NormList.size() > 0) ? true : false;
-    const bool bRetBoard = (pSailboards != 0) ? true : false;
+    const bool bRetPlane = (pPlanes != 0) ? true : false;
     const bool bReportErr = (errors != 0) ? true : false;
 
     std::vector<int> indexList;
-    if (bRetBoard)
+    if (bRetPlane)
         indexList = *pIndexList;
     std::vector<vcg::Point3f> pointList = PointList;
     std::vector<vcg::Point3f> normList = NormList;
@@ -546,7 +550,8 @@ std::vector<vcg::Point4f> DetectHTPlanes(
             break;
 
         // Surface Points Verification
-        std::vector<int> planeVerList = AttachToPlane(pointList, normList, plane, TDis, TAng);
+        std::vector<int> planeVerList;
+        AttachToPlane(planeVerList, pointList, normList, plane, TDis, TAng);
 
         // Coplanar Separation
         PicMaxRegion(pointList, planeVerList, TDis*2.0);
@@ -559,14 +564,14 @@ std::vector<vcg::Point4f> DetectHTPlanes(
         if (bReportErr)
             errors->push_back(err);
 
-        if (bRetBoard) {
-            Sailboard *oneBord = new Sailboard(Pt_OnPlane + planeNum);
-            oneBord->m_varN = err;
+        if (bRetPlane) {
+            ObjPlane *onePle = new ObjPlane(Pt_OnPlane + planeNum);
+            onePle->m_varN = err;
 
             // Extract the Minimum-Bounding-Rectangle
-            ExtractMBR(*pMesh, *oneBord, plane, pointList, indexList, planeVerList);
+            ExtractMBR(*pMesh, *onePle, plane, pointList, indexList, planeVerList);
 
-            pSailboards->push_back(oneBord);
+            pPlanes->push_back(onePle);
         }
 
         // Remove Pts on Plane
@@ -580,7 +585,7 @@ std::vector<vcg::Point4f> DetectHTPlanes(
                 normList.erase(normList.begin() + index);
             }
         }
-        if (bRetBoard) {
+        if (bRetPlane) {
             for (int i = planeVerList.size() - 1; i >= 0; --i) {
                 int index = planeVerList.at(i);
                 indexList.erase(indexList.begin() + index);
@@ -591,7 +596,7 @@ std::vector<vcg::Point4f> DetectHTPlanes(
         planeVec.push_back(plane);
         planeNum++;
     }
-    if (bRetBoard)
+    if (bRetPlane)
         indexList.clear();
     pointList.clear();
     normList.clear();
@@ -599,13 +604,13 @@ std::vector<vcg::Point4f> DetectHTPlanes(
     return planeVec;
 }
 
-std::vector<Sailboard*> ExtractPlanes(
+std::vector<ObjPlane*> ExtractPlanes(
     CMeshO &mesh,
     const std::vector<int> &indexList,
     const std::vector<vcg::Point3f> &pointList,
     const int planeNUm, const int *labels)
 {
-    std::vector<Sailboard*> sailboards;
+    std::vector<ObjPlane*> planes;
 
     const int NPlane = planeNUm;
     const int NPoint = pointList.size();
@@ -621,21 +626,20 @@ std::vector<Sailboard*> ExtractPlanes(
     for (int k = 1; k < NPlane + 1; k++) {
         if (planeVerList[k].empty())
             continue;
-        Sailboard *oneBord = new Sailboard(PlaneID++);
+        ObjPlane *onePle = new ObjPlane(PlaneID++);
 
         vcg::Point4f plane;
         double err = FineFit(pointList, planeVerList[k], plane);
-        oneBord->m_varN = err;
-        ExtractMBR(mesh, *oneBord, plane, pointList, indexList, planeVerList[k]);
+        onePle->m_varN = err;
+        ExtractMBR(mesh, *onePle, plane, pointList, indexList, planeVerList[k]);
 
-        sailboards.push_back(oneBord);
+        planes.push_back(onePle);
     }
-    return sailboards;
+    return planes;
 }
 
 // Plane Fitting with GCO
 // MPFGCO : Multi-Plane Fitting with GCO
-#define ReporCost 1
 MPFGCOCost MPFGCOGeneratCost(
     const std::vector<vcg::Point4f> &planes,
     const std::vector<vcg::Point3f> &points,
@@ -698,9 +702,9 @@ MPFGCOCost MPFGCOGeneratCost(
     gcoCost.smoothCost = SmoothCost;
     gcoCost.labelCost  = cost_label;
 
-#if ReporCost
-    reportMat<int>(DataCost, NPts, NLabel, "../DataCost.txt");
-    reportMat<int>(SmoothCost, NLabel, NLabel, "../SmoothCost.txt");
+#if defined(_ReportOut_)
+    reportMat<int>(DataCost, NPts, NLabel, "../~CostData~.txt");
+    reportMat<int>(SmoothCost, NLabel, NLabel, "../~CostSmooth~.txt");
 #endif
 
     return gcoCost;
@@ -778,8 +782,8 @@ MPFGCONeighbors MPFGCOParseNeighbors(
     gcoNei.neighborsIndexes = NeiIndex;
     gcoNei.neighborsWeights = NeiWeight;
 
-#if ReporCost
-    reportMat<int>(_NeiWeight, NPts, numNeighbors, "../NeighborWeight.txt");
+#if defined(_ReportOut_)
+    reportMat<int>(_NeiWeight, NPts, numNeighbors, "../~NeighborWeight~.txt");
 #endif
 
     return gcoNei;

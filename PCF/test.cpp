@@ -11,11 +11,11 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-#if 0 // Reconstructed Models
-	const string InputDir = "../../../Data/3DModels";
+#if 1 // Reconstructed Models
+	const string InputDir = "../../../Data/ModelPC";
 	const string OutputDir = "../../../Data/Result";
 #else // Synthesized Models
-    const string InputDir = "../../../Data/StdModel/50K";
+    const string InputDir = "../../../Data/ModelPCStd/50K";
     const string OutputDir = "../../../Data/ResultStd";
 #endif
 	const string szPath = InputDir + "/*.ply";
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 			{
 				const string FileName = fileinfo.name;
 #if 0 // Test Only One
-				if (FileName != "cube.ply")
+				if (FileName != "CY1.ply")
 					continue;
 #endif
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 				Fit.savePly(FileNameOpt.c_str());
 				Fit.autoColor();
 				Fit.savePly(FileNameRej.c_str());
-				SaveSatellite(Fit.getSate(), SateStruct.c_str());
+				SaveObjSet(Fit.getGEOObjSet(), SateStruct.c_str());
 				cout << "\n--------------------------------------------------------------------------------------------\n";
 				t2 = timeGetTime();
 				cout << "\n\n"

@@ -2,7 +2,7 @@
 #include "PointCloudFitUtil.h"
 #include "gco/GCoptimization.h"
 
-std::vector<Sailboard*> PCFit::DetectPlanesHT(const int expPN)
+std::vector<ObjPlane*> PCFit::DetectPlanesHT(const int expPN)
 {
     CMeshO &mesh = m_meshDoc.mesh->cm;
 
@@ -21,32 +21,32 @@ std::vector<Sailboard*> PCFit::DetectPlanesHT(const int expPN)
 	const int _THard = fmax(300, pointList.size()*0.01);
 
     // -- Detect Planes
-    std::vector<Sailboard*> sailbords;
-    std::vector<vcg::Point4f> planes; // Useless
+    std::vector<ObjPlane*> planes;
+    std::vector<vcg::Point4f> infPlanes; // Useless
 
-    planes = DetectHTPlanes(
+    infPlanes = DetectHTPlanes(
         pointList, normList,
         intercept, m_refa, Precision_HT,
         _planeDisThreshold, _planeAngThreshold,
         Threshold_NPtsPlane, _THard, expPN,
         0,
-        &sailbords, &mesh, &indexList);
+        &planes, &mesh, &indexList);
 
     // -- Move Back
-    for (int i = 0; i<sailbords.size(); ++i) {
-        sailbords.at(i)->m_pO += center; 
+    for (int i = 0; i<planes.size(); ++i) {
+        planes.at(i)->m_pO += center;
     }
 
 	indexList.clear();
 	pointList.clear();
     normList.clear();
 
-	return sailbords;
+	return planes;
 }
 
-std::vector<Sailboard*> PCFit::DetectPlanesGCO(const int expPN, const int iteration)
+std::vector<ObjPlane*> PCFit::DetectPlanesGCO(const int expPN, const int iteration)
 { 
-    std::vector<Sailboard*> sailbords;
+    std::vector<ObjPlane*> planes;
     CMeshO &mesh = m_meshDoc.mesh->cm;
 
     // -- Get Normalized Point List (Moved So That the Center is [0,0])
@@ -63,9 +63,9 @@ std::vector<Sailboard*> PCFit::DetectPlanesGCO(const int expPN, const int iterat
     const double _planeAngThreshold = Threshold_AngToPlane;
     const int _THard = fmax(300, pointList.size()*0.01);
     // -- Detect Init Planes
-    std::vector<vcg::Point4f> planes;
+    std::vector<vcg::Point4f> infPlanes;
     std::vector<double> errors;
-    planes = DetectHTPlanes(
+    infPlanes = DetectHTPlanes(
         pointList, normList,
         intercept, m_refa, Precision_HT,
         _planeDisThreshold, _planeAngThreshold,
@@ -92,10 +92,10 @@ std::vector<Sailboard*> PCFit::DetectPlanesGCO(const int expPN, const int iterat
     int *gcoResult = new int[pointList.size()];
 	try{
         int numSite = pointList.size();
-        int numLabel = planes.size() + 1;
+        int numLabel = infPlanes.size() + 1;
 		GCoptimizationGeneralGraph *gco = new GCoptimizationGeneralGraph(numSite, numLabel);
         MPFGCOCost gcoCost = 
-            MPFGCOGeneratCost(planes, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
+            MPFGCOGeneratCost(infPlanes, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
         MPFGCONeighbors gcoNei = 
             MPFGCOParseNeighbors(mesh, indexList, lambda, delta, numNeighbors, m_refa);
         // -- Set [Data Energy]
@@ -114,7 +114,7 @@ std::vector<Sailboard*> PCFit::DetectPlanesGCO(const int expPN, const int iterat
         // -- Get Result <& Re-Estimate>
         for (int i = 0; i < numSite; i++)
             gcoResult[i] = gco->whatLabel(i);
-        // errors = GCOReEstimat(planes, pointList, gcoResult);
+        // errors = GCOReEstimat(infPlanes, pointList, gcoResult);
 
         // -- Cleaning Up
         gcoCost.memRelease();
@@ -123,10 +123,10 @@ std::vector<Sailboard*> PCFit::DetectPlanesGCO(const int expPN, const int iterat
 	catch (GCException e){
 		e.Report();
 	}
-    sailbords = ExtractPlanes(mesh, indexList, pointList, planes.size(), gcoResult);
+    planes = ExtractPlanes(mesh, indexList, pointList, infPlanes.size(), gcoResult);
     // -- Move Back
-    for (int i = 0; i<sailbords.size(); ++i) {
-        sailbords.at(i)->m_pO += center;
+    for (int i = 0; i<planes.size(); ++i) {
+        planes.at(i)->m_pO += center;
     }
     
     
@@ -135,5 +135,5 @@ std::vector<Sailboard*> PCFit::DetectPlanesGCO(const int expPN, const int iterat
     normList.clear();
     delete[] gcoResult;
 
-    return sailbords;
+    return planes;
 }

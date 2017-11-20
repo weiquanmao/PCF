@@ -10,6 +10,8 @@
 #define R2D(rad) (rad*_R2D)
 #endif
 
+#define _ReportOut_
+
 template<class T>
 static void reportMat(T* mat, const int row, const int col, const char *file)
 {
@@ -23,7 +25,7 @@ static void reportMat(T* mat, const int row, const int col, const char *file)
     fout.close();
 }
 
-inline double EIConfidence(const std::vector<int> &list)
+static double EIConfidence(const std::vector<int> &list)
 {
     const int Num = list.size();
     const double MaxEI = -log(1.0 / Num);
@@ -39,7 +41,7 @@ inline double EIConfidence(const std::vector<int> &list)
     double EI = (Sumn*log(Sumn) - Sumnlogn) / (Sumn*1.0);
     return EI / MaxEI;
 }
-inline double EIConfidence(const std::vector<std::pair<double, int>> &list)
+static double EIConfidence(const std::vector<std::pair<double, int>> &list)
 {
     const int BinNum = 10;
     const int N = list.size();
@@ -60,6 +62,8 @@ inline double EIConfidence(const std::vector<std::pair<double, int>> &list)
 
     return conf;
 }
+
+
 
 /////////////////////////////////
 // ------- For Plane -------
@@ -86,7 +90,8 @@ int HoughPlane(
     const double _intercept, const double _a, const double _s);
 
 // [2] Surface Points Verification
-std::vector<int> AttachToPlane(
+int AttachToPlane(
+    std::vector<int> &PtOnPlane,
     const std::vector<vcg::Point3f> &PointList,
     const std::vector<vcg::Point3f> &NormList,
     const vcg::Point4f &plane,
@@ -113,7 +118,7 @@ double PatchDimensions(
     double &ex, double &ey);
 void ExtractMBR(
     CMeshO &mesh,
-    Sailboard &ABord,
+    ObjPlane &APlane,
     const vcg::Point4f &Plane,
     const std::vector<vcg::Point3f> &PointList,
     const std::vector<int> &IndexList,
@@ -127,10 +132,10 @@ std::vector<vcg::Point4f> DetectHTPlanes(
     const double TNPtsRatio = 0.0, const int TNPtsHard = 0,
     const int ExpPlaneNum = 0,
     std::vector<double> *errors = 0,
-    std::vector<Sailboard*> *pSailboards = 0,
+    std::vector<ObjPlane*> *pPlanes = 0,
     CMeshO *pMesh = 0, std::vector<int> *pIndexList = 0);
 
-std::vector<Sailboard*> ExtractPlanes(
+std::vector<ObjPlane*> ExtractPlanes(
     CMeshO &mesh,
     const std::vector<int> &indexList,
     const std::vector<vcg::Point3f> &pointList,    
@@ -208,14 +213,95 @@ std::vector<double> GCOReEstimat(
     std::vector<vcg::Point4f> &planes,
     const std::vector<vcg::Point3f> &pointList,
     const int *labels);
+
 /////////////////////////////////
 // ------- For Cube -------
 /////////////////////////////////
+void RemovePlanes(
+    std::vector<ObjPlane*> &planes,
+    const std::vector<ObjPlane*> &planesTobeRemoved,
+    const bool memRelease = false);
+bool IsParallel(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
+bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
 
+// [1] Infer Cube Faces
+enum PlaneRelation {
+    PlaneRelation_NoRetation,
+    PlaneRelation_Adjacency,
+    PlaneRelation_AtOppo
+};
+bool IsOppoFaces(
+    const ObjPlane *P1, const ObjPlane *P2,
+    const double TAng);
+bool IsAdjacencyFaces(
+    const ObjPlane *P1, const ObjPlane *P2,
+    const double TDis, const double TAng);
+PlaneRelation EstPlaneRelation(
+    const ObjPlane *P1, const ObjPlane *P2,
+    const double TDis, const double TAng);
+
+std::vector<ObjPlane*> CubeFaceInferringOne(
+    const std::vector<ObjPlane*> &planes,
+    const double TDis, const double TAng);
+
+int CubeFaceInferring(
+    std::vector< std::vector<ObjPlane*> > &cubefaces,
+    std::vector<ObjPlane*> &planes,
+    const double TDis, const double TAng,
+    const bool remove = true);
+
+
+// [2] Estimate Cube
+void RobustOrientation(
+    const std::vector<ObjPlane*> &CubePlanes,
+    vcg::Point3f &NX, vcg::Point3f &NY, vcg::Point3f &NZ,
+    const double TAng);
+
+void RobustDimention(
+    const std::vector<ObjPlane*> &CubePlanes,
+    vcg::Point3f &NX, vcg::Point3f &NY, vcg::Point3f &NZ,
+    vcg::Point3f &OP, vcg::Point3f &SIZE, vcg::Point3f &WEIGHTS,
+    const double TAng);
+
+ObjCube* CubeMeasure(const std::vector<ObjPlane*> &CubePlanes, const double TAng);
+
+// [3] Attach Planes To Cube
+bool BelongToCube(
+    const ObjPlane *plane,
+    const ObjCube *Cube,
+    const double TAng);
+int AttachToCube(
+    std::vector<ObjPlane*> &planes, 
+    std::vector< std::vector<ObjPlane*>> &CubeFaces,
+    const std::vector<ObjCube*> &cubes,   
+    const double TAng,
+    const bool remove = true);
 
 /////////////////////////////////
 // ------- For Cylinder -------
 /////////////////////////////////
 
+// [1] Detect Symmetric Axis
+bool DetectSymAxis(
+    const std::vector<vcg::Point3f> &PointList,
+    const std::vector<vcg::Point3f> &NormList,
+    const double _a,
+    vcg::Point3f &PO, vcg::Point3f &NN);
+
+// [2] Attach Points to Cylinder and Estimate Radius
+struct CylinderPointInfo {
+    int index;
+    double r;
+    double l;
+    CylinderPointInfo(const int _idx = 0, const double _r = 0.0, const double _l = 0.0)
+        : index(_idx), r(_r), l(_l) {};
+};
+double EstRadius(const std::vector<double> &RList, double &weight);
+void AttachToCylinder(
+    std::vector<int> &PtOnCylinder,
+    ObjCylinder &cylinder,
+    const std::vector<vcg::Point3f> &PointList,
+    const std::vector<vcg::Point3f> &NormList,    
+    const double _a, const double TR);
 
 #endif // !_POINT_CLOUD_FIT_UTIL_H_FILE_

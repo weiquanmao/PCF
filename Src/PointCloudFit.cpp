@@ -10,9 +10,9 @@
 
 const unsigned int  nColorChannel = 3;
 const unsigned char Color_Gray[nColorChannel] = { 100, 100, 100 };
-const unsigned char Color_MainBody[nColorChannel] = { 255,   0,   0 };
-const unsigned char Color_MainBody_Cube[nColorChannel] = { 255,   0,   0 };
-const unsigned char Color_MainBody_Cylinder[nColorChannel] = { 255,   0,   0 };
+const unsigned char Color_Solid[nColorChannel] = { 255,   0,   0 };
+const unsigned char Color_Solid_Cube[nColorChannel] = { 255,   0,   0 };
+const unsigned char Color_Solid_Cylinder[nColorChannel] = { 255,   0,   0 };
 const unsigned char Color_Noise[nColorChannel] = { 0, 255,   0 };
 const unsigned char Color_Plane[10][nColorChannel] =
 {
@@ -35,7 +35,7 @@ void doFailure() {
 
 
 PCFit::PCFit(const int nThread)
-	: m_sate(0)
+	: m_GEOObjSet(0)
 	, m_refa(1.0)
 {
 	printLogo();
@@ -43,7 +43,7 @@ PCFit::PCFit(const int nThread)
 	setThreadNum(nThread);
 }
 PCFit::PCFit(const char *PlyFilePath, const int nThread)
-	: m_sate(0)
+	: m_GEOObjSet(0)
 	, m_refa(1.0)
 {
 	printLogo();
@@ -53,9 +53,9 @@ PCFit::PCFit(const char *PlyFilePath, const int nThread)
 }
 PCFit::~PCFit()
 {
-	if (!m_sate) {
-		delete m_sate;
-		m_sate = 0;
+	if (!m_GEOObjSet) {
+		delete m_GEOObjSet;
+        m_GEOObjSet = 0;
 	}
 }
 
@@ -188,9 +188,9 @@ bool PCFit::loadPly(const char * PlyFilePath)
 	bool bOpen = false;
 	if (PlyFilePath) {		
 		bOpen = m_meshDoc.loadMesh(PlyFilePath);
-		if (bOpen && m_sate != 0) {
-			delete m_sate;
-			m_sate = 0;
+		if (bOpen && m_GEOObjSet != 0) {
+			delete m_GEOObjSet;
+            m_GEOObjSet = 0;
 		}
 	}
 	//----]]
@@ -232,10 +232,10 @@ int PCFit::deletePts(const int mask)
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
-	if (vcg::tri::HasPerVertexAttribute(mesh, _MySatePtAttri))
+	if (vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
 	{
-		CMeshO::PerVertexAttributeHandle<SatePtType> type_hi =
-			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+		CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 			if ((type_hi[vi] & mask) != 0) {
@@ -250,10 +250,10 @@ int PCFit::keepPts(const int mask)
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
-	if (vcg::tri::HasPerVertexAttribute(mesh, _MySatePtAttri))
+	if (vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
 	{
-		CMeshO::PerVertexAttributeHandle<SatePtType> type_hi =
-			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+		CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 			if ((type_hi[vi] & mask) != 0) {
@@ -273,10 +273,10 @@ int PCFit::recolorPts(const int mask, const unsigned char R, const unsigned char
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
-	if (vcg::tri::HasPerVertexAttribute(mesh, _MySatePtAttri))
+	if (vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
 	{
-		CMeshO::PerVertexAttributeHandle<SatePtType> type_hi =
-			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+		CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 		{
@@ -296,9 +296,9 @@ int PCFit::recolorPts(const int mask, const unsigned char R, const unsigned char
 void PCFit::autoColor()
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
-	if (vcg::tri::HasPerVertexAttribute(mesh, _MySatePtAttri)) {
-		CMeshO::PerVertexAttributeHandle<SatePtType> type_hi = 
-			vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+	if (vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri)) {
+		CMeshO::PerVertexAttributeHandle<PtType> type_hi = 
+			vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 		unsigned char PlaneColor[3];
 		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 		{
@@ -306,10 +306,10 @@ void PCFit::autoColor()
 				continue;
 
 			const unsigned char* pColor = Color_Gray;
-			if (type_hi[vi] == Pt_OnMBCube)
-				pColor = Color_MainBody_Cube;
-			else if (type_hi[vi] == Pt_OnMBCylinder)
-				pColor = Color_MainBody_Cylinder;
+			if (type_hi[vi] == Pt_OnCube)
+				pColor = Color_Solid_Cube;
+			else if (type_hi[vi] == Pt_OnCylinder)
+				pColor = Color_Solid_Cylinder;
 			else if (type_hi[vi] == Pt_Noise)
 				pColor = Color_Noise;
 			else if (type_hi[vi] >= Pt_OnPlane) {
@@ -332,7 +332,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 
 	QTime time;
 	CMeshO &mesh = m_meshDoc.mesh->cm;
-	m_sate = new Satellite();
+    m_GEOObjSet = new ObjSet();
 
 	// [A+] Add Attribute
 	bool bAttriAdded = false;
@@ -340,17 +340,17 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		time.restart();
 		printf("\n\n[=InitPtAttri=]: -->> Initialize Satellite Point Attribute <<--\n");		
         //----[[
-		CMeshO::PerVertexAttributeHandle<SatePtType> type_hi;
-		if (!vcg::tri::HasPerVertexAttribute(mesh, _MySatePtAttri))
+		CMeshO::PerVertexAttributeHandle<PtType> type_hi;
+		if (!vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
 		{// Add It
 			printf("    >> Add Attri ... \n");
-			type_hi = vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+			type_hi = vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 			bAttriAdded = true;
 		}
 		else
 		{// Get It
 			printf("    >> Get Attri ... \n");
-			type_hi = vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+			type_hi = vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 			bAttriAdded = false;
 		}
 		printf("    >> Set Attri ... \n");
@@ -397,7 +397,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 
 
 	// -- 2. Find All Planes
-	std::vector<Sailboard*> planes;
+	std::vector<ObjPlane*> planes;
 	{
 #if 1
 		printf("\n\n[=PlaneFit_HT=]: -->> Try to Fit %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
@@ -416,64 +416,55 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 #endif
     }
 
-	m_sate->m_SailboradList = planes;
-	return true;
-
-
-
 	// -- 3. Judge Cube Planes
-	MainBodyCube *cubeMain = 0;
+	std::vector<ObjCube*> cubes;
 	if (planes.size() >= 2) {
-		printf("\n\n[=DetectMB_Cuboid=]: -->> Try to Detect Cuboid Mainbody from %d Planes <<--  \n", planes.size());
+		printf("\n\n[=DetectCube=]: -->> Try to Detect Cube from %d Planes <<--  \n", planes.size());
 		time.restart();
 		//-------------------------------
-		cubeMain = DetectCuboidFromPlanes(planes);
-		m_sate->m_Mainbody = cubeMain;
+        cubes = DetectCubeFromPlanes(planes);
 		//-------------------------------
-		if (cubeMain != 0) {
-			printf("[=DetectMB_Cuboid=]: Done, Cuboid MB is detected in %.4f seconds, the other %d plane(s) are treated as sailbords.\n", time.elapsed() / 1000.0, planes.size());
-		}
-		else {
-			printf("[=DetectMB_Cuboid=]: No Cuboid MB is detected, all the %d plane(s) are treated as sailbords. Elapsed %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
-		}
+		printf("[=DetectCube=]: Done, %d cube(s) is detected in %.4f seconds, the other %d plane(s) are left.\n", cubes.size(), time.elapsed() / 1000.0, planes.size());
 	}
+    for (int i = 0; i < cubes.size(); ++i)
+        m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
 
 
 
 	// -- 4. Find Cyclinde
-	if (m_sate->m_Mainbody == 0) {
-		if ( m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL) ) {
-			printf("\n\n[=DetectMB_Cylinder=]: -->> Try to Detect Cylinder Mainbody <<--  \n");
-			time.restart();
-			//-------------------------------
-			MainBodyCylinder *cylinderMain = DetectCylinder();
-			m_sate->m_Mainbody = cylinderMain;
-			//-------------------------------
-			if (cylinderMain != 0) {
-				printf("[=DetectMB_Cylinder=]: Done, Cylinder MB is detected in %.4f seconds.\n", time.elapsed() / 1000.0);
-			}
-			else {
-				printf("[=DetectMB_Cylinder=]: No Cylinder MB is detected. Elapsed %.4f seconds.\n", time.elapsed() / 1000.0);
-			}
-		}
-		else {
-			printf("\n\n[=DetectMB_Cylinder=]: [ ): ] Normals Are Neederd To Detected Cylinder Mainbody. \n");
-		}
+    ObjCylinder *objCylinder = 0;
+	if ( m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL) ) {
+#if 1
+		printf("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis <<--  \n");
+		time.restart();
+		//-------------------------------
+        objCylinder = DetectCylinderSymAxis();
+		//-------------------------------
+		if (objCylinder != 0)
+			printf("[=DetectCylinder_SA=]: Done, cylinder is detected in %.4f seconds.\n", time.elapsed() / 1000.0);
+		else
+			printf("[=DetectCylinder_SA=]: No cylinder is detected. Elapsed %.4f seconds.\n", time.elapsed() / 1000.0);
+#else
+#endif
+    }
+	else {
+		printf("\n\n[=DetectCylinder=]: [ ): ] Normals are needed to detected cylinder. \n");
 	}
-
+    if (objCylinder != 0)
+        m_GEOObjSet->m_SolidList.push_back(objCylinder);
 
 
 	// -- 5. Set SailbordList
 	{
-		printf("\n\n[=SailbordCheck=]: %d plane(s) are treated as sailbords. \n", planes.size());
-		m_sate->m_SailboradList = planes;
+		printf("\n\n[=PlanesCheck=]: %d plane(s) are left. \n", planes.size());
+		m_GEOObjSet->m_PlaneList.swap(planes);
 	}
 
 
 	// -- *Remove Added Attribute
 	if (bAttriAdded && !keepAttribute) {
 		printf("\n\n[=CleanPtAttri=]: -->> Delete Point Sate Attribute <<--\n");
-		vcg::tri::Allocator<CMeshO>::DeletePerVertexAttribute(mesh, _MySatePtAttri);
+		vcg::tri::Allocator<CMeshO>::DeletePerVertexAttribute(mesh, _MyPtAttri);
 	}
 	
 	return true;

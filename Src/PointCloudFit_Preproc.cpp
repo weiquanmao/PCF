@@ -67,8 +67,8 @@ int PCFit::DeNoiseKNN()
 
 	// 3. Delete Noise Pts
 	int nNoise = 0;
-	CMeshO::PerVertexAttributeHandle<SatePtType> type_hi = 
-		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+	CMeshO::PerVertexAttributeHandle<PtType> type_hi = 
+		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 	for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 		if ((*vi).IsD()) {
 			nNoise++;
@@ -105,8 +105,8 @@ int RegionGrow(
 	int nCluster = 0;    // No. of Clusters
 	long maxCount = 0;   // Size of The Largest Cluster
 	int maxCluster = 0;	 // Index of the Largest Cluster
-	CMeshO::PerVertexAttributeHandle<SatePtType> type_hi =
-		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+	CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 	for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 		if ( !(vi->IsD()) && type_hi[vi] == Pt_Undefined) {
 			// Seed Point
@@ -180,8 +180,8 @@ int PCFit::DeNoiseRegGrw()
     //----[[
     const int nStep = DeNoise_GrowNeighbors;
 	const int nIter = DeNoise_MaxIteration <= 0 ? 100 : DeNoise_MaxIteration;
-	CMeshO::PerVertexAttributeHandle<SatePtType> type_hi = 
-		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+	CMeshO::PerVertexAttributeHandle<PtType> type_hi = 
+		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 	for (int _iter = 0; _iter<nIter; _iter++) {
 
 		// 1)Update Threshold
@@ -384,7 +384,6 @@ vcg::Point3f PCFit::GetPointList(
     if (bNormalize) {
         center = mesh.bbox.Center();
         printf(
-            "\n"
             "    [--GetBorder--]: #nPts-%d \n"
             "      | #MinPt  : < %7.3f, %7.3f, %7.3f > \n"
             "      | #MaxPt  : < %7.3f, %7.3f, %7.3f > \n"
@@ -403,8 +402,8 @@ vcg::Point3f PCFit::GetPointList(
     pointList.reserve(mesh.vn);
     if (normalSupportted)
         normList.reserve(mesh.vn);
-    CMeshO::PerVertexAttributeHandle<SatePtType> type_hi =
-        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<SatePtType>(mesh, _MySatePtAttri);
+    CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
     CMeshO::VertexIterator vi;
     int index;
     for (index = 0, vi = mesh.vert.begin(); vi != mesh.vert.end(); ++index, ++vi)

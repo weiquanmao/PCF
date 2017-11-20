@@ -86,7 +86,7 @@
     <ClCompile Include="..\Src\PointCloudFit_Cylinder.cpp" />
     <ClCompile Include="..\Src\PointCloudFit_Plane.cpp" />
     <ClCompile Include="..\Src\PointCloudFit_Preproc.cpp" />
-    <ClCompile Include="..\Src\Satellite.cpp" />
+    <ClCompile Include="..\Src\GeometryObject.cpp" />
     <ClCompile Include="..\Src\vcglib\wrap\ply\plylib.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
@@ -116,7 +116,7 @@
     </CustomBuild>
     <ClInclude Include="..\Src\PCA.h" />
     <ClInclude Include="..\Src\PointCloudFit.h" />
-    <ClInclude Include="..\Src\Satellite.h" />
+    <ClInclude Include="..\Src\GeometryObject.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\Src\gco\GCO_README.TXT" />
