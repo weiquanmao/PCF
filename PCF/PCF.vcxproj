@@ -87,6 +87,7 @@
     <ClCompile Include="..\Src\PointCloudFit_Plane.cpp" />
     <ClCompile Include="..\Src\PointCloudFit_Preproc.cpp" />
     <ClCompile Include="..\Src\GeometryObject.cpp" />
+    <ClCompile Include="..\Src\Utility\flog.cpp" />
     <ClCompile Include="..\Src\vcglib\wrap\ply\plylib.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
@@ -97,6 +98,7 @@
     <ClInclude Include="..\Src\gco\graph.h" />
     <ClInclude Include="..\Src\gco\LinkedBlockList.h" />
     <ClInclude Include="..\Src\PointCloudFitUtil.h" />
+    <ClInclude Include="..\Src\Utility\flog.h" />
     <ClInclude Include="..\Src\vcglib\wrap\io_trimesh\export.h" />
     <ClInclude Include="..\Src\vcglib\wrap\io_trimesh\import.h" />
     <ClInclude Include="..\Src\vcglib\wrap\ply\plylib.h" />

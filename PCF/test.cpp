@@ -1,4 +1,5 @@
 #include "PointCloudFit.h"
+#include "Utility/flog.h"
 #include <windows.h>
 #include <iostream>
 #include <string>
@@ -11,7 +12,7 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-#if 0 // Reconstructed Models
+#if 1 // Reconstructed Models
 	const string InputDir = "../../../Data/ModelPC";
 	const string OutputDir = "../../../Data/Result";
 #else // Synthesized Models
@@ -29,7 +30,7 @@ int main(int argc, char *argv[])
 			if ((fileinfo.attrib & _A_ARCH))
 			{
 				const string FileName = fileinfo.name;
-#if 0 // Test Only One
+#if 1 // Test Only One
 				if (FileName != "GPS.ply")
 					continue;
 #endif
@@ -39,18 +40,18 @@ int main(int argc, char *argv[])
 				const string FileNameRej = OutputDir + "/" + BaseName + "_Rej.ply";
 				const string SateStruct = OutputDir + "/" + BaseName + ".struct";
 
-				cout
+                clog
 					<< "===============================\n"
 					<< "[ ----- Point Cloud Fit ----- ]\n"
-					<< "[+] " << FilePath << endl
-					<< "[-] " << FileNameOpt << endl
-					<< "[-] " << FileNameRej << endl
-					<< "[-] " << SateStruct << endl
+					<< "[+] " << FilePath << '\n'
+					<< "[-] " << FileNameOpt << '\n'
+					<< "[-] " << FileNameRej << '\n'
+					<< "[-] " << SateStruct << '\n'
 					<< "===============================\n";
-
+                
 				DWORD t1, t2;
 				t1 = timeGetTime();
-				cout << "\n--------------------------------------------------------------------------------------------\n";
+                clog << "\n--------------------------------------------------------------------------------------------\n";
 				PCFit Fit;
 				Fit.printParams();
 				Fit.loadPly(FilePath.c_str());
@@ -61,9 +62,9 @@ int main(int argc, char *argv[])
 				Fit.autoColor();
 				Fit.savePly(FileNameRej.c_str());
 				SaveObjSet(Fit.getGEOObjSet(), SateStruct.c_str());
-				cout << "\n--------------------------------------------------------------------------------------------\n";
+                clog << "\n--------------------------------------------------------------------------------------------\n";
 				t2 = timeGetTime();
-				cout << "\n\n"
+                clog << "\n\n"
 					<< "=============================\n"
 					<< " # Elapsed Time: " << (t2 - t1)*1.0 / 1000 << " Seconds.\n"
 					<< "=============================\n"

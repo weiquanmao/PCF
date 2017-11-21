@@ -3,6 +3,11 @@
 
 #include "MeshDoc.h"
 #include "GeometryObject.h"
+#include "Utility/flog.h"
+#ifdef _USE_OPENMP_
+#include <omp.h>
+#endif
+#include <QTime>
 
 void doFailure();
 
@@ -46,7 +51,7 @@ public:
 private:
 	MeshDocument m_meshDoc;
     ObjSet *m_GEOObjSet;
-	double m_refa;
+	double m_refa;                           // 长度参考单位
 
 	// All Thresholds
 	int Threshold_NPts;                      // 整体点云数小于[Threshold_NPts]不进行处理

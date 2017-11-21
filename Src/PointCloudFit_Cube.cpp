@@ -22,7 +22,6 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPlane*> &planes
         ObjCube *Cube = CubeMeasure(CubeFaces.at(i), TAng);
         cubes.push_back(Cube);
     }
-
 	// C. Attach Planes To Cube
     int nAdded = AttachToCube(planes, CubeFaces, cubes, TAng, true);
    

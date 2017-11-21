@@ -1,8 +1,5 @@
 #include "PointCloudFitUtil.h"
 #include "PCA.h"
-#ifdef _USE_OPENMP_
-#include <omp.h>
-#endif
 
 bool DetectSymAxis(
     const std::vector<vcg::Point3f> &PointList,

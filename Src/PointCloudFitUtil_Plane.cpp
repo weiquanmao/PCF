@@ -1,10 +1,6 @@
 #include "PointCloudFitUtil.h"
-#ifdef _USE_OPENMP_
-#include <omp.h>
-#endif
-#include <random>
 
-#include <QTime>
+#include <random>
 
 #include "PCA.h"
 #include <wrap/io_trimesh/io_mask.h>
@@ -136,7 +132,7 @@ int HoughPlaneOne(
     default:		  Plane = vcg::Point4f(1.0, pa, pb, pc);; break; //XYZ
     }
 
-    printf(
+    flog(
         "        | [#Time-%7.4f]-[%d-Seted] : %7.4f %7.4f %7.4f %7.4f  #nPts-< %d >\n",
         time.elapsed() / 1000.0,
         fix == FixedAxis_X ? 'X' : (fix == FixedAxis_Y ? 'Y' : 'Z'),
@@ -153,7 +149,7 @@ int HoughPlane(
 {//¼ì²â + ÄâºÏÆ½Ãæ
     QTime time;
     time.start();
-    printf(
+    flog(
         "      [--Plane_HT--]: #nPts-%d \n",
         PointList.size());
 
@@ -172,7 +168,7 @@ int HoughPlane(
     else
         retIdx = (N[1]>N[2]) ? 1 : 2;
 
-    printf(
+    flog(
         "        | [+][Checked] : [%d] #nPts-< %d > \n"
         "      [--Plane_HT--]: Done in %.4f seconds \n",
         retIdx + 1, N[retIdx], time.elapsed() / 1000.0);
@@ -228,7 +224,7 @@ int AttachToPlane(
         ReMoved.clear();
     }
 
-    printf(
+    flog(
         "      [--Attach--]: Attach points to planes...\n"
         "        | #Threshold_Dis : %.4f\n"
         "        | #Threshold_Ang : %.4f-[%d]\n"
@@ -299,7 +295,7 @@ void PicMaxRegion(
     recorder.clear();
     std::sort(index.begin(), index.end());
 
-    printf(
+    flog(
         "      [--MaxRegion--]: #Pts-%d\n"
         "        | #Threshold_Dis : %.4f\n"
         "        | #NPts_MaxReg   : %d\n"
@@ -337,7 +333,7 @@ double FineFit(
     }
     fitError = sqrt(fitError / ExactVec.size());
 
-    printf(
+    flog(
         "      [--Fit_LS--]: #Pts-%d\n"
         "        | #Plane    : < %.4f, %.4f, %.4f, %.4f> \n"
         "        | #FitError : %.4f\n"
@@ -478,7 +474,7 @@ void ExtractMBR(
     APlne.m_dY = DY;
     APlne.m_sizeConfidence = vcg::Point3f(confidenceX, confidenceY, 0);
     //
-    printf(
+    flog(
         "      [--PatchDim--]: #Pts-%d\n"
         "        | #Loc-PCA_X   : < %7.4f, %7.4f, %7.4f> \n"
         "        | #Loc-PCA_Y   : < %7.4f, %7.4f, %7.4f> \n"
@@ -541,7 +537,7 @@ std::vector<vcg::Point4f> DetectHTPlanes(
         if (bHasNorm)
             _planeNT *= 0.5;
 
-        printf("    >> Detecting the [ No.%d ] plane with #Minimum - [ %d ] ...\n", planeNum + 1, _planeNT);
+        flog("    >> Detecting the [ No.%d ] plane with #Minimum - [ %d ] ...\n", planeNum + 1, _planeNT);
 
         vcg::Point4f plane;
         // HT Detection            

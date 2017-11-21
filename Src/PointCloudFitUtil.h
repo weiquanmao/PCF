@@ -1,6 +1,10 @@
 #ifndef _POINT_CLOUD_FIT_UTIL_H_FILE_
 #include "PointCloudFit.h"
-#include <fstream>
+#include "Utility/flog.h"
+#ifdef _USE_OPENMP_
+#include <omp.h>
+#endif
+#include <QTime>
 
 #ifndef _DRTrans
 #define _DRTrans

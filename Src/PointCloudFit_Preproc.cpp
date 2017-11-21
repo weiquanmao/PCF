@@ -1,7 +1,6 @@
 #include "PointCloudFit.h"
 #include "PCA.h"
 
-#include <QTime>
 #include <wrap/io_trimesh/io_mask.h>
 #include <vcg/complex/algorithms/update/bounding.h>
 #include <vcg/space/index/kdtree/kdtree.h>
@@ -13,7 +12,7 @@ int PCFit::DeNoiseKNN()
 
 	QTime time;
 	time.start();
-	printf(
+	flog(
 		"    [--DeNoiseKNN--]: #nPts-%d \n"
 		"      | #NIteration : %d \n"
 		"      | #NNeighbord : %d \n"
@@ -41,7 +40,7 @@ int PCFit::DeNoiseKNN()
 		Gap *= DeNoise_DisRatioOfOutlier;
 
 		//----
-		printf("[%d]-%.3f ", i + 1, Gap);
+		flog("[%d]-%.3f ", i + 1, Gap);
 		//----
 
 		// 2)Point Check
@@ -80,7 +79,7 @@ int PCFit::DeNoiseKNN()
 	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 
 	//----]]
-	printf(
+	flog(
 		"\n    [--DeNoiseKNN--]: Done, %d outlier(s) were found in %.4f seconds.\n",
 		nNoise, time.elapsed()/1000.0);
 
@@ -169,7 +168,7 @@ int PCFit::DeNoiseRegGrw()
 
 	QTime time;
 	time.start();
-	printf(
+	flog(
 		"    [--DeNoiseRegGrw--]: #nPts-%d \n"
 		"      | #NIteration : %d \n"
         "      | #KNNStep    : %d \n"
@@ -206,7 +205,7 @@ int PCFit::DeNoiseRegGrw()
 		}
 
 		//----
-		printf("[%d]-%.3f-<%d in %d> ", _iter+1, Gap, maxN, Nums.size());
+		flog("[%d]-%.3f-<%d in %d> ", _iter+1, Gap, maxN, Nums.size());
 		//----
 
 		if (Nums.size() == 1)
@@ -223,7 +222,7 @@ int PCFit::DeNoiseRegGrw()
 	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 
 	//----]]
-	printf(
+	flog(
 		"\n    [--DeNoiseRegGrw--]: Done, found %d outlier(s) in %.4f seconds.\n",
 		nNoise, time.elapsed() / 1000.0);
 
@@ -277,7 +276,7 @@ bool PCFit::PCADimensionAna(
 	int ret = PCA(data, row, col, PC, V);
 	delete[] data;
 	if (ret == -1) {
-		printf("    [--PCADirection--] PCA failed. [--PCADirection--]\n");
+		flog("    [--PCADirection--] PCA failed. [--PCADirection--]\n");
 		doFailure();
 	}
 
@@ -299,7 +298,7 @@ bool PCFit::PCADimensionAna(
 	PDirections.push_back(NY);
 	PDirections.push_back(NZ);
 
-	printf(
+	flog(
 		"    [--PCADirection--] #bPts - %d/%d \n"
 		"       ( Principal direction vectors, col by decreasing order )\n"
 		"       |  %7.4f %7.4f %7.4f - <%7.4f> \n"
@@ -360,7 +359,7 @@ double PCFit::RoughnessAna(bool leftNoisePts)
 	}
 	assert(Count == N);
 	double roughness = R / Count;
-	printf(
+	flog(
 		"    [--RoughnessAna--] #bPts - %d/%d \n"
 		"       | RoughnessA - <%7.4f> \n"
 		"    [--RoughnessAna--]: Done in %.4f seconds.\n",
@@ -383,7 +382,7 @@ vcg::Point3f PCFit::GetPointList(
     vcg::Point3f center(0.0, 0.0, 0.0);
     if (bNormalize) {
         center = mesh.bbox.Center();
-        printf(
+        flog(
             "    [--GetBorder--]: #nPts-%d \n"
             "      | #MinPt  : < %7.3f, %7.3f, %7.3f > \n"
             "      | #MaxPt  : < %7.3f, %7.3f, %7.3f > \n"
@@ -416,8 +415,8 @@ vcg::Point3f PCFit::GetPointList(
         }
     }
     if (bNormalize)
-        printf("    >> Got #%d Normalized Pts.\n", pointList.size());
+        flog("    >> Got #%d Normalized Pts.\n", pointList.size());
     else
-        printf("    >> Got #%d Pts.\n", pointList.size());
+        flog("    >> Got #%d Pts.\n", pointList.size());
     return center;
 }

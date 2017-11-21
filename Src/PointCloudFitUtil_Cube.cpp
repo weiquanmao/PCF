@@ -1,7 +1,5 @@
 #include "PointCloudFitUtil.h"
 
-#include <QTime>
-
 #define VCGAngle(N1, N2) R2D(abs(vcg::Angle(N1, N2)))
 #define CheckParallel(ang) (90.0 - abs(90.0 - ang))
 #define CheckPerpendicular(ang) abs(90.0 - ang)
@@ -163,7 +161,7 @@ int CubeFaceInferring(
             break;
     }
 
-    printf(
+    flog(
         "      [--Cube_Infer--]: #Ple-%d\n"
         "        | #TDis    : %.4f \n"
         "        | #TAng    : %.4f \n"
@@ -418,7 +416,7 @@ void RobustOrientation(
     assert((FaceNZ.size() + EdgeNZ.size()) == CubePlanes.size());
     RobustDirections(FaceNX, FaceNY, FaceNZ, EdgeNX, EdgeNY, EdgeNZ, NX, NY, NZ);
 
-    printf(
+    flog(
         "      [--Cube_Orientation--]: #Ple-%d\n"
         "        | #TAng  : %.4f \n"
         "        | #NX    : < %.4f, %.4f, %.4f > \n"
@@ -657,7 +655,7 @@ void RobustDimention(
     WEIGHTS = vcg::Point3f(wx, wy, wz);
     OP = NX*minx + NY*miny + NZ*minz;
 
-    printf(
+    flog(
         "      [--Cube_Dimention--]: #Ple-%d\n"
         "        | #TAng  : %.4f \n"
         "        | #OP    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"

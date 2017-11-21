@@ -1,10 +1,6 @@
 #include "PointCloudFit.h"
-#ifdef _USE_OPENMP_
-#include <omp.h>
-#endif
 
 #include <QSettings> 
-#include <QTime>
 
 #include <wrap/io_trimesh/io_mask.h>
 
@@ -62,10 +58,10 @@ PCFit::~PCFit()
 
 void PCFit::printLogo()
 {
-	printf(
+	flog(
 		"\n\n"
 		"    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   \n"
-		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.3.0                \n"
+		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.4.0                \n"
 		"  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA \n"
 		" /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  \n"
 		"                                                 |  Email: weiqm@buaa.edu.cn  \n"
@@ -76,7 +72,7 @@ void PCFit::printLogo()
 }
 void PCFit::printParams()
 {
-	printf(
+	flog(
 		" +------------------------------------------------------+\n"
 		" | PARAMETERS IN USE:                                   |\n"
 		" |------------------------------------------------------|\n"
@@ -110,7 +106,7 @@ void PCFit::setThreadNum(const int nThread)
 	int nThreadMax = omp_get_max_threads();
 	int nThreadUsed = (nThread <= 0 || nThread > nThreadMax) ? nThreadMax : nThread;
 	omp_set_num_threads(nThreadUsed);
-	printf(
+	flog(
 		" +------------------------------------------------------+\n"
 		" |          USE OPENMP: %02d THREAD(s) ARE USED.          |\n"
 		" +------------------------------------------------------+\n",
@@ -183,7 +179,7 @@ bool PCFit::loadPly(const char * PlyFilePath)
 {
 	QTime time;
 	time.start();
-	printf("\n\n[=LoadPly=]: -->> Loading Points from File: %s <<--  \n", PlyFilePath);	
+	flog("\n\n[=LoadPly=]: -->> Loading Points from File: %s <<--  \n", PlyFilePath);	
     //----[[
 	bool bOpen = false;
 	if (PlyFilePath) {		
@@ -195,9 +191,9 @@ bool PCFit::loadPly(const char * PlyFilePath)
 	}
 	//----]]
 	if (bOpen)
-		printf("[=LoadPly=]: Done, %d point(s) were loaded in %.4f seconds.\n", m_meshDoc.mesh->cm.vn, time.elapsed() / 1000.0);
+		flog("[=LoadPly=]: Done, %d point(s) were loaded in %.4f seconds.\n", m_meshDoc.mesh->cm.vn, time.elapsed() / 1000.0);
 	else {
-		printf("[=LoadPly=]: [Error] Failed to open file %s for reading.\n", PlyFilePath);
+		flog("[=LoadPly=]: [Error] Failed to open file %s for reading.\n", PlyFilePath);
 		doFailure();
 	}
 	return bOpen;
@@ -206,14 +202,14 @@ bool PCFit::savePly(const char *PlyFilePath)
 {
 	QTime time;
 	time.start();
-	printf("\n\n[=SavePly=]: -->> Svae Points as Ply File: %s <<--\n", PlyFilePath);	
+	flog("\n\n[=SavePly=]: -->> Svae Points as Ply File: %s <<--\n", PlyFilePath);	
     //----[[
 	bool bSave = m_meshDoc.saveMesh(PlyFilePath, false);
 	//----]]
 	if (bSave)
-		printf("[=SavePly=]: Done, %d point(s) were saved in %.4f seconds.\n", m_meshDoc.mesh->cm.vn, time.elapsed() / 1000.0);
+		flog("[=SavePly=]: Done, %d point(s) were saved in %.4f seconds.\n", m_meshDoc.mesh->cm.vn, time.elapsed() / 1000.0);
 	else {
-		printf("[=SavePly=]: [Error] Failed to open file %s for writing.\n", PlyFilePath);
+		flog("[=SavePly=]: [Error] Failed to open file %s for writing.\n", PlyFilePath);
 		doFailure();
 	}
 	return bSave;
@@ -338,28 +334,28 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	bool bAttriAdded = false;
 	{
 		time.restart();
-		printf("\n\n[=InitPtAttri=]: -->> Initialize Satellite Point Attribute <<--\n");		
+		flog("\n\n[=InitPtAttri=]: -->> Initialize Satellite Point Attribute <<--\n");		
         //----[[
 		CMeshO::PerVertexAttributeHandle<PtType> type_hi;
 		if (!vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
 		{// Add It
-			printf("    >> Add Attri ... \n");
+			flog("    >> Add Attri ... \n");
 			type_hi = vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 			bAttriAdded = true;
 		}
 		else
 		{// Get It
-			printf("    >> Get Attri ... \n");
+			flog("    >> Get Attri ... \n");
 			type_hi = vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
 			bAttriAdded = false;
 		}
-		printf("    >> Set Attri ... \n");
+		flog("    >> Set Attri ... \n");
 		for (int i = 0; i < mesh.VN(); i++)
 		{// Set It
 			type_hi[i] = Pt_Undefined;
 		}
 		//-----]]
-		printf("[=InitPtAttri=]: Done, %d point(s) were setted in %.4f seconds.\n", mesh.vn, time.elapsed() / 1000.0);
+		flog("[=InitPtAttri=]: Done, %d point(s) were setted in %.4f seconds.\n", mesh.vn, time.elapsed() / 1000.0);
 	}
 
 
@@ -368,7 +364,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	{
 		// [1.1] Remove Outliers
 		time.restart();
-		printf("\n\n[=DeNoise=]: -->> Remove Outliers <<--  \n");	
+		flog("\n\n[=DeNoise=]: -->> Remove Outliers <<--  \n");	
         //----[[
 #if 0 // DeNoise by KNN
 		int nNoise = DeNoiseKNN();
@@ -376,12 +372,12 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		int nNoise = DeNoiseRegGrw();
 #endif
 		//----]]
-		printf("[=DeNoise=]: Done, %d outlier(s ) were removed in %.4f seconds.\n", nNoise, time.elapsed()/1000.0);
+		flog("[=DeNoise=]: Done, %d outlier(s ) were removed in %.4f seconds.\n", nNoise, time.elapsed()/1000.0);
 
 
 		// [1.2] Get Dimension Reference Unit
 		time.restart();
-		printf("\n\n[=RefSize=]: -->> Dimension Reference Unit Ana. <<--  \n");	
+		flog("\n\n[=RefSize=]: -->> Dimension Reference Unit Ana. <<--  \n");	
         //----[[
 		vcg::Point3f PSize;
 		std::vector<vcg::Point3f> PDirection;
@@ -391,7 +387,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		m_refa = RoughnessAna(true);
 
 		//----]]
-		printf("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
+		flog("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
 
 
@@ -400,31 +396,31 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	std::vector<ObjPlane*> planes;
 	{
 #if 1
-		printf("\n\n[=PlaneFit_HT=]: -->> Try to Fit %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
+		flog("\n\n[=PlaneFit_HT=]: -->> Try to Fit %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
 		time.restart();
 		//-------------------------------
 		planes = DetectPlanesHT(PlaneNum_Expected);
 		//-------------------------------
-		printf("[=PlaneFit_HT=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
+		flog("[=PlaneFit_HT=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
 #else
-        printf("\n\n[=PlaneFit_MPFGCO=]: -->> Try to Fit by Multi-Planes Fitting in GCO with %d Expected Initial Planes <<--  \n", PlaneNum_Expected);
+        flog("\n\n[=PlaneFit_MPFGCO=]: -->> Try to Fit by Multi-Planes Fitting in GCO with %d Expected Initial Planes <<--  \n", PlaneNum_Expected);
         time.restart();
         //-------------------------------
         planes = DetectPlanesGCO(PlaneNum_Expected, 10);
         //-------------------------------
-        printf("[=PlaneFit_MPFGCO=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);      
+        flog("[=PlaneFit_MPFGCO=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);      
 #endif
     }
 
 	// -- 3. Judge Cube Planes
 	std::vector<ObjCube*> cubes;
 	if (planes.size() >= 2) {
-		printf("\n\n[=DetectCube=]: -->> Try to Detect Cube from %d Planes <<--  \n", planes.size());
+		flog("\n\n[=DetectCube=]: -->> Try to Detect Cube from %d Planes <<--  \n", planes.size());
 		time.restart();
 		//-------------------------------
         cubes = DetectCubeFromPlanes(planes);
 		//-------------------------------
-		printf("[=DetectCube=]: Done, %d cube(s) is detected in %.4f seconds, the other %d plane(s) are left.\n", cubes.size(), time.elapsed() / 1000.0, planes.size());
+		flog("[=DetectCube=]: Done, %d cube(s) is detected in %.4f seconds, the other %d plane(s) are left.\n", cubes.size(), time.elapsed() / 1000.0, planes.size());
 	}
     for (int i = 0; i < cubes.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
@@ -435,20 +431,20 @@ bool PCFit::Fit_Sate(bool keepAttribute)
     ObjCylinder *objCylinder = 0;
 	if ( m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL) ) {
 #if 1
-		printf("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis <<--  \n");
+		flog("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis <<--  \n");
 		time.restart();
 		//-------------------------------
         objCylinder = DetectCylinderSymAxis();
 		//-------------------------------
 		if (objCylinder != 0)
-			printf("[=DetectCylinder_SA=]: Done, cylinder is detected in %.4f seconds.\n", time.elapsed() / 1000.0);
+			flog("[=DetectCylinder_SA=]: Done, cylinder is detected in %.4f seconds.\n", time.elapsed() / 1000.0);
 		else
-			printf("[=DetectCylinder_SA=]: No cylinder is detected. Elapsed %.4f seconds.\n", time.elapsed() / 1000.0);
+			flog("[=DetectCylinder_SA=]: No cylinder is detected. Elapsed %.4f seconds.\n", time.elapsed() / 1000.0);
 #else
 #endif
     }
 	else {
-		printf("\n\n[=DetectCylinder=]: [ ): ] Normals are needed to detected cylinder. \n");
+		flog("\n\n[=DetectCylinder=]: [ ): ] Normals are needed to detected cylinder. \n");
 	}
     if (objCylinder != 0)
         m_GEOObjSet->m_SolidList.push_back(objCylinder);
@@ -456,14 +452,14 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 
 	// -- 5. Set SailbordList
 	{
-		printf("\n\n[=PlanesCheck=]: %d plane(s) are left. \n", planes.size());
+		flog("\n\n[=PlanesCheck=]: %d plane(s) are left. \n", planes.size());
 		m_GEOObjSet->m_PlaneList.swap(planes);
 	}
 
 
 	// -- *Remove Added Attribute
 	if (bAttriAdded && !keepAttribute) {
-		printf("\n\n[=CleanPtAttri=]: -->> Delete Point Sate Attribute <<--\n");
+		flog("\n\n[=CleanPtAttri=]: -->> Delete Point Sate Attribute <<--\n");
 		vcg::tri::Allocator<CMeshO>::DeletePerVertexAttribute(mesh, _MyPtAttri);
 	}
 	
