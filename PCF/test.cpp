@@ -1,5 +1,6 @@
 #include "PointCloudFit.h"
-#include "Utility/flog.h"
+#include "utility/flog.h"
+#include "utility/melody.h"
 #include <windows.h>
 #include <iostream>
 #include <string>
@@ -12,7 +13,7 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-#if 1 // Reconstructed Models
+#if 0 // Reconstructed Models
 	const string InputDir = "../../../Data/ModelPC";
 	const string OutputDir = "../../../Data/Result";
 #else // Synthesized Models
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
 			{
 				const string FileName = fileinfo.name;
 #if 1 // Test Only One
-				if (FileName != "GPS.ply")
+				if (FileName != "gps.ply")
 					continue;
 #endif
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));
@@ -74,6 +75,7 @@ int main(int argc, char *argv[])
 		_findclose(hFile);
 	}
 
+    // MelodyPlay_Notice();
 	system("pause");
 	return 0;
 }

@@ -16,6 +16,8 @@ std::vector<ObjPlane*> PCFit::DetectPlanesHT(const int expPN)
 	double candicate1 = mesh.bbox.Diag() * sqrt(3.0) / 2.0;
 	double candicate2 = mesh.bbox.DimX() + mesh.bbox.DimY() + mesh.bbox.DimZ();
 	double intercept = (candicate1 < candicate2) ? candicate1 : candicate2;
+
+    // -- Calculate Thresholds
 	const double _planeDisThreshold = m_refa*Threshold_DisToPlane;
 	const double _planeAngThreshold = Threshold_AngToPlane;
 	const int _THard = fmax(300, pointList.size()*0.01);
@@ -59,9 +61,12 @@ std::vector<ObjPlane*> PCFit::DetectPlanesGCO(const int expPN, const int iterati
     double candicate1 = mesh.bbox.Diag() * sqrt(3.0) / 2.0;
     double candicate2 = mesh.bbox.DimX() + mesh.bbox.DimY() + mesh.bbox.DimZ();
     double intercept = (candicate1 < candicate2) ? candicate1 : candicate2;
+
+    // -- Calculate Thresholds
     const double _planeDisThreshold = m_refa*Threshold_DisToPlane;
     const double _planeAngThreshold = Threshold_AngToPlane;
     const int _THard = fmax(300, pointList.size()*0.01);
+
     // -- Detect Init Planes
     std::vector<vcg::Point4f> infPlanes;
     std::vector<double> errors;
@@ -124,6 +129,8 @@ std::vector<ObjPlane*> PCFit::DetectPlanesGCO(const int expPN, const int iterati
 		e.Report();
 	}
     planes = ExtractPlanes(mesh, indexList, pointList, infPlanes.size(), gcoResult);
+
+
     // -- Move Back
     for (int i = 0; i<planes.size(); ++i) {
         planes.at(i)->m_pO += center;

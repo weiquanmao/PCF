@@ -6,7 +6,7 @@ ObjCylinder* PCFit::DetectCylinderSymAxis()
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
     CMeshO::PerVertexAttributeHandle<PtType> type_hi =
-        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 
 	// -- Get Point List And Normal List
     std::vector<int> indexList;

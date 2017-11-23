@@ -1,5 +1,5 @@
 #include "PointCloudFit.h"
-#include "PCA.h"
+#include "tool/PCA.h"
 
 #include <wrap/io_trimesh/io_mask.h>
 #include <vcg/complex/algorithms/update/bounding.h>
@@ -67,7 +67,7 @@ int PCFit::DeNoiseKNN()
 	// 3. Delete Noise Pts
 	int nNoise = 0;
 	CMeshO::PerVertexAttributeHandle<PtType> type_hi = 
-		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 	for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 		if ((*vi).IsD()) {
 			nNoise++;
@@ -105,7 +105,7 @@ int RegionGrow(
 	long maxCount = 0;   // Size of The Largest Cluster
 	int maxCluster = 0;	 // Index of the Largest Cluster
 	CMeshO::PerVertexAttributeHandle<PtType> type_hi =
-		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 	for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 		if ( !(vi->IsD()) && type_hi[vi] == Pt_Undefined) {
 			// Seed Point
@@ -180,7 +180,7 @@ int PCFit::DeNoiseRegGrw()
     const int nStep = DeNoise_GrowNeighbors;
 	const int nIter = DeNoise_MaxIteration <= 0 ? 100 : DeNoise_MaxIteration;
 	CMeshO::PerVertexAttributeHandle<PtType> type_hi = 
-		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 	for (int _iter = 0; _iter<nIter; _iter++) {
 
 		// 1)Update Threshold
@@ -326,9 +326,10 @@ double PCFit::RoughnessAna(bool leftNoisePts)
 	vcg::KdTree<float>::PriorityQueue queue;
 
     // Key Parameter
+    // rafa = a*miu + b*std
 	const int knn = 20;
 	const int a = 1.0;
-	const int b = 1.0;
+	const int b = 3.0;
 	const int N = leftNoisePts ? mesh.vn : mesh.vert.size();
 	
 	int Count = 0;
@@ -402,7 +403,7 @@ vcg::Point3f PCFit::GetPointList(
     if (normalSupportted)
         normList.reserve(mesh.vn);
     CMeshO::PerVertexAttributeHandle<PtType> type_hi =
-        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
     CMeshO::VertexIterator vi;
     int index;
     for (index = 0, vi = mesh.vert.begin(); vi != mesh.vert.end(); ++index, ++vi)

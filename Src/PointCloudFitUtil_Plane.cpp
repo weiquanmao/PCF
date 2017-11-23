@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "PCA.h"
+#include "tool/PCA.h"
 #include <wrap/io_trimesh/io_mask.h>
 #include <vcg/complex/algorithms/update/bounding.h>
 #include <vcg/space/index/kdtree/kdtree.h>
@@ -146,7 +146,7 @@ int HoughPlane(
     const std::vector<vcg::Point3f> &PointList,
     const std::vector<vcg::Point3f> &NormList,
     const double _intercept, const double _a, const double _s)
-{//¼ì²â + ÄâºÏÆ½Ãæ
+{
     QTime time;
     time.start();
     flog(
@@ -208,28 +208,24 @@ int AttachToPlane(
     {
         vcg::Point3f NP = vcg::Point3f(plane.V(0), plane.V(1), plane.V(2));
         NP.Normalize();
-        std::vector<int> ReMoved;
+        std::vector<int> OnPlaneList_NormChecked;
         for (int i = 0; i<OnPlaneList.size(); ++i) {
             vcg::Point3f npt = NormList.at(OnPlaneList.at(i));
             npt.Normalize();
             double ang = 90 - abs(90 - vcg::AngleN(NP, npt)*_R2D);
-            if (ang>_TAng)
-                ReMoved.push_back(i);
+            if (ang<_TAng)
+                OnPlaneList_NormChecked.push_back(OnPlaneList.at(i));
         }
 
-        if (!ReMoved.empty()) {
-            for (int i = ReMoved.size() - 1; i >= 0; --i)
-                OnPlaneList.erase(OnPlaneList.begin() + ReMoved.at(i));
-        }
-        ReMoved.clear();
+        OnPlaneList.swap(OnPlaneList_NormChecked);
     }
 
     flog(
-        "      [--Attach--]: Attach points to planes...\n"
+        "      [--AttachToPlane--]: Attach points to planes...\n"
         "        | #Threshold_Dis : %.4f\n"
         "        | #Threshold_Ang : %.4f-[%d]\n"
         "        | #nPts-OnPlane  : %d \n"
-        "      [--Attach--]: Done in %.4f seconds. \n",
+        "      [--AttachToPlane--]: Done in %.4f seconds. \n",
         TDis, _TAng, bHasNorm,
         OnPlaneList.size(), time.elapsed() / 1000.0);
 
@@ -242,7 +238,7 @@ int AttachToPlane(
 void PicMaxRegion(
     const std::vector<vcg::Point3f> &PointList,
     std::vector<int> &index,
-    const double _2TDis)
+    const double _TDis)
 {
     QTime time;
     time.start();
@@ -269,13 +265,13 @@ void PicMaxRegion(
         // Growing
         while (!seedStack.empty())
         {
-            seed = seedStack.at(0);
-            seedStack.erase(seedStack.begin());
+            seed = *(seedStack.end()-1);
+            seedStack.pop_back();
             recorder.clear();
             for (int i = 0; i<index.size(); i++)
             {
                 int p = index.at(i);
-                if (vcg::Distance(seed, PointList.at(p))<_2TDis)
+                if (vcg::Distance(seed, PointList.at(p))<_TDis)
                 {
                     seedStack.push_back(PointList.at(p));
                     tempLoc.push_back(p);
@@ -288,8 +284,8 @@ void PicMaxRegion(
         if (tempLoc.size() > LocFinal.size())
             LocFinal.swap(tempLoc);
     }
-    for (auto iter : LocFinal)
-        index.push_back(iter);
+    index.swap(LocFinal);
+
     LocFinal.clear();
     tempLoc.clear();
     recorder.clear();
@@ -300,7 +296,7 @@ void PicMaxRegion(
         "        | #Threshold_Dis : %.4f\n"
         "        | #NPts_MaxReg   : %d\n"
         "      [--MaxRegion--]: Done in %.4f seconds. \n",
-        NPtsAll, _2TDis, index.size(), time.elapsed() / 1000.0);
+        NPtsAll, _TDis, index.size(), time.elapsed() / 1000.0);
 }
 
 
@@ -411,7 +407,7 @@ void ExtractMBR(
     VCGPLane.SetDirection(NP);
     VCGPLane.SetOffset(offset);
     CMeshO::PerVertexAttributeHandle<PtType> type_hi =
-        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
     std::vector<vcg::Point3f> OnPPt;
 
     const int PlaneCode = APlne.m_PlaneIndex;
@@ -475,13 +471,13 @@ void ExtractMBR(
     APlne.m_sizeConfidence = vcg::Point3f(confidenceX, confidenceY, 0);
     //
     flog(
-        "      [--PatchDim--]: #Pts-%d\n"
+        "      [--ExtractMBR--]: #Pts-%d\n"
         "        | #Loc-PCA_X   : < %7.4f, %7.4f, %7.4f> \n"
         "        | #Loc-PCA_Y   : < %7.4f, %7.4f, %7.4f> \n"
         "        | #Loc-Adjed_O : < %7.4f, %7.4f, %7.4f> \n"
         "        | #Loc-Adjed_X : < %7.4f, %7.4f, %7.4f> - [%7.4f]\n"
         "        | #Loc-Adjed_Y : < %7.4f, %7.4f, %7.4f> - [%7.4f]\n"
-        "      [--PatchDim--]: Done in %.4f seconds. \n",
+        "      [--ExtractMBR--]: Done in %.4f seconds. \n",
         OnPPt.size(),
         NX_0.X(), NX_0.Y(), NX_0.Z(), NY_0.X(), NY_0.Y(), NY_0.Z(),
         O.X(), O.Y(), O.Z(),

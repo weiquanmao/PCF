@@ -49,6 +49,9 @@
     <Filter Include="SRC\Utility">
       <UniqueIdentifier>{85e85e07-7ff0-4d40-bc2d-07d0e7124205}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SRC\Tool">
+      <UniqueIdentifier>{de565617-4423-4729-bfd8-0b5504e0f09d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -59,9 +62,6 @@
     </ClCompile>
     <ClCompile Include="..\Src\MeshDoc.cpp">
       <Filter>SRC\PLY</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Src\PCA.cpp">
-      <Filter>SRC</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\PointCloudFit_Cube.cpp">
       <Filter>SRC</Filter>
@@ -102,15 +102,21 @@
     <ClCompile Include="..\Src\GeometryObject.cpp">
       <Filter>SRC</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\Utility\flog.cpp">
+    <ClCompile Include="..\Src\utility\flog.cpp">
       <Filter>SRC\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\utility\melody.cpp">
+      <Filter>SRC\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\tool\IOU.cpp">
+      <Filter>SRC\Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\tool\PCA.cpp">
+      <Filter>SRC\Tool</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\PointCloudFit.h">
-      <Filter>SRC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Src\PCA.h">
       <Filter>SRC</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\vcglib\wrap\io_trimesh\export.h">
@@ -143,8 +149,20 @@
     <ClInclude Include="..\Src\GeometryObject.h">
       <Filter>SRC</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Utility\flog.h">
+    <ClInclude Include="..\Src\utility\flog.h">
       <Filter>SRC\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\utility\melody.h">
+      <Filter>SRC\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\utility\melodyNotes.h">
+      <Filter>SRC\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\tool\IOU.h">
+      <Filter>SRC\Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\tool\PCA.h">
+      <Filter>SRC\Tool</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

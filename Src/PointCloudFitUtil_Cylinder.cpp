@@ -1,5 +1,5 @@
 #include "PointCloudFitUtil.h"
-#include "PCA.h"
+#include "tool/PCA.h"
 
 bool DetectSymAxis(
     const std::vector<vcg::Point3f> &PointList,

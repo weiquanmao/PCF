@@ -1,4 +1,5 @@
 #include "PointCloudFitUtil.h"
+#include "tool/IOU.h"
 
 #define VCGAngle(N1, N2) R2D(abs(vcg::Angle(N1, N2)))
 #define CheckParallel(ang) (90.0 - abs(90.0 - ang))
@@ -31,9 +32,44 @@ void RemovePlanes(
 }
 
 // [1] Infer Cube Faces
+double PlaneIoU(const ObjPlane *P1, const ObjPlane *P2)
+{
+    double oX = (P2->m_pO - P1->m_pO) * P1->m_dX / P1->m_dX.SquaredNorm();
+    double oY = (P2->m_pO - P1->m_pO) * P1->m_dY / P1->m_dY.SquaredNorm();
+
+    double xX = P2->m_dX * P1->m_dX / P1->m_dX.SquaredNorm();
+    double xY = P2->m_dX * P1->m_dY / P1->m_dY.SquaredNorm();
+
+    double yX = P2->m_dY * P1->m_dX / P1->m_dX.SquaredNorm();
+    double yY = P2->m_dY * P1->m_dY / P1->m_dY.SquaredNorm();
+
+    IOU::Quad quad1(
+        IOU::Point(0, 0),
+        IOU::Point(0, 1),
+        IOU::Point(1, 1),
+        IOU::Point(1, 0));
+    IOU::Quad quad2(
+        IOU::Point(oX, oY),
+        IOU::Point(oX+yX, oY+yY),
+        IOU::Point(oX+yX+xX, oY+yY+xY),
+        IOU::Point(oX+xX, oY+xY));
+    if (quad2.isAntiClockWiseConvex())
+        quad2.flipBack();
+
+    double interArea = CalInterArea(quad1, quad2);
+    
+    double s1 = quad1.area();
+    double s2 = quad2.area();
+    assert(interArea >= 0.0);
+    assert(s1 > 0.0 && s2 > 0.0);
+    assert(interArea <= s1 && interArea <= s2);
+
+    return interArea / (s1 + s2 - interArea);
+
+}
 bool IsOppoFaces(
     const ObjPlane *P1, const ObjPlane *P2,
-    const double TAng)
+    const double TAng, const double TIoU)
 {
     // 1. Parallel Normals
     if (!IsParallel(P1->m_N, P2->m_N, TAng))
@@ -47,10 +83,9 @@ bool IsOppoFaces(
         return false;
 
     // 3. Face to Face
-    vcg::Point3f O1 = P1->m_pO + (P1->m_dX + P1->m_dY) / 2.0;
-    vcg::Point3f O2 = P2->m_pO + (P2->m_dX + P2->m_dY) / 2.0;
-    vcg::Point3f O2O = O1 - O2;
-    if ( !IsParallel(O2O, P1->m_N, /*TAng*/15) || !IsParallel(O2O, P2->m_N, /*TAng*/15))
+    double iou12 = PlaneIoU(P1, P2);
+    double iou21 = PlaneIoU(P2, P1);
+    if ( (iou12 + iou21)/2.0 < TIoU)
         return false;
 
     // All Passed
@@ -58,8 +93,10 @@ bool IsOppoFaces(
 }
 bool IsAdjacencyFaces(
     const ObjPlane *P1, const ObjPlane *P2,
-    const double TDis, const double TAng)
+    const double TRDis, const double TAng,
+    PlaneRelation *adjType)
 {
+    PlaneRelation _adjType = PlaneRelation_NoRetation;
     // 1. Perpendicular Normals
     if (!IsPerpendicular(P1->m_N, P2->m_N, TAng))
         return false;
@@ -69,16 +106,19 @@ bool IsAdjacencyFaces(
     double angXY = VCGAngle(P1->m_dX, P2->m_dY);
     double angYY = VCGAngle(P1->m_dY, P2->m_dY);
     double angYX = VCGAngle(P1->m_dY, P2->m_dX);
-    if (!(
-        (CheckPerpendicular(angXX)<TAng && CheckPerpendicular(angXY)<TAng && (CheckParallel(angYY)<TAng || CheckParallel(angYX)<TAng)) ||
-        (CheckPerpendicular(angYX)<TAng && CheckPerpendicular(angYY)<TAng && (CheckParallel(angXY)<TAng || CheckParallel(angXX)<TAng))
-        ))
+    bool solu1 = 
+        (CheckPerpendicular(angXX) < TAng && CheckPerpendicular(angXY) < TAng) && // X1 -| X2 and Y2
+        (CheckParallel(angYY) < TAng || CheckParallel(angYX) < TAng);             // Y1 // X2 or Y2
+    bool solu2 =
+        (CheckPerpendicular(angYX) < TAng && CheckPerpendicular(angYY) < TAng) && // Y1 -| X2 and Y2
+        (CheckParallel(angXY) < TAng || CheckParallel(angXX) < TAng);             // X1 // X2 or Y2
+    if (!solu1 && !solu2)
         return false;
 
     // 3. Adjacency Faces
     vcg::Point3f O1 = P1->m_pO + (P1->m_dX + P1->m_dY) / 2.0;
     vcg::Point3f O2 = P2->m_pO + (P2->m_dX + P2->m_dY) / 2.0;
-    vcg::Point3f O2O = O1 - O2;
+    vcg::Point3f O2O = O2 - O1;
     vcg::Point3f NN = P1->m_N^P2->m_N;
     if (!IsPerpendicular(O2O, NN, 30.0))
         return false;
@@ -87,55 +127,153 @@ bool IsAdjacencyFaces(
     double Dis2 = abs(O2O*P2->m_N);
     double l1 = CheckPerpendicular(VCGAngle(P1->m_dX, NN)) < CheckPerpendicular(VCGAngle(P1->m_dY, NN)) ? P1->width() : P1->height();
     double l2 = CheckPerpendicular(VCGAngle(P2->m_dX, NN)) < CheckPerpendicular(VCGAngle(P2->m_dY, NN)) ? P2->width() : P2->height();
-    if (!(abs(Dis1 - l2*0.5) < /*(l2*_DRT_PlaneDis)*/TDis && abs(Dis2 - l1*0.5) < TDis))
+    if (
+        ((Dis1 - l2*0.5) / l2 > TRDis || (l2*0.5 - Dis1) / l2 > TRDis / 2.0) ||
+        ((Dis2 - l1*0.5) / l1 > TRDis || (l1*0.5 - Dis2) / l1 > TRDis / 2.0)
+        )
         return false;
 
     // All Passed
+    if (adjType != 0) {
+        vcg::Point3f O2O_proj = O2O - (P1->m_N * (O2O*P1->m_N)) / P1->m_N.SquaredNorm();
+        if (CheckPerpendicular(VCGAngle(O2O_proj, P1->m_dX)) < CheckPerpendicular(VCGAngle(O2O_proj, P1->m_dY))) {
+            // U or B
+            if (O2O*P1->m_dY > 0)
+                _adjType = PlaneRelation_Adjacency_B;
+            else
+                _adjType = PlaneRelation_Adjacency_U;
+        }
+        else {
+            // R or L
+            if (O2O*P1->m_dX > 0)
+                _adjType = PlaneRelation_Adjacency_R;
+            else
+                _adjType = PlaneRelation_Adjacency_L;
+        }
+        *adjType = _adjType;
+    }
+
     return true;
 }
 
 PlaneRelation EstPlaneRelation(
     const ObjPlane *P1, const ObjPlane *P2,
-    const double TDis, const double TAng)
+    const double TRDis, const double TAng, const double TIoU)
 {
     PlaneRelation  relation = PlaneRelation_NoRetation;
 
-    if (IsOppoFaces(P1, P2, TAng))
-        relation = PlaneRelation_AtOppo;
-    else if (IsAdjacencyFaces(P1, P2, TDis, TAng))
-        relation = PlaneRelation_Adjacency;
+    if (IsOppoFaces(P1, P2, TAng, TIoU))
+        return PlaneRelation_AtOppo;
+    else if (IsAdjacencyFaces(P1, P2, TRDis, TAng, &relation))
+        return relation;
 
-    return relation;
+    return PlaneRelation_NoRetation;
 }
+bool BuildBox(
+    ObjPlane* cubePlane[6], ObjPlane* plane,
+    const double TRDis, const double TAng, const double TIoU)
+{
+    //  [0]       [1]       [2]          [3]         [4]        [5]
+    //   |         |         |            |           |          |
+    //RefPlane  UpPlane  RightPlane  BottomPlane  LeftPlane  OppoPlane
+    assert(
+        cubePlane[0] != 0 &&
+        plane != 0
+    );
 
+    PlaneRelation P[6];
+    for (int i = 0; i < 6; ++i) {
+        if (cubePlane[i] == 0)
+            P[i] = PlaneRelation_NoRetation;
+        else {
+            PlaneRelation Pi = EstPlaneRelation(cubePlane[i], plane, TRDis, TAng, TIoU);
+            if (Pi == PlaneRelation_NoRetation)
+                return false;
+            P[i] = Pi;
+        }
+    }
+
+
+    if (P[0] == PlaneRelation_Adjacency_U &&
+        P[1] == PlaneRelation_NoRetation &&
+        P[2] != PlaneRelation_AtOppo &&
+        (P[3] & 0x01) == 0 &&
+        P[4] != PlaneRelation_AtOppo &&
+        P[5] != PlaneRelation_AtOppo
+        )
+        cubePlane[1] = plane;
+    else if (P[0] == PlaneRelation_Adjacency_R &&
+        P[1] != PlaneRelation_AtOppo &&
+        P[2] == PlaneRelation_NoRetation &&
+        P[3] != PlaneRelation_AtOppo &&
+        (P[4] & 0x01) == 0 &&
+        P[5] != PlaneRelation_AtOppo
+        )
+        cubePlane[2] = plane;
+    else if (P[0] == PlaneRelation_Adjacency_B &&
+        (P[1] & 0x01) == 0 &&
+        P[2] != PlaneRelation_AtOppo &&
+        P[3] == PlaneRelation_NoRetation &&
+        P[4] != PlaneRelation_AtOppo &&
+        P[5] != PlaneRelation_AtOppo
+        )
+        cubePlane[3] = plane;
+    else if (P[0] == PlaneRelation_Adjacency_L &&
+        P[1] != PlaneRelation_AtOppo &&
+        (P[2] & 0x01) == 0 &&
+        P[3] != PlaneRelation_AtOppo &&
+        P[4] == PlaneRelation_NoRetation &&
+        P[5] != PlaneRelation_AtOppo
+        )
+        cubePlane[4] = plane;
+    else if (P[0] == PlaneRelation_AtOppo &&
+        P[1] != PlaneRelation_AtOppo &&
+        P[2] != PlaneRelation_AtOppo &&
+        P[3] != PlaneRelation_AtOppo &&
+        P[4] != PlaneRelation_AtOppo &&
+        P[5] == PlaneRelation_NoRetation
+        )
+        cubePlane[5] = plane;
+    else
+        return false;
+
+    return true;
+}
 std::vector<ObjPlane*> CubeFaceInferringOne(
     const std::vector<ObjPlane*> &planes,
-    const double TDis, const double TAng)
+    const double TRDis, const double TAng, const double TIoU)
 {
-    std::vector<ObjPlane*> tempList;
+    ObjPlane* tempList[6];
     std::vector<ObjPlane*> finalOut;
-
+    finalOut.reserve(6);
     for (int i = 0; i < planes.size(); ++i) {
-        tempList.clear();
-        tempList.push_back(planes.at(i));
+        // clean
+        for (int j = 0; j < 6; ++j)
+            tempList[j] = 0;
+        // init
+        tempList[0] = planes.at(i);
+        int pNum = 1;
         for (int j = 0; j < planes.size(); j++) {
             if (j == i)
                 continue;
-            bool isCubeFace = true;
-            for (int k = 0; k < tempList.size(); k++) {
-                if (EstPlaneRelation(tempList.at(k), planes.at(j), TDis, TAng) == PlaneRelation_NoRetation)
-                {
-                    isCubeFace = false;
+            if (i == 2 && j == 7)
+                int aa = 0;
+            if (BuildBox(tempList, planes.at(j), TRDis, TAng, TIoU)) {
+                pNum++;
+                if (pNum == 6)
                     break;
-                }
             }
-            if (isCubeFace)
-                tempList.push_back(planes.at(j));
         }
-        if (tempList.size() > finalOut.size())
-            finalOut.swap(tempList);
+        if (pNum > finalOut.size()) {
+            finalOut.clear();
+            for (int j = 0; j < 6; ++j) {
+                if (tempList[j] != 0)
+                    finalOut.push_back(tempList[j]);
+            }
+            if (finalOut.size() == 6)
+                break;
+        }
     }
-    tempList.clear();
     if (finalOut.size() < 2)
         finalOut.clear();
     return finalOut;
@@ -143,7 +281,7 @@ std::vector<ObjPlane*> CubeFaceInferringOne(
 int CubeFaceInferring(
     std::vector< std::vector<ObjPlane*> > &cubefaces,
     std::vector<ObjPlane*> &planes,
-    const double TDis, const double TAng,
+    const double TRDis, const double TAng, const double TIoU,
     const bool remove)
 {
     QTime time;
@@ -152,7 +290,7 @@ int CubeFaceInferring(
     std::vector<ObjPlane*> _planes = planes;
     std::vector< std::vector<ObjPlane*> > _cubefaces;
     while (_planes.size() > 1) {
-        std::vector<ObjPlane*> faces = CubeFaceInferringOne(_planes, TDis, TAng);
+        std::vector<ObjPlane*> faces = CubeFaceInferringOne(_planes, TRDis, TAng, TIoU);
         if (!faces.empty()) {
             _cubefaces.push_back(faces);
             RemovePlanes(_planes, faces, false);
@@ -163,13 +301,13 @@ int CubeFaceInferring(
 
     flog(
         "      [--Cube_Infer--]: #Ple-%d\n"
-        "        | #TDis    : %.4f \n"
+        "        | #TRDis    : %.4f \n"
         "        | #TAng    : %.4f \n"
         "        | #Cube    : %d \n"
         "        | #LeftPle : %d \n"
         "      [--Cube_Infer--]: Done in %.4f seconds. \n",
         planes.size(),
-        TDis, TAng,
+        TRDis, TAng,
         _cubefaces.size(), _planes.size(),
         time.elapsed() / 1000.0);
 

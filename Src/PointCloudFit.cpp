@@ -38,14 +38,14 @@ PCFit::PCFit(const int nThread)
 	initMParams();
 	setThreadNum(nThread);
 }
-PCFit::PCFit(const char *PlyFilePath, const int nThread)
+PCFit::PCFit(const char *plyFilePath, const int nThread)
 	: m_GEOObjSet(0)
 	, m_refa(1.0)
 {
 	printLogo();
 	initMParams();
 	setThreadNum(nThread);
-	loadPly(PlyFilePath);
+	loadPly(plyFilePath);
 }
 PCFit::~PCFit()
 {
@@ -77,7 +77,6 @@ void PCFit::printParams()
 		" | PARAMETERS IN USE:                                   |\n"
 		" |------------------------------------------------------|\n"
 		" | [Threshold_NPts              ]:       < %000008d >   |\n"
-		//" | [RefA_Ratio                  ]:       < %0008.3f >   |\n"
 		" | [PlaneNum_Expected           ]:       < %000008d >   |\n"
 		" | [DeNoise_MaxIteration        ]:       < %000008d >   |\n"
 		" | [DeNoise_KNNNeighbors        ]:       < %000008d >   |\n"
@@ -86,16 +85,17 @@ void PCFit::printParams()
 		" | [Precision_HT                ]:       < %0008.3f >   |\n"
 		" | [Threshold_NPtsPlane         ]:       < %0008.3f >   |\n"
 		" | [Threshold_DisToPlane        ]:       < %0008.3f >   |\n"
-		" | [Threshold_AngToPlane        ]:       < %0008.3f >   |\n"		
+		" | [Threshold_AngToPlane        ]:       < %0008.3f >   |\n"	
 		" | [Threshold_PRAng             ]:       < %0008.3f >   |\n"
 		" | [Threshold_PRDis             ]:       < %0008.3f >   |\n"
+        " | [Threshold_PRIoU             ]:       < %0008.3f >   |\n"
 		" | [Threshold_NPtsCyl           ]:       < %0008.3f >   |\n"
 		" +------------------------------------------------------+\n",
-		Threshold_NPts, /*RefA_Ratio,*/ PlaneNum_Expected,
+		Threshold_NPts, PlaneNum_Expected,
 		DeNoise_MaxIteration, DeNoise_KNNNeighbors, DeNoise_GrowNeighbors, DeNoise_DisRatioOfOutlier,
 		Precision_HT, Threshold_NPtsPlane,
-		Threshold_DisToPlane, Threshold_AngToPlane,
-		Threshold_PRAng, Threshold_PRDis,
+		Threshold_DisToPlane, Threshold_AngToPlane, 
+		Threshold_PRAng, Threshold_PRDis, Threshold_PRIoU,
 		Threshold_NPtsCyl);
 }
 
@@ -116,7 +116,6 @@ void PCFit::setThreadNum(const int nThread)
 void PCFit::initMParams(const char *iniFile)
 {
 	Threshold_NPts = 100;
-	//RefA_Ratio = 0.01;
 	PlaneNum_Expected = 20;
 
 	DeNoise_MaxIteration = 0;
@@ -125,12 +124,13 @@ void PCFit::initMParams(const char *iniFile)
     DeNoise_DisRatioOfOutlier = 0.1;
 
 	Precision_HT = 0.01;
-	Threshold_NPtsPlane = 0.04;
-	Threshold_DisToPlane = 4.0;
-	Threshold_AngToPlane = 30.0;
-	
+	Threshold_NPtsPlane = 0.05;
+	Threshold_DisToPlane = 2.0;
+	Threshold_AngToPlane = 15.0;
+    
 	Threshold_PRAng = 15.0;
-	Threshold_PRDis = 1.0/6.0;
+	Threshold_PRDis = 0.50;
+    Threshold_PRIoU = 0.85;
 
 	Threshold_NPtsCyl = 0.2;
 
@@ -139,8 +139,6 @@ void PCFit::initMParams(const char *iniFile)
 		QStringList keys = conf.allKeys();
 		if (keys.contains("Threshold_NPts"))
 			Threshold_NPts = conf.value("Threshold_NPts").toInt();
-		//if (keys.contains("RefA_Ratio"))
-		//	RefA_Ratio = conf.value("RefA_Ratio").toDouble();
 		if (keys.contains("PlaneNum_Expected"))
 			PlaneNum_Expected = conf.value("PlaneNum_Expected").toInt();
 
@@ -161,11 +159,13 @@ void PCFit::initMParams(const char *iniFile)
 			Threshold_DisToPlane = conf.value("Threshold_DisToPlane").toDouble();
 		if (keys.contains("Threshold_AngToPlane"))
 			Threshold_AngToPlane = conf.value("Threshold_AngToPlane").toDouble();
-
+        
 		if (keys.contains("Threshold_PRAng"))
 			Threshold_PRAng = conf.value("Threshold_PRAng").toDouble();
 		if (keys.contains("Threshold_PRDis"))
 			Threshold_PRDis = conf.value("Threshold_PRDis").toDouble();
+        if (keys.contains("Threshold_PRIoU"))
+            Threshold_PRIoU = conf.value("Threshold_PRIoU").toDouble();
 
 		if (keys.contains("Threshold_NPtsCyl"))
 			Threshold_NPtsCyl = conf.value("Threshold_NPtsCyl").toDouble();
@@ -175,15 +175,15 @@ void PCFit::initMParams(const char *iniFile)
 }
 
 
-bool PCFit::loadPly(const char * PlyFilePath)
+bool PCFit::loadPly(const char * plyFilePath)
 {
 	QTime time;
 	time.start();
-	flog("\n\n[=LoadPly=]: -->> Loading Points from File: %s <<--  \n", PlyFilePath);	
+	flog("\n\n[=LoadPly=]: -->> Loading Points from File: %s <<--  \n", plyFilePath);	
     //----[[
 	bool bOpen = false;
-	if (PlyFilePath) {		
-		bOpen = m_meshDoc.loadMesh(PlyFilePath);
+	if (plyFilePath) {		
+		bOpen = m_meshDoc.loadMesh(plyFilePath);
 		if (bOpen && m_GEOObjSet != 0) {
 			delete m_GEOObjSet;
             m_GEOObjSet = 0;
@@ -193,23 +193,23 @@ bool PCFit::loadPly(const char * PlyFilePath)
 	if (bOpen)
 		flog("[=LoadPly=]: Done, %d point(s) were loaded in %.4f seconds.\n", m_meshDoc.mesh->cm.vn, time.elapsed() / 1000.0);
 	else {
-		flog("[=LoadPly=]: [Error] Failed to open file %s for reading.\n", PlyFilePath);
+		flog("[=LoadPly=]: [Error] Failed to open file %s for reading.\n", plyFilePath);
 		doFailure();
 	}
 	return bOpen;
 }
-bool PCFit::savePly(const char *PlyFilePath)
+bool PCFit::savePly(const char *plyFilePath)
 {
 	QTime time;
 	time.start();
-	flog("\n\n[=SavePly=]: -->> Svae Points as Ply File: %s <<--\n", PlyFilePath);	
+	flog("\n\n[=SavePly=]: -->> Svae Points as Ply File: %s <<--\n", plyFilePath);	
     //----[[
-	bool bSave = m_meshDoc.saveMesh(PlyFilePath, false);
+	bool bSave = m_meshDoc.saveMesh(plyFilePath, false);
 	//----]]
 	if (bSave)
 		flog("[=SavePly=]: Done, %d point(s) were saved in %.4f seconds.\n", m_meshDoc.mesh->cm.vn, time.elapsed() / 1000.0);
 	else {
-		flog("[=SavePly=]: [Error] Failed to open file %s for writing.\n", PlyFilePath);
+		flog("[=SavePly=]: [Error] Failed to open file %s for writing.\n", plyFilePath);
 		doFailure();
 	}
 	return bSave;
@@ -228,10 +228,10 @@ int PCFit::deletePts(const int mask)
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
-	if (vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
+	if (vcg::tri::HasPerVertexAttribute(mesh, PtAttri_GeoType))
 	{
 		CMeshO::PerVertexAttributeHandle<PtType> type_hi =
-			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 			if ((type_hi[vi] & mask) != 0) {
@@ -246,10 +246,10 @@ int PCFit::keepPts(const int mask)
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
-	if (vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
+	if (vcg::tri::HasPerVertexAttribute(mesh, PtAttri_GeoType))
 	{
 		CMeshO::PerVertexAttributeHandle<PtType> type_hi =
-			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
 			if ((type_hi[vi] & mask) != 0) {
@@ -265,23 +265,23 @@ int PCFit::keepPts(const int mask)
 	return cnt;
 }
 
-int PCFit::recolorPts(const int mask, const unsigned char R, const unsigned char G, const unsigned char B, const unsigned char A)
+int PCFit::recolorPts(const int mask, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a)
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
-	if (vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
+	if (vcg::tri::HasPerVertexAttribute(mesh, PtAttri_GeoType))
 	{
 		CMeshO::PerVertexAttributeHandle<PtType> type_hi =
-			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 		{
 			if ( (mask == 0 && type_hi[vi] == 0) ||
                 (mask & type_hi[vi]) != 0) {
-				vi->C().X() = R;
-				vi->C().Y() = G;
-				vi->C().Z() = B;
-				vi->C().W() = A;
+				vi->C().X() = r;
+				vi->C().Y() = g;
+				vi->C().Z() = b;
+				vi->C().W() = a;
 				++cnt;
 			}
 		}
@@ -292,26 +292,27 @@ int PCFit::recolorPts(const int mask, const unsigned char R, const unsigned char
 void PCFit::autoColor()
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
-	if (vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri)) {
+	if (vcg::tri::HasPerVertexAttribute(mesh, PtAttri_GeoType)) {
 		CMeshO::PerVertexAttributeHandle<PtType> type_hi = 
-			vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+			vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 		unsigned char PlaneColor[3];
 		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 		{
-			if (type_hi[vi] == Pt_Undefined || vi->IsD())
+            int code = type_hi[vi];
+			if (code == Pt_Undefined || vi->IsD())
 				continue;
 
 			const unsigned char* pColor = Color_Gray;
-			if (type_hi[vi] == Pt_OnCube)
+			if (code == Pt_OnCube)
 				pColor = Color_Solid_Cube;
-			else if (type_hi[vi] == Pt_OnCylinder)
+			else if (code == Pt_OnCylinder)
 				pColor = Color_Solid_Cylinder;
-			else if (type_hi[vi] == Pt_Noise)
+			else if (code == Pt_Noise)
 				pColor = Color_Noise;
-			else if (type_hi[vi] >= Pt_OnPlane) {
-				PlaneColor[0] = Color_Plane[type_hi[vi] % 10][0];
-				PlaneColor[1] = Color_Plane[type_hi[vi] % 10][1];
-				PlaneColor[2] = Color_Plane[type_hi[vi] % 10][2];
+			else if (code >= Pt_OnPlane) {
+				PlaneColor[0] = Color_Plane[(code - Pt_OnPlane) % 10][0];
+				PlaneColor[1] = Color_Plane[(code - Pt_OnPlane) % 10][1];
+				PlaneColor[2] = Color_Plane[(code - Pt_OnPlane) % 10][2];
 				pColor = PlaneColor;
 			}
 			for (int i = 0; i<nColorChannel; i++)
@@ -337,21 +338,21 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		flog("\n\n[=InitPtAttri=]: -->> Initialize Satellite Point Attribute <<--\n");		
         //----[[
 		CMeshO::PerVertexAttributeHandle<PtType> type_hi;
-		if (!vcg::tri::HasPerVertexAttribute(mesh, _MyPtAttri))
-		{// Add It
+		if (!vcg::tri::HasPerVertexAttribute(mesh, PtAttri_GeoType))
+		{// Add Attribute
 			flog("    >> Add Attri ... \n");
-			type_hi = vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+			type_hi = vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 			bAttriAdded = true;
 		}
 		else
-		{// Get It
+		{// Get Attribute
 			flog("    >> Get Attri ... \n");
-			type_hi = vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, _MyPtAttri);
+			type_hi = vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 			bAttriAdded = false;
 		}
 		flog("    >> Set Attri ... \n");
 		for (int i = 0; i < mesh.VN(); i++)
-		{// Set It
+		{// Set Attribute
 			type_hi[i] = Pt_Undefined;
 		}
 		//-----]]
@@ -382,27 +383,28 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 		vcg::Point3f PSize;
 		std::vector<vcg::Point3f> PDirection;
 
-		// PCADimensionAna(PSize, PDirection, true);
-		// m_refa = PSize.V(2)*RefA_Ratio;
+#if 0 // Generate Reference Unit A by PAC
+		PCADimensionAna(PSize, PDirection, true);
+		m_refa = PSize.V(2)*RefA_Ratio;
+#else // Generate Reference Unit A by Roughness Analyse
 		m_refa = RoughnessAna(true);
-
+#endif
 		//----]]
 		flog("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
 
 
-
-	// -- 2. Find All Planes
+	// -- 2. Detect All Planes
 	std::vector<ObjPlane*> planes;
 	{
-#if 1
-		flog("\n\n[=PlaneFit_HT=]: -->> Try to Fit %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
+#if 1 // Detect Planes by Hough Transform
+		flog("\n\n[=PlaneFit_HT=]: -->> Try to Detect %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
 		time.restart();
 		//-------------------------------
 		planes = DetectPlanesHT(PlaneNum_Expected);
 		//-------------------------------
 		flog("[=PlaneFit_HT=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
-#else
+#else // Detect Planes by Multi-Model Fitting with GCO
         flog("\n\n[=PlaneFit_MPFGCO=]: -->> Try to Fit by Multi-Planes Fitting in GCO with %d Expected Initial Planes <<--  \n", PlaneNum_Expected);
         time.restart();
         //-------------------------------
@@ -412,7 +414,8 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 #endif
     }
 
-	// -- 3. Judge Cube Planes
+    
+	// -- 3. Detect Cube from Planes
 	std::vector<ObjCube*> cubes;
 	if (planes.size() >= 2) {
 		flog("\n\n[=DetectCube=]: -->> Try to Detect Cube from %d Planes <<--  \n", planes.size());
@@ -425,13 +428,13 @@ bool PCFit::Fit_Sate(bool keepAttribute)
     for (int i = 0; i < cubes.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
 
-
-
-	// -- 4. Find Cyclinde
+    /*
+    
+	// -- 4. Detect Cylinder
     ObjCylinder *objCylinder = 0;
 	if ( m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL) ) {
-#if 1
-		flog("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis <<--  \n");
+#if 1 // Detect Planes by Symmetric Axis Detection with Hough Transform
+		flog("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis Detection <<--  \n");
 		time.restart();
 		//-------------------------------
         objCylinder = DetectCylinderSymAxis();
@@ -440,7 +443,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 			flog("[=DetectCylinder_SA=]: Done, cylinder is detected in %.4f seconds.\n", time.elapsed() / 1000.0);
 		else
 			flog("[=DetectCylinder_SA=]: No cylinder is detected. Elapsed %.4f seconds.\n", time.elapsed() / 1000.0);
-#else
+#else // Detect Planes by Multi-Model Fitting with GCO
 #endif
     }
 	else {
@@ -449,8 +452,9 @@ bool PCFit::Fit_Sate(bool keepAttribute)
     if (objCylinder != 0)
         m_GEOObjSet->m_SolidList.push_back(objCylinder);
 
+    */
 
-	// -- 5. Set SailbordList
+	// -- 5. Set Planes
 	{
 		flog("\n\n[=PlanesCheck=]: %d plane(s) are left. \n", planes.size());
 		m_GEOObjSet->m_PlaneList.swap(planes);
@@ -460,7 +464,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	// -- *Remove Added Attribute
 	if (bAttriAdded && !keepAttribute) {
 		flog("\n\n[=CleanPtAttri=]: -->> Delete Point Sate Attribute <<--\n");
-		vcg::tri::Allocator<CMeshO>::DeletePerVertexAttribute(mesh, _MyPtAttri);
+		vcg::tri::Allocator<CMeshO>::DeletePerVertexAttribute(mesh, PtAttri_GeoType);
 	}
 	
 	return true;

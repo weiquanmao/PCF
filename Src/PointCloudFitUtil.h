@@ -1,6 +1,6 @@
 #ifndef _POINT_CLOUD_FIT_UTIL_H_FILE_
 #include "PointCloudFit.h"
-#include "Utility/flog.h"
+#include "utility/flog.h"
 #ifdef _USE_OPENMP_
 #include <omp.h>
 #endif
@@ -105,7 +105,7 @@ int AttachToPlane(
 void PicMaxRegion(
     const std::vector<vcg::Point3f> &PointList,
     std::vector<int> &index,
-    const double _2TDis);
+    const double _TDis);
 
 // [4] LS Fit
 double FineFit(
@@ -230,28 +230,47 @@ bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const doubl
 
 // [1] Infer Cube Faces
 enum PlaneRelation {
-    PlaneRelation_NoRetation,
-    PlaneRelation_Adjacency,
-    PlaneRelation_AtOppo
+    PlaneRelation_NoRetation  = 0x00,
+    /*****************************************
+     *           |               | 
+     *           |      [U]p     |
+     * ---------[O] -----[X]-----+---------
+     *           | / / / / / / / |
+     *  [L]eft  [Y] / /Rect / / /| [R]ight
+     *           | / / / / / / / |
+     * ----------+---------------+---------
+     *           |    [B]ottom   |
+     *           |               |
+     *****************************************/
+    PlaneRelation_Adjacency_U = 0x01,
+    PlaneRelation_Adjacency_B = 0x03,
+    PlaneRelation_Adjacency_L = 0x05,    
+    PlaneRelation_Adjacency_R = 0x07,
+    PlaneRelation_AtOppo      = 0x08,
 };
+double PlaneIoU(const ObjPlane *P1, const ObjPlane *P2);
 bool IsOppoFaces(
     const ObjPlane *P1, const ObjPlane *P2,
-    const double TAng);
+    const double TAng, const double TIoU);
 bool IsAdjacencyFaces(
     const ObjPlane *P1, const ObjPlane *P2,
-    const double TDis, const double TAng);
+    const double TRDis, const double TAng,
+    PlaneRelation *adjType = 0);
 PlaneRelation EstPlaneRelation(
     const ObjPlane *P1, const ObjPlane *P2,
-    const double TDis, const double TAng);
+    const double TRDis, const double TAng, const double TIoU);
 
+bool BuildBox(
+    ObjPlane* cubePlane[6], ObjPlane* plane,
+    const double TRDis, const double TAng, const double TIoU);
 std::vector<ObjPlane*> CubeFaceInferringOne(
     const std::vector<ObjPlane*> &planes,
-    const double TDis, const double TAng);
+    const double TRDis, const double TAng, const double TIoU);
 
 int CubeFaceInferring(
     std::vector< std::vector<ObjPlane*> > &cubefaces,
     std::vector<ObjPlane*> &planes,
-    const double TDis, const double TAng,
+    const double TRDis, const double TAng, const double TIoU,
     const bool remove = true);
 
 

@@ -23,7 +23,7 @@ void SaveObjSet(ObjSet *objSet, const char *file)
         out << objSet->m_SolidList.size() << '\n';
         for (int i = 0; i<objSet->m_SolidList.size(); i++) {
             ObjSolid *solid = objSet->m_SolidList.at(i);
-            if (solid->type() == ObjSolid::Solid_Cube) {
+            if (solid->type() == ObjSolid::Solid_Cube) { // Cube
                 ObjCube *cube = (ObjCube*)solid;
                 out << "1" << "\n";
                 out << cube->m_pO.X() << '\t' << cube->m_pO.Y() << '\t' << cube->m_pO.Z() << '\n'
@@ -31,7 +31,7 @@ void SaveObjSet(ObjSet *objSet, const char *file)
                     << cube->m_dY.X() << '\t' << cube->m_dY.Y() << '\t' << cube->m_dY.Z() << cube->m_sizeConfidence.Y() << '\n'
                     << cube->m_dZ.X() << '\t' << cube->m_dZ.Y() << '\t' << cube->m_dZ.Z() << cube->m_sizeConfidence.Z() << '\n';
             }
-            if (solid->type() == ObjSolid::Solid_Cylinder) {
+            if (solid->type() == ObjSolid::Solid_Cylinder) { // Cylinder
                 ObjCylinder *cyl = (ObjCylinder*)solid;
                 out << "2" << "\n";
                 out << cyl->m_pO.X() << '\t' << cyl->m_pO.Y() << '\t' << cyl->m_pO.Z() << '\n'
@@ -39,19 +39,14 @@ void SaveObjSet(ObjSet *objSet, const char *file)
                     << cyl->m_length << '\t' << cyl->m_length_weight << '\n'
                     << cyl->m_radius << '\t' << cyl->m_radius_weight << '\n';
             }
-            if (solid->type() == ObjSolid::Solid_Cone) {
-                //ObjCone *cone = (ObjCone*)solid;
+            if (solid->type() == ObjSolid::Solid_Cone) { // Cone
                 out << "3" << "\n";
-                //out << cyl->m_pO.X() << '\t' << cyl->m_pO.Y() << '\t' << cyl->m_pO.Z() << '\n'
-                //    << cyl->m_N.X() << '\t' << cyl->m_N.Y() << '\t' << cyl->m_N.Z() << '\n'
-                //    << cyl->m_length << '\t' << cyl->m_length_weight << '\n'
-                //    << cyl->m_radius << '\t' << cyl->m_radius_weight << '\n';
             }
         }
 
 		
 		out << objSet->m_PlaneList.size() << '\n';
-		for (int i = 0; i<objSet->m_PlaneList.size(); i++) {
+		for (int i = 0; i<objSet->m_PlaneList.size(); i++) { // Planes
 			ObjPlane *ple = objSet->m_PlaneList.at(i);
 			out << ple->m_PlaneIndex << '\t' << ple->m_varN << '\n';
 			out << ple->m_pO.X() << '\t' << ple->m_pO.Y() << '\t' << ple->m_pO.Z() << '\n'
@@ -106,7 +101,7 @@ ObjSet* LoadObjSet(const char *file)
 		
 		int nSB;
 		in >> nSB;
-		for (int i = 0; i<nSB; i++) {
+		for (int i = 0; i<nSB; i++) { // Planes
 			int nCode;
 			double nVar;
 			in >> nCode >> nVar;

@@ -31,8 +31,9 @@ namespace FLOG {
     }
     bool _openLog(const char *logFile)
     {
+        bool bRet = true;
         if (logFile == 0)
-            return _closeLog(true);
+            bRet = _closeLog(true);
         else {
             if (_b_log_file_opened_ && !_closeLog(false))
                 return false;
@@ -43,12 +44,17 @@ namespace FLOG {
                 clog._m_log_file_ = std::ofstream(_log_file_);
                 sprintf(_log_file_path_, logFile);
                 _b_log_file_opened_ = true;
-                return true;
+                bRet = true;
+            }
+            else {
+                printf("[FLOG ERROR]: Failed to open log file %s.", _log_file_path_);
+                bRet = false;
             }
         }
+
+        return bRet;
     }
     
-
     bool isLogFileOpened() { return _b_log_file_opened_; }
     bool setDefaultLogFile() { return _openLog(_log_file_path_default_); }
     bool setLogFile(const char *logFile) { return _openLog(logFile); }
@@ -56,7 +62,6 @@ namespace FLOG {
 
     void setAppendMode() { _log_mode_ = 'a'; }
     void setWriteMode() { _log_mode_ = 'w'; }
-
 
     int flog(const char *format, ...)
     {        
