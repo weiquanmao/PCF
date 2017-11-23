@@ -61,7 +61,7 @@ void PCFit::printLogo()
 	flog(
 		"\n\n"
 		"    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   \n"
-		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.4.0                \n"
+		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.5.0                \n"
 		"  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA \n"
 		" /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  \n"
 		"                                                 |  Email: weiqm@buaa.edu.cn  \n"
