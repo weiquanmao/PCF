@@ -13,7 +13,7 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-#if 0 // Reconstructed Models
+#if 1 // Reconstructed Models
 	const string InputDir = "../../../Data/ModelPC";
 	const string OutputDir = "../../../Data/Result";
 #else // Synthesized Models
@@ -31,8 +31,9 @@ int main(int argc, char *argv[])
 			if ((fileinfo.attrib & _A_ARCH))
 			{
 				const string FileName = fileinfo.name;
-#if 1 // Test Only One
-				if (FileName != "gps.ply")
+                SetConsoleTitleA(FileName.c_str());
+#if 0 // Test Only One
+				if (FileName != "dsp.ply")
 					continue;
 #endif
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));
@@ -74,8 +75,9 @@ int main(int argc, char *argv[])
 		} while (_findnext(hFile, &fileinfo) == 0);
 		_findclose(hFile);
 	}
-
+    
     // MelodyPlay_Notice();
+    SetConsoleTitleA("-- Finished --");
 	system("pause");
 	return 0;
 }

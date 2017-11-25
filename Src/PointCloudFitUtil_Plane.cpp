@@ -331,7 +331,7 @@ double FineFit(
 
     flog(
         "      [--Fit_LS--]: #Pts-%d\n"
-        "        | #Plane    : < %.4f, %.4f, %.4f, %.4f> \n"
+        "        | #Plane    : < %.4f, %.4f, %.4f, %.4f > \n"
         "        | #FitError : %.4f\n"
         "      [--Fit_LS--]: Done in %.4f seconds. \n",
         planeVerList.size(),
@@ -472,11 +472,11 @@ void ExtractMBR(
     //
     flog(
         "      [--ExtractMBR--]: #Pts-%d\n"
-        "        | #Loc-PCA_X   : < %7.4f, %7.4f, %7.4f> \n"
-        "        | #Loc-PCA_Y   : < %7.4f, %7.4f, %7.4f> \n"
-        "        | #Loc-Adjed_O : < %7.4f, %7.4f, %7.4f> \n"
-        "        | #Loc-Adjed_X : < %7.4f, %7.4f, %7.4f> - [%7.4f]\n"
-        "        | #Loc-Adjed_Y : < %7.4f, %7.4f, %7.4f> - [%7.4f]\n"
+        "        | #Loc-PCA_X   : < %7.4f, %7.4f, %7.4f > \n"
+        "        | #Loc-PCA_Y   : < %7.4f, %7.4f, %7.4f > \n"
+        "        | #Loc-Adjed_O : < %7.4f, %7.4f, %7.4f > \n"
+        "        | #Loc-Adjed_X : < %7.4f, %7.4f, %7.4f > - [%7.4f]\n"
+        "        | #Loc-Adjed_Y : < %7.4f, %7.4f, %7.4f > - [%7.4f]\n"
         "      [--ExtractMBR--]: Done in %.4f seconds. \n",
         OnPPt.size(),
         NX_0.X(), NX_0.Y(), NX_0.Z(), NY_0.X(), NY_0.Y(), NY_0.Z(),
@@ -544,26 +544,36 @@ std::vector<vcg::Point4f> DetectHTPlanes(
         // Surface Points Verification
         std::vector<int> planeVerList;
         AttachToPlane(planeVerList, pointList, normList, plane, TDis, TAng);
-
-        // Coplanar Separation
-        PicMaxRegion(pointList, planeVerList, TDis*2.0);
-        if (planeVerList.size() <= _planeNT)
+        if (planeVerList.size() < _planeNT)
             break;
 
-        // Least Squre Fit
-        double err = FineFit(pointList, planeVerList, plane);
-        // planeVerList = AttachToPlane(pointList,directionList,plane,_planeDThreshold); // AGAIN!
-        if (bReportErr)
-            errors->push_back(err);
+        // Coplanar Separation
+        PicMaxRegion(pointList, planeVerList, TDis);
+        if (planeVerList.size() < TNPtsHard) {
+            flog(
+                "      [ -- The number of the max region is too small,       -- ] \n"
+                "      [ -- and this region result will be DISCARD.          -- ] \n"
+                "      [ -- Detection of the [ No.%02 d ] plane wil be retired. -- ] \n", 
+                planeNum + 1);
+        }
+        else {
+            // Least Squre Fit
+            double err = FineFit(pointList, planeVerList, plane);
+            // planeVerList = AttachToPlane(pointList,directionList,plane,_planeDThreshold); // AGAIN!
+            if (bReportErr)
+                errors->push_back(err);
 
-        if (bRetPlane) {
-            ObjPlane *onePle = new ObjPlane(Pt_OnPlane + planeNum);
-            onePle->m_varN = err;
+            if (bRetPlane) {
+                ObjPlane *onePle = new ObjPlane(Pt_OnPlane + planeNum);
+                onePle->m_varN = err;
 
-            // Extract the Minimum-Bounding-Rectangle
-            ExtractMBR(*pMesh, *onePle, plane, pointList, indexList, planeVerList);
+                // Extract the Minimum-Bounding-Rectangle
+                ExtractMBR(*pMesh, *onePle, plane, pointList, indexList, planeVerList);
 
-            pPlanes->push_back(onePle);
+                pPlanes->push_back(onePle);
+            }
+            planeVec.push_back(plane);
+            planeNum++;
         }
 
         // Remove Pts on Plane
@@ -585,8 +595,6 @@ std::vector<vcg::Point4f> DetectHTPlanes(
         }
         planeVerList.clear();
 
-        planeVec.push_back(plane);
-        planeNum++;
     }
     if (bRetPlane)
         indexList.clear();

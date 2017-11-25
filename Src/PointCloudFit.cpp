@@ -62,7 +62,7 @@ void PCFit::printLogo()
 		"\n\n"
 		"    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   \n"
 		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.5.0                \n"
-		"  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA \n"
+		"  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA  \n"
 		" /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  \n"
 		"                                                 |  Email: weiqm@buaa.edu.cn  \n"
 		"\n"
@@ -77,6 +77,7 @@ void PCFit::printParams()
 		" | PARAMETERS IN USE:                                   |\n"
 		" |------------------------------------------------------|\n"
 		" | [Threshold_NPts              ]:       < %000008d >   |\n"
+        " | [RefA_Ratio                  ]:       < %0008.3f >   |\n"
 		" | [PlaneNum_Expected           ]:       < %000008d >   |\n"
 		" | [DeNoise_MaxIteration        ]:       < %000008d >   |\n"
 		" | [DeNoise_KNNNeighbors        ]:       < %000008d >   |\n"
@@ -85,13 +86,13 @@ void PCFit::printParams()
 		" | [Precision_HT                ]:       < %0008.3f >   |\n"
 		" | [Threshold_NPtsPlane         ]:       < %0008.3f >   |\n"
 		" | [Threshold_DisToPlane        ]:       < %0008.3f >   |\n"
-		" | [Threshold_AngToPlane        ]:       < %0008.3f >   |\n"	
+		" | [Threshold_AngToPlane        ]:       < %0008.3f >   |\n"
 		" | [Threshold_PRAng             ]:       < %0008.3f >   |\n"
 		" | [Threshold_PRDis             ]:       < %0008.3f >   |\n"
         " | [Threshold_PRIoU             ]:       < %0008.3f >   |\n"
 		" | [Threshold_NPtsCyl           ]:       < %0008.3f >   |\n"
 		" +------------------------------------------------------+\n",
-		Threshold_NPts, PlaneNum_Expected,
+		Threshold_NPts, RefA_Ratio, PlaneNum_Expected,
 		DeNoise_MaxIteration, DeNoise_KNNNeighbors, DeNoise_GrowNeighbors, DeNoise_DisRatioOfOutlier,
 		Precision_HT, Threshold_NPtsPlane,
 		Threshold_DisToPlane, Threshold_AngToPlane, 
@@ -115,18 +116,19 @@ void PCFit::setThreadNum(const int nThread)
 }
 void PCFit::initMParams(const char *iniFile)
 {
-	Threshold_NPts = 100;
+	Threshold_NPts    = 100;
+    RefA_Ratio        = 0.01;
 	PlaneNum_Expected = 20;
 
-	DeNoise_MaxIteration = 0;
-	DeNoise_KNNNeighbors = 50;
-    DeNoise_GrowNeighbors = 20;
+	DeNoise_MaxIteration      = 0;
+	DeNoise_KNNNeighbors      = 50;
+    DeNoise_GrowNeighbors     = 20;
     DeNoise_DisRatioOfOutlier = 0.1;
 
-	Precision_HT = 0.01;
-	Threshold_NPtsPlane = 0.05;
-	Threshold_DisToPlane = 2.0;
-	Threshold_AngToPlane = 15.0;
+	Precision_HT          = 0.01;
+	Threshold_NPtsPlane   = 0.025;
+	Threshold_DisToPlane  = 2.0;
+	Threshold_AngToPlane  = 30.0;
     
 	Threshold_PRAng = 15.0;
 	Threshold_PRDis = 0.50;
@@ -139,6 +141,8 @@ void PCFit::initMParams(const char *iniFile)
 		QStringList keys = conf.allKeys();
 		if (keys.contains("Threshold_NPts"))
 			Threshold_NPts = conf.value("Threshold_NPts").toInt();
+        if (keys.contains("RefA_Ratio"))
+            RefA_Ratio = conf.value("RefA_Ratio").toInt();
 		if (keys.contains("PlaneNum_Expected"))
 			PlaneNum_Expected = conf.value("PlaneNum_Expected").toInt();
 
@@ -382,17 +386,14 @@ bool PCFit::Fit_Sate(bool keepAttribute)
         //----[[
 		vcg::Point3f PSize;
 		std::vector<vcg::Point3f> PDirection;
+        PCADimensionAna(PSize, PDirection, true);
+        double PCASize = PSize.V(2)*RefA_Ratio;
+        double RoughSize = RoughnessAna(true);
+        m_refa = RoughSize > PCASize ? RoughSize : PCASize;
 
-#if 0 // Generate Reference Unit A by PAC
-		PCADimensionAna(PSize, PDirection, true);
-		m_refa = PSize.V(2)*RefA_Ratio;
-#else // Generate Reference Unit A by Roughness Analyse
-		m_refa = RoughnessAna(true);
-#endif
 		//----]]
 		flog("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
-
 
 	// -- 2. Detect All Planes
 	std::vector<ObjPlane*> planes;
@@ -414,7 +415,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 #endif
     }
 
-    
+    /*
 	// -- 3. Detect Cube from Planes
 	std::vector<ObjCube*> cubes;
 	if (planes.size() >= 2) {
@@ -428,7 +429,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
     for (int i = 0; i < cubes.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
 
-    /*
+    
     
 	// -- 4. Detect Cylinder
     ObjCylinder *objCylinder = 0;

@@ -51,8 +51,8 @@ void SaveObjSet(ObjSet *objSet, const char *file)
 			out << ple->m_PlaneIndex << '\t' << ple->m_varN << '\n';
 			out << ple->m_pO.X() << '\t' << ple->m_pO.Y() << '\t' << ple->m_pO.Z() << '\n'
 				<< ple->m_N.X() << '\t' << ple->m_N.Y() << '\t' << ple->m_N.Z() << '\n'
-				<< ple->m_dX.X() << '\t' << ple->m_dX.Y() << '\t' << ple->m_dX.Z() << ple->m_sizeConfidence.X() << '\n'
-				<< ple->m_dY.X() << '\t' << ple->m_dY.Y() << '\t' << ple->m_dY.Z() << ple->m_sizeConfidence.Y() << '\n'
+				<< ple->m_dX.X() << '\t' << ple->m_dX.Y() << '\t' << ple->m_dX.Z() << '\t' << ple->m_sizeConfidence.X() << '\n'
+				<< ple->m_dY.X() << '\t' << ple->m_dY.Y() << '\t' << ple->m_dY.Z() << '\t' << ple->m_sizeConfidence.Y() << '\n'
 				<< 0.0 << '\t' << 0.0 << '\t' << 0.0 << 0.0 << '\n';
 		}
 		out.close();

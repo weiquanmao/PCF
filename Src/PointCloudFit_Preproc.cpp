@@ -301,9 +301,9 @@ bool PCFit::PCADimensionAna(
 	flog(
 		"    [--PCADirection--] #bPts - %d/%d \n"
 		"       ( Principal direction vectors, col by decreasing order )\n"
-		"       |  %7.4f %7.4f %7.4f - <%7.4f> \n"
-		"       |  %7.4f %7.4f %7.4f - <%7.4f> \n"
-		"       |  %7.4f %7.4f %7.4f - <%7.4f> \n"
+		"       |  %7.4f %7.4f %7.4f - < %7.4f > \n"
+		"       |  %7.4f %7.4f %7.4f - < %7.4f > \n"
+		"       |  %7.4f %7.4f %7.4f - < %7.4f > \n"
 		"    [--PCADirection--]: Done in %.4f seconds.\n",
 		Count, N,
 		NX.X(), NY.X(), NZ.X(), PSize.X(),
@@ -327,7 +327,7 @@ double PCFit::RoughnessAna(bool leftNoisePts)
 
     // Key Parameter
     // rafa = a*miu + b*std
-	const int knn = 20;
+	const int knn = 40;
 	const int a = 1.0;
 	const int b = 3.0;
 	const int N = leftNoisePts ? mesh.vn : mesh.vert.size();
@@ -362,7 +362,7 @@ double PCFit::RoughnessAna(bool leftNoisePts)
 	double roughness = R / Count;
 	flog(
 		"    [--RoughnessAna--] #bPts - %d/%d \n"
-		"       | RoughnessA - <%7.4f> \n"
+		"       | RoughnessA - < %7.4f > \n"
 		"    [--RoughnessAna--]: Done in %.4f seconds.\n",
 		Count, N, roughness, time.elapsed() / 1000.0);
 

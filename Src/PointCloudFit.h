@@ -55,24 +55,29 @@ private:
 	double m_refa;                           // 长度参考单位
 
 	// All Thresholds
+    // 基础参数-[基本不用改]
 	int Threshold_NPts;                      // 整体点云数小于[Threshold_NPts]不进行处理
-	// double RefA_Ratio;                       // 单位长度比例
+	double RefA_Ratio;                       // 单位长度比例
 	int PlaneNum_Expected;                   // 期望平面个数
 
+    // 去噪参数-[基本不用改]
 	int DeNoise_MaxIteration;                // 去噪迭代阈值, 默认100(<=0)
 	int DeNoise_KNNNeighbors;                // 去噪时KNN最近邻个数(KNN)
     int DeNoise_GrowNeighbors;               // 去噪时KNN最近邻个数(区域生长)
 	double DeNoise_DisRatioOfOutlier;        // 去噪距离比例阈值
 
+    // 平面检测参数
 	double Precision_HT;                     // HT系数
 	double Threshold_NPtsPlane;              // 平面点个数比例阈值
 	double Threshold_DisToPlane;             // 平面检测距离阈值系数
 	double Threshold_AngToPlane;             // 平面检测角度阈值
     
-
+    // 立方体检测参数
 	double Threshold_PRAng;                  // 平面关系角度阈值
 	double Threshold_PRDis;                  // 平面关系距离阈值系数
     double Threshold_PRIoU;                  // 平面关系交并比阈值
+
+    // 圆柱体检测参数
 	double Threshold_NPtsCyl;                // 圆柱点个数阈值系数
 private:
 	// Preproc
