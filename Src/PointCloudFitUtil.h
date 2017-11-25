@@ -45,25 +45,24 @@ static double EIConfidence(const std::vector<int> &list)
     double EI = (Sumn*log(Sumn) - Sumnlogn) / (Sumn*1.0);
     return EI / MaxEI;
 }
-static double EIConfidence(const std::vector<std::pair<double, int>> &list)
-{
+static double EIConfidence(const std::vector<double> &list)
+{// list MUST be in order!
     const int BinNum = 10;
     const int N = list.size();
-    const double min = list.at(0).first;
-    const double max = list.at(N - 1).first;
-    const double BinStep = (max - min) / (BinNum - 1);
-    const double BeginVal = min - BinStep*0.5;
+    const double min = list.at(0);
+    const double max = list.at(N - 1);
+    const double BinStep = abs(max - min) / (BinNum - 1);
+    const double BeginVal = min < max ? min - BinStep*0.5 : max - BinStep*0.5;
     std::vector<int> NList;
     for (int i = 0; i<BinNum; i++)
         NList.push_back(0);
     for (int i = 0; i<N; ++i) {
-        double v = list.at(i).first;
+        double v = list.at(i);
         int n = (v - BeginVal) / BinStep;
         NList[n]++;
     }
     double conf = EIConfidence(NList);
     NList.clear();
-
     return conf;
 }
 
@@ -114,15 +113,18 @@ double FineFit(
     vcg::Point4f &plane);
 
 // [5] Get Minimum-Bounding-Rectangle
+bool PatchDimensionOne(
+    std::vector<std::pair<double, int>> &proList,
+    int &idxBegin, int &idxEnd, double r = 1.414);
 double PatchDimensions(
     const std::vector<vcg::Point3f> & pts,
     const vcg::Point3f &nx,
     const vcg::Point3f &ny,
     vcg::Point3f &Pt_O, vcg::Point3f &Pt_Dx, vcg::Point3f &Pt_Dy,
-    double &ex, double &ey);
+    double *ex = 0, double *ey = 0);
 void ExtractMBR(
     CMeshO &mesh,
-    ObjPlane &APlane,
+    ObjRect &APlane,
     const vcg::Point4f &Plane,
     const std::vector<vcg::Point3f> &PointList,
     const std::vector<int> &IndexList,
@@ -136,10 +138,10 @@ std::vector<vcg::Point4f> DetectHTPlanes(
     const double TNPtsRatio = 0.0, const int TNPtsHard = 0,
     const int ExpPlaneNum = 0,
     std::vector<double> *errors = 0,
-    std::vector<ObjPlane*> *pPlanes = 0,
+    std::vector<ObjPatch*> *pPlanes = 0,
     CMeshO *pMesh = 0, std::vector<int> *pIndexList = 0);
 
-std::vector<ObjPlane*> ExtractPlanes(
+std::vector<ObjPatch*> ExtractPatches(
     CMeshO &mesh,
     const std::vector<int> &indexList,
     const std::vector<vcg::Point3f> &pointList,    
@@ -222,8 +224,8 @@ std::vector<double> GCOReEstimat(
 // ------- For Cube -------
 /////////////////////////////////
 void RemovePlanes(
-    std::vector<ObjPlane*> &planes,
-    const std::vector<ObjPlane*> &planesTobeRemoved,
+    std::vector<ObjRect*> &planes,
+    const std::vector<ObjRect*> &planesTobeRemoved,
     const bool memRelease = false);
 bool IsParallel(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
 bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
@@ -248,54 +250,54 @@ enum PlaneRelation {
     PlaneRelation_Adjacency_R = 0x07,
     PlaneRelation_AtOppo      = 0x08,
 };
-double PlaneIoU(const ObjPlane *P1, const ObjPlane *P2);
+double PlaneIoU(const ObjRect *P1, const ObjRect *P2);
 bool IsOppoFaces(
-    const ObjPlane *P1, const ObjPlane *P2,
+    const ObjRect *P1, const ObjRect *P2,
     const double TAng, const double TIoU);
 bool IsAdjacencyFaces(
-    const ObjPlane *P1, const ObjPlane *P2,
+    const ObjRect *P1, const ObjRect *P2,
     const double TRDis, const double TAng,
     PlaneRelation *adjType = 0);
 PlaneRelation EstPlaneRelation(
-    const ObjPlane *P1, const ObjPlane *P2,
+    const ObjRect *P1, const ObjRect *P2,
     const double TRDis, const double TAng, const double TIoU);
 
 bool BuildBox(
-    ObjPlane* cubePlane[6], ObjPlane* plane,
+    ObjRect* cubePlane[6], ObjRect* plane,
     const double TRDis, const double TAng, const double TIoU);
-std::vector<ObjPlane*> CubeFaceInferringOne(
-    const std::vector<ObjPlane*> &planes,
+std::vector<ObjRect*> CubeFaceInferringOne(
+    const std::vector<ObjRect*> &planes,
     const double TRDis, const double TAng, const double TIoU);
 
 int CubeFaceInferring(
-    std::vector< std::vector<ObjPlane*> > &cubefaces,
-    std::vector<ObjPlane*> &planes,
+    std::vector< std::vector<ObjRect*> > &cubefaces,
+    std::vector<ObjRect*> &planes,
     const double TRDis, const double TAng, const double TIoU,
     const bool remove = true);
 
 
 // [2] Estimate Cube
 void RobustOrientation(
-    const std::vector<ObjPlane*> &CubePlanes,
+    const std::vector<ObjRect*> &CubePlanes,
     vcg::Point3f &NX, vcg::Point3f &NY, vcg::Point3f &NZ,
     const double TAng);
 
 void RobustDimention(
-    const std::vector<ObjPlane*> &CubePlanes,
+    const std::vector<ObjRect*> &CubePlanes,
     vcg::Point3f &NX, vcg::Point3f &NY, vcg::Point3f &NZ,
     vcg::Point3f &OP, vcg::Point3f &SIZE, vcg::Point3f &WEIGHTS,
     const double TAng);
 
-ObjCube* CubeMeasure(const std::vector<ObjPlane*> &CubePlanes, const double TAng);
+ObjCube* CubeMeasure(const std::vector<ObjRect*> &CubePlanes, const double TAng);
 
 // [3] Attach Planes To Cube
 bool BelongToCube(
-    const ObjPlane *plane,
+    const ObjRect *plane,
     const ObjCube *Cube,
     const double TAng);
 int AttachToCube(
-    std::vector<ObjPlane*> &planes, 
-    std::vector< std::vector<ObjPlane*>> &CubeFaces,
+    std::vector<ObjRect*> &planes, 
+    std::vector< std::vector<ObjRect*>> &CubeFaces,
     const std::vector<ObjCube*> &cubes,   
     const double TAng,
     const bool remove = true);

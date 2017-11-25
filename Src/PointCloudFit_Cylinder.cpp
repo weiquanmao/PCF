@@ -15,7 +15,7 @@ ObjCylinder* PCFit::DetectCylinderSymAxis()
     vcg::Point3f center = GetPointList(indexList, pointList, normList, true);
     assert(normList.size() == pointList.size());
 
-    ObjCylinder *cylinder = new ObjCylinder();
+    ObjCylinder *cylinder = new ObjCylinder(0);
     vcg::Point3f PO, N;
 
 	// -- Detect Symmetric Axis
@@ -24,7 +24,7 @@ ObjCylinder* PCFit::DetectCylinderSymAxis()
         return 0;
     }
 
-    cylinder->m_pO = PO;
+    cylinder->m_O = PO;
     cylinder->m_N = N;
 
 	// -- Estimate Radiu & Identify Surface Points
@@ -36,7 +36,7 @@ ObjCylinder* PCFit::DetectCylinderSymAxis()
     }
     
 	for (int iter = 0; iter < 0; iter++) {
-        PO = cylinder->m_pO;
+        PO = cylinder->m_O;
         N = cylinder->m_N;
 
 		std::vector<vcg::Point3f> pointListChecked;
@@ -96,6 +96,6 @@ ObjCylinder* PCFit::DetectCylinderSymAxis()
 		type_hi[index] = Pt_OnCylinder;
 	}
 
-    cylinder->m_pO += center;
+    cylinder->m_O += center;
 	return cylinder;
 }

@@ -5,7 +5,7 @@
 #include <eigenlib/Eigen/Eigenvalues>
 
 
-std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPlane*> &planes)
+std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjRect*> &planes)
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
     std::vector<ObjCube*> cubes;
@@ -15,7 +15,7 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPlane*> &planes
     const double TIoU = Threshold_PRIoU;
 
 	// A. Find Correlate Planes
-    std::vector< std::vector<ObjPlane*> > CubeFaces;
+    std::vector< std::vector<ObjRect*> > CubeFaces;
     int nGroups = CubeFaceInferring(CubeFaces, planes, TRDis, TAng, TIoU, true);
     
 	// B. Estimate Cube
@@ -32,7 +32,7 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPlane*> &planes
     std::vector<int> IdCubePlanes;
     for (int i = 0; i < CubeFaces.size(); ++i)
         for (int j = 0; j < CubeFaces[i].size(); ++j) {
-            IdCubePlanes.push_back(CubeFaces[i][j]->m_PlaneIndex);
+            IdCubePlanes.push_back(CubeFaces[i][j]->m_index);
             delete CubeFaces[i][j];
         }
 

@@ -13,12 +13,12 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-#if 1 // Reconstructed Models
-	const string InputDir = "../../../Data/ModelPC";
-	const string OutputDir = "../../../Data/Result";
+#if 0 // Reconstructed Models
+	const string InputDir = "../../../Data/PCModelRecon";
+	const string OutputDir = "../../../Data/ResultRecon";
 #else // Synthesized Models
-    const string InputDir = "../../../Data/ModelPCStd/50K";
-    const string OutputDir = "../../../Data/ResultStd";
+    const string InputDir = "../../../Data/PCModelSyn/50K";
+    const string OutputDir = "../../../Data/ResultSyn";
 #endif
 	const string szPath = InputDir + "/*.ply";
 

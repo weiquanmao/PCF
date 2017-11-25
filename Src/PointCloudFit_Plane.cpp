@@ -2,7 +2,7 @@
 #include "PointCloudFitUtil.h"
 #include "gco/GCoptimization.h"
 
-std::vector<ObjPlane*> PCFit::DetectPlanesHT(const int expPN)
+std::vector<ObjPatch*> PCFit::DetectPlanesHT(const int expPN)
 {
     CMeshO &mesh = m_meshDoc.mesh->cm;
 
@@ -23,7 +23,7 @@ std::vector<ObjPlane*> PCFit::DetectPlanesHT(const int expPN)
 	const int _THard = fmax(300, pointList.size()*0.01);
 
     // -- Detect Planes
-    std::vector<ObjPlane*> planes;
+    std::vector<ObjPatch*> planes;
     std::vector<vcg::Point4f> infPlanes; // Useless
 
     infPlanes = DetectHTPlanes(
@@ -36,7 +36,7 @@ std::vector<ObjPlane*> PCFit::DetectPlanesHT(const int expPN)
 
     // -- Move Back
     for (int i = 0; i<planes.size(); ++i) {
-        planes.at(i)->m_pO += center;
+        planes.at(i)->m_O += center;
     }
 
 	indexList.clear();
@@ -46,9 +46,9 @@ std::vector<ObjPlane*> PCFit::DetectPlanesHT(const int expPN)
 	return planes;
 }
 
-std::vector<ObjPlane*> PCFit::DetectPlanesGCO(const int expPN, const int iteration)
+std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPN, const int iteration)
 { 
-    std::vector<ObjPlane*> planes;
+    std::vector<ObjPatch*> planes;
     CMeshO &mesh = m_meshDoc.mesh->cm;
 
     // -- Get Normalized Point List (Moved So That the Center is [0,0])
@@ -128,12 +128,12 @@ std::vector<ObjPlane*> PCFit::DetectPlanesGCO(const int expPN, const int iterati
 	catch (GCException e){
 		e.Report();
 	}
-    planes = ExtractPlanes(mesh, indexList, pointList, infPlanes.size(), gcoResult);
+    planes = ExtractPatches(mesh, indexList, pointList, infPlanes.size(), gcoResult);
 
 
     // -- Move Back
     for (int i = 0; i<planes.size(); ++i) {
-        planes.at(i)->m_pO += center;
+        planes.at(i)->m_O += center;
     }
     
     

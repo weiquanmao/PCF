@@ -4,84 +4,130 @@
 #include <vector>
 #include <vcg/space/deprecated_point3.h>
 
-class ObjPlane
+enum GeoObjType {
+    GeoObj_Patch     = 0x100,    
+    Patch_Rectangle  = 0x111,
+    Patch_Circle     = 0x121,
+    Patch_Arbitary   = 0x1FF,
+
+    GeoObj_Solid     = 0x200,
+    Solid_Cube       = 0x211,
+    Solid_Cylinder   = 0x212,
+    Solid_Cone       = 0x221
+};
+
+class GeoObj
+{
+public:    
+    virtual GeoObjType type() const = 0;
+    vcg::Point3f m_O;
+    const int m_index;
+    GeoObj(int index) : m_index(index) { m_O.SetZero(); }
+};
+
+class ObjPatch : public GeoObj
 {
 public:
-	float height() const { return m_dY.Norm(); }
-	float width() const { return m_dX.Norm(); }
-	float thickness() const { return m_dZ.Norm(); }
+    virtual GeoObjType type() const { return GeoObj_Patch; }
 
-	vcg::Point3f m_pO;
-	vcg::Point3f m_dX;
-	vcg::Point3f m_dY;
-	vcg::Point3f m_dZ;
-	vcg::Point3f m_sizeConfidence;
-	vcg::Point3f m_N;
-	double m_varN;
-	const int m_PlaneIndex;
-    ObjPlane(int index)
-		: m_PlaneIndex(index) {
-		m_N.SetZero();
-		m_pO.SetZero();
-		m_dX.SetZero();
-		m_dY.SetZero();
-		m_dZ.SetZero();
-		m_sizeConfidence.SetZero();
-		m_varN = 0.0;
+    vcg::Point3f m_N;
+    double m_varN;
+    ObjPatch(int index)
+        : GeoObj(index) {
+        m_N.SetZero();
+        m_varN = 0.0;
+    }
+};
+class ObjRect : public ObjPatch
+{
+public:
+    GeoObjType type() const { return Patch_Rectangle; }
+
+	float height() const { return m_AY.Norm(); }
+	float width() const { return m_AX.Norm(); }
+
+	vcg::Point3f m_AX;
+	vcg::Point3f m_AY;
+	double  m_EIConfX;
+    double  m_EIConfY;
+
+    ObjRect(int index)
+		: ObjPatch(index) {
+		m_AX.SetZero();
+		m_AY.SetZero();
+        m_EIConfX = 0.0;
+        m_EIConfY = 0.0;
 	}
 };
-class ObjSolid
+class ObjCircle : public ObjPatch
 {
 public:
-	enum SolidType {
-		Solid_Cube = 1,
-		Solid_Cylinder = 2,
-        Solid_Cone = 3
-	};
-	virtual SolidType type() const = 0;
+    GeoObjType type() const { return Patch_Circle; }
+
+    double  m_radius;
+    double  m_EIConfR;
+
+    ObjCircle(int index)
+        : ObjPatch(index) {
+        m_radius = 0.0;
+        m_EIConfR = 0.0;
+    }
+};
+
+class ObjSolid : public GeoObj
+{
+public:
+    virtual GeoObjType type() const { return GeoObj_Solid; }
+    ObjSolid(int index) : GeoObj(index) { }
 };
 class ObjCube : public ObjSolid
 {
 public:
-	vcg::Point3f m_pO;
-	vcg::Point3f m_dX;
-	vcg::Point3f m_dY;
-	vcg::Point3f m_dZ;
-	vcg::Point3f m_sizeConfidence;
-	double DimX() const { return m_dX.Norm(); }
-	double DimY() const { return m_dY.Norm(); }
-	double DimZ() const { return m_dZ.Norm(); }
-    ObjCube()
-		: ObjSolid() {
-		m_sizeConfidence.SetZero();
-		m_pO.SetZero();
-		m_dX.SetZero();
-		m_dY.SetZero();
-		m_dZ.SetZero();
-	}
-    SolidType type() const { return Solid_Cube; }
+    GeoObjType type() const { return Solid_Cube; }
+
+	double DimX() const { return m_AX.Norm(); }
+	double DimY() const { return m_AY.Norm(); }
+	double DimZ() const { return m_AZ.Norm(); }
+
+    vcg::Point3f m_AX;
+    vcg::Point3f m_AY;
+    vcg::Point3f m_AZ;
+    double  m_EIConfX;
+    double  m_EIConfY;
+    double  m_EIConfZ;
+    ObjCube(int index)
+		: ObjSolid(index) {
+        m_EIConfX = 0.0;
+        m_EIConfY = 0.0;
+        m_EIConfZ = 0.0;
+		m_AX.SetZero();
+		m_AY.SetZero();
+		m_AZ.SetZero();
+	}   
 };
 class ObjCylinder : public ObjSolid
 {
 public:
+    GeoObjType type() const { return Solid_Cylinder; }
+
 	double m_radius;
 	double m_length;
-	double m_radius_weight;
-	double m_length_weight;
-	vcg::Point3f m_pO;
-	vcg::Point3f m_N;
-    ObjCylinder()
-		: ObjSolid() {
+	double m_EIConfR;
+	double m_EIConfL;
+    vcg::Point3f m_N;
+    ObjCylinder(int index)
+		: ObjSolid(index) {
+        m_N.SetZero();
 		m_radius = 0.0;
 		m_length = 0.0;
-		m_N.SetZero();
-		m_pO.SetZero();
+        m_EIConfR = 0.0;
+        m_EIConfL = 0.0;
 	}
-    SolidType type() const { return Solid_Cylinder; }
+    
 };
 class ObjSet {
 public:
-	std::vector<ObjPlane*> m_PlaneList;
+	std::vector<ObjPatch*> m_PlaneList;
     std::vector<ObjSolid*> m_SolidList;
     ObjSet() {}
 	~ObjSet() {
@@ -97,7 +143,7 @@ public:
         }
         return false;
     }
-	bool containBord(ObjPlane *plane) {
+	bool containPlane(ObjPatch *plane) {
 		if (plane == 0)
 			return false;
 		for (int i = 0; i<m_PlaneList.size(); i++) {
@@ -116,8 +162,8 @@ public:
         }
 
     }
-	void delPlane(ObjPlane *plane) {
-		std::vector<ObjPlane*>::iterator it;
+	void delPlane(ObjPatch *plane) {
+		std::vector<ObjPatch*>::iterator it;
 		for (it = m_PlaneList.begin(); it != m_PlaneList.end(); it++) {
 			if (*it == plane) {
                 m_PlaneList.erase(it);

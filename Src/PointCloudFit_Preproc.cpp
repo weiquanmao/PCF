@@ -327,7 +327,7 @@ double PCFit::RoughnessAna(bool leftNoisePts)
 
     // Key Parameter
     // rafa = a*miu + b*std
-	const int knn = 40;
+	const int knn = 20;
 	const int a = 1.0;
 	const int b = 3.0;
 	const int N = leftNoisePts ? mesh.vn : mesh.vert.size();

@@ -94,11 +94,11 @@ private:
         const bool bNormalize = false);
 
 	// Detect Plane
-	std::vector<ObjPlane*> DetectPlanesHT(const int expPN);
-    std::vector<ObjPlane*> DetectPlanesGCO(const int expPN, const int iteration = -1);
+	std::vector<ObjPatch*> DetectPlanesHT(const int expPN);
+    std::vector<ObjPatch*> DetectPlanesGCO(const int expPN, const int iteration = -1);
 	
 	// Detect Cude
-    std::vector<ObjCube*> DetectCubeFromPlanes(std::vector<ObjPlane*> &planes);
+    std::vector<ObjCube*> DetectCubeFromPlanes(std::vector<ObjRect*> &planes);
 	
 	// Detect Cylinder
 	ObjCylinder* DetectCylinderSymAxis();

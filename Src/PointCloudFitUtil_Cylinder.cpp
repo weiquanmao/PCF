@@ -391,10 +391,10 @@ void AttachToCylinder(
     _out.close();
 #endif
 
-    cylinder.m_length_weight = EIConfidence(PtCount);
-    cylinder.m_radius = EstRadius(PtMeanR, cylinder.m_radius_weight);
+    cylinder.m_EIConfL = EIConfidence(PtCount);
+    cylinder.m_radius = EstRadius(PtMeanR, cylinder.m_EIConfR);
     cylinder.m_length = lEnd - lBegin;
-    cylinder.m_pO = PO + NN*(lEnd + lBegin) / 2.0;
+    cylinder.m_O = PO + NN*(lEnd + lBegin) / 2.0;
 
     PtOnCylinder.swap(PtOnCylList);
 }

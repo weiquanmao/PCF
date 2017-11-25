@@ -126,9 +126,9 @@ void PCFit::initMParams(const char *iniFile)
     DeNoise_DisRatioOfOutlier = 0.1;
 
 	Precision_HT          = 0.01;
-	Threshold_NPtsPlane   = 0.025;
+	Threshold_NPtsPlane   = 0.05;
 	Threshold_DisToPlane  = 2.0;
-	Threshold_AngToPlane  = 30.0;
+	Threshold_AngToPlane  = 15.0;
     
 	Threshold_PRAng = 15.0;
 	Threshold_PRDis = 0.50;
@@ -396,7 +396,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	}
 
 	// -- 2. Detect All Planes
-	std::vector<ObjPlane*> planes;
+	std::vector<ObjPatch*> planes;
 	{
 #if 1 // Detect Planes by Hough Transform
 		flog("\n\n[=PlaneFit_HT=]: -->> Try to Detect %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
