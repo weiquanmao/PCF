@@ -487,8 +487,9 @@ void ExtractMBR(
     const int PlaneCode = APlne.m_index;
     for (int i = PlaneVerList.size() - 1; i >= 0; --i)
     {
-        // Set labels
         int index = PlaneVerList.at(i);
+
+        // Set labels      
         type_hi[IndexList.at(index)] = PlaneCode;
 
         // Get project points
@@ -573,6 +574,80 @@ void ExtractMBR(
         time.elapsed() / 1000.0);
     OnPPt.clear();
 }
+ObjCircle* CircleCheck(
+    const ObjRect *rect,
+    const std::vector<vcg::Point3f> &PointList,
+    const std::vector<int> &PlaneVerList)
+{
+    QTime time;
+    time.start();
+
+    if (rect == 0)
+        return 0;
+
+    const double T1 = 0.05;
+    const double T2 = 0.9;
+
+    const double w = rect->width();
+    const double h = rect->height();
+    const double r = (w + h) / 2;
+    const double k1 = abs(w - h)*0.5 / r;
+    if (k1 > T1)
+        return 0;
+
+    const vcg::Point3f &ro = rect->m_O;
+    const vcg::Point3f &rx = rect->m_AX;
+    const vcg::Point3f &ry = rect->m_AY;
+    const double cx = w*0.5;
+    const double cy = h*0.5;
+    const double sx = 1.0 / w;
+    const double sy = 1.0 / h;
+    const double r2 = r*r*0.25;
+    const double r4 = r*r*0.125;
+    int count_r = 0;
+    int count_c = 0;
+    int count_ci = 0;
+    for (int i = 0; i < PlaneVerList.size(); ++i) {
+        const vcg::Point3f &p = PointList.at(PlaneVerList.at(i));
+        double x = (p - ro)*rx*sx;
+        double y = (p - ro)*ry*sy;
+        if (x >= 0.0 && x <= w && y >= 0.0 && y <= h) {
+            count_r++;
+            double d = (x - cx)*(x - cx) + (y - cy)*(y - cy);
+            if (d <= r2)
+                count_c++;
+            if (d <= r4)
+                count_ci++;
+        }
+    }
+
+    double k2 = count_c*1.0 / count_r;
+    if (k2 < T2)
+        return 0;
+
+    double k3 = count_ci*1.0 / count_c;
+    if (k3 > 0.6)
+        return 0;
+
+    ObjCircle *circle = new ObjCircle(rect->m_index);
+    circle->m_N = rect->m_N;
+    circle->m_O = ro + (rx + ry) / 2.0;
+    circle->m_varN = rect->m_varN;
+    circle->m_radius = r*0.5;
+
+
+    flog(
+        "      [--CircleCheck--]: < %7.4f, %7.4f >\n"
+        "        | #|X-Y|/|X+Y| :  %7.4f \n"
+        "        | #InnerRate   :  %7.4f \n"
+        "        | #CircleRate  :  %7.4f \n"
+        "        | #------------------------------------- \n"
+        "      [--CircleCheck--]: Done in %.4f seconds. \n",
+        T1,T2,k1,k2,k3,
+        time.elapsed() / 1000.0);
+
+    return circle;
+}
 
 std::vector<vcg::Point4f> DetectHTPlanes(
     const std::vector<vcg::Point3f> &PointList,
@@ -650,13 +725,21 @@ std::vector<vcg::Point4f> DetectHTPlanes(
                 errors->push_back(err);
 
             if (bRetPlane) {
-                ObjRect *onePle = new ObjRect(Pt_OnPlane + planeNum);
-                onePle->m_varN = err;
 
                 // Extract the Minimum-Bounding-Rectangle
+                ObjRect *onePle = new ObjRect(Pt_OnPlane + planeNum);
                 ExtractMBR(*pMesh, *onePle, plane, pointList, indexList, planeVerList);
+                onePle->m_varN = err;
+                // Circle Check
+                ObjCircle *oneCirCle = CircleCheck(onePle, pointList, planeVerList);
 
-                pPlanes->push_back(onePle);
+                if (oneCirCle != 0) {
+                    delete onePle;
+                    pPlanes->push_back(oneCirCle);
+                }
+                else
+                    pPlanes->push_back(onePle);
+
             }
             planeVec.push_back(plane);
             planeNum++;

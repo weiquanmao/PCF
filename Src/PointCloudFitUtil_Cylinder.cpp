@@ -216,23 +216,19 @@ double RobustMean(const std::vector<T> &data)
     }
     return U;
 }
-double EstRadius(const std::vector<double> &RList, double &weight)
+double EstRadius(const std::vector<double> &RList)
 {
     const double cutRatio = 0.2;
     const int n1 = RList.size()*cutRatio;
     const int n2 = RList.size()*(1.0 - 2 * cutRatio);
     double sum = 0.0;
-    double sum2 = 0.0;
     int N = n2-n1+1;    
     for (int i = n1; i<n2; ++i) {
         double r = RList.at(i);
         sum += r;
-        sum2 += r*r;
     }
     double meanR = sum / N;
-    double var = sqrt(sum2 / N - meanR*meanR);
 
-    weight = 1.0 - var / meanR;
     return meanR;
 }
 void AttachToCylinder(
@@ -391,8 +387,7 @@ void AttachToCylinder(
     _out.close();
 #endif
 
-    cylinder.m_EIConfL = EIConfidence(PtCount);
-    cylinder.m_radius = EstRadius(PtMeanR, cylinder.m_EIConfR);
+    cylinder.m_radius = EstRadius(PtMeanR);
     cylinder.m_length = lEnd - lBegin;
     cylinder.m_O = PO + NN*(lEnd + lBegin) / 2.0;
 

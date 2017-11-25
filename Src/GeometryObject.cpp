@@ -5,7 +5,7 @@
 
 #define GeometryObjectHead \
 "# --------  COMMENTS --------\n" \
-"# GeometryObject 2.0         \n" \
+"# GeometryObject 2.1         \n" \
 "# by PCF                     \n" \
 "# Comment by start with '#'. \n" \
 "#                            \n" \
@@ -41,9 +41,8 @@
 "#   | --[For Cylinder]--     \n" \
 "#   | <Solid Type := 2> <ID> \n" \
 "#   | <O.X> <O.Y> <O.Z>      \n" \
-"#   | <N.X> <N.Y> <N.Z> <EX> \n" \
-"#   | <Length> <ELength>     \n" \
-"#   | <Radius> <ERadius>     \n" \
+"#   | <N.X> <N.Y> <N.Z>      \n" \
+"#   | <Radius> <Length>      \n" \
 "#   | ...                    \n" \
 "#   |                        \n" \
 "#   | <Number of Plane(s)>   \n" \
@@ -55,9 +54,8 @@
 "#   | <Y.X> <Y.Y> <Y.Z> <EY> \n" \
 "#   | --[For Circle]--       \n" \
 "#   | <Plane Type := 2> <ID> \n" \
-"#   | <O.X> <O.Y> <O.Z>      \n" \
+"#   | <O.X> <O.Y> <O.Z> <R>  \n" \
 "#   | <N.X> <N.Y> <N.Z> <Var>\n" \
-"#   | <R> <EX>               \n" \
 "#   | ...                    \n" \
 "#   +------------------------\n" \
 "# ----- END OF COMMENTS -----\n" \
@@ -86,8 +84,7 @@ void SaveObjSet(ObjSet *objSet, const char *file)
                 out << "2" << '\t' << cyl->m_index << "\n";
                 out << cyl->m_O.X() << '\t' << cyl->m_O.Y() << '\t' << cyl->m_O.Z() << '\n'
                     << cyl->m_N.X() << '\t' << cyl->m_N.Y() << '\t' << cyl->m_N.Z() << '\n'
-                    << cyl->m_radius << '\t' << cyl->m_EIConfR << '\n'
-                    << cyl->m_length << '\t' << cyl->m_EIConfL << '\n';
+                    << cyl->m_radius << '\t' << cyl->m_length << '\n';
             }
             if (solid->type() == Solid_Cone) { // Cone
                 out << "3" << "\n";
@@ -110,9 +107,8 @@ void SaveObjSet(ObjSet *objSet, const char *file)
             if (patch->type() == Patch_Circle) { // Circle
                 ObjCircle *cir = (ObjCircle*)patch;
                 out << "2" << '\t' << cir->m_index << "\n";
-                out << cir->m_O.X() << '\t' << cir->m_O.Y() << '\t' << cir->m_O.Z() << '\n'
-                    << cir->m_N.X() << '\t' << cir->m_N.Y() << '\t' << cir->m_N.Z() << '\n'
-                    << cir->m_radius << '\t' << cir->m_EIConfR << '\n';
+                out << cir->m_O.X() << '\t' << cir->m_O.Y() << '\t' << cir->m_O.Z() << '\t' << cir->m_radius << '\n'
+                    << cir->m_N.X() << '\t' << cir->m_N.Y() << '\t' << cir->m_N.Z() << '\t' << cir->m_varN << '\n';
             }
             if (patch->type() == Patch_Arbitary) { // Arbitary
                 out << "3" << "\n";
@@ -153,8 +149,7 @@ ObjSet* LoadObjSet(const char *file)
                 ObjCylinder *cyl = new ObjCylinder(nCode);
                 in >> cyl->m_O.X() >> cyl->m_O.Y() >> cyl->m_O.Z()
                     >> cyl->m_N.X() >> cyl->m_N.Y() >> cyl->m_N.Z()
-                    >> cyl->m_radius >> cyl->m_EIConfR
-                    >> cyl->m_length >> cyl->m_EIConfL;
+                    >> cyl->m_radius >> cyl->m_length;
                 objSet->m_SolidList.push_back(cyl);
             }
             if (solidType == 3) { // Cone
@@ -179,9 +174,8 @@ ObjSet* LoadObjSet(const char *file)
             }
             if (patchType == 2) { // Circle
                 ObjCircle *cir = new ObjCircle(nCode);
-                in >> cir->m_O.X() >> cir->m_O.Y() >> cir->m_O.Z()
-                    >> cir->m_N.X() >> cir->m_N.Y() >> cir->m_N.Z() >> cir->m_varN
-                    >> cir->m_radius >> cir->m_EIConfR;
+                in >> cir->m_O.X() >> cir->m_O.Y() >> cir->m_O.Z() >> cir->m_radius
+                    >> cir->m_N.X() >> cir->m_N.Y() >> cir->m_N.Z() >> cir->m_varN;
 
                 objSet->m_PlaneList.push_back(cir);
             }

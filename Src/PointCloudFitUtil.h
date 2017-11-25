@@ -117,7 +117,7 @@ bool PatchDimensionOne(
     std::vector<std::pair<double, int>> &proList,
     int &idxBegin, int &idxEnd, double r = 1.414);
 double PatchDimensions(
-    const std::vector<vcg::Point3f> & pts,
+    const std::vector<vcg::Point3f> &pts,
     const vcg::Point3f &nx,
     const vcg::Point3f &ny,
     vcg::Point3f &Pt_O, vcg::Point3f &Pt_Dx, vcg::Point3f &Pt_Dy,
@@ -128,6 +128,10 @@ void ExtractMBR(
     const vcg::Point4f &Plane,
     const std::vector<vcg::Point3f> &PointList,
     const std::vector<int> &IndexList,
+    const std::vector<int> &PlaneVerList);
+ObjCircle* CircleCheck(
+    const ObjRect *rect,
+    const std::vector<vcg::Point3f> &PointList,
     const std::vector<int> &PlaneVerList);
 
 std::vector<vcg::Point4f> DetectHTPlanes(
@@ -288,7 +292,10 @@ void RobustDimention(
     vcg::Point3f &OP, vcg::Point3f &SIZE, vcg::Point3f &WEIGHTS,
     const double TAng);
 
-ObjCube* CubeMeasure(const std::vector<ObjRect*> &CubePlanes, const double TAng);
+void CubeMeasure(
+    ObjCube *cube,
+    const std::vector<ObjRect*> &CubePlanes,
+    const double TAng);
 
 // [3] Attach Planes To Cube
 bool BelongToCube(
@@ -321,7 +328,7 @@ struct CylinderPointInfo {
     CylinderPointInfo(const int _idx = 0, const double _r = 0.0, const double _l = 0.0)
         : index(_idx), r(_r), l(_l) {};
 };
-double EstRadius(const std::vector<double> &RList, double &weight);
+double EstRadius(const std::vector<double> &RList);
 void AttachToCylinder(
     std::vector<int> &PtOnCylinder,
     ObjCylinder &cylinder,

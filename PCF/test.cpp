@@ -13,12 +13,15 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-#if 0 // Reconstructed Models
+#if _RECON_DATA_ // Reconstructed Models
 	const string InputDir = "../../../Data/PCModelRecon";
 	const string OutputDir = "../../../Data/ResultRecon";
-#else // Synthesized Models
+#elif _SYN_DATA_ // Synthesized Models
     const string InputDir = "../../../Data/PCModelSyn/50K";
     const string OutputDir = "../../../Data/ResultSyn";
+#else
+    const string InputDir = "../../../Data/";
+    const string OutputDir = "../../../Data/";
 #endif
 	const string szPath = InputDir + "/*.ply";
 
@@ -33,7 +36,7 @@ int main(int argc, char *argv[])
 				const string FileName = fileinfo.name;
                 SetConsoleTitleA(FileName.c_str());
 #if 0 // Test Only One
-				if (FileName != "dsp.ply")
+				if (FileName != "scisat.ply")
 					continue;
 #endif
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));

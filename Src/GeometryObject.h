@@ -63,15 +63,8 @@ class ObjCircle : public ObjPatch
 {
 public:
     GeoObjType type() const { return Patch_Circle; }
-
     double  m_radius;
-    double  m_EIConfR;
-
-    ObjCircle(int index)
-        : ObjPatch(index) {
-        m_radius = 0.0;
-        m_EIConfR = 0.0;
-    }
+    ObjCircle(int index) : ObjPatch(index) { m_radius = 0.0; }
 };
 
 class ObjSolid : public GeoObj
@@ -112,16 +105,12 @@ public:
 
 	double m_radius;
 	double m_length;
-	double m_EIConfR;
-	double m_EIConfL;
     vcg::Point3f m_N;
     ObjCylinder(int index)
 		: ObjSolid(index) {
         m_N.SetZero();
 		m_radius = 0.0;
 		m_length = 0.0;
-        m_EIConfR = 0.0;
-        m_EIConfL = 0.0;
 	}
     
 };

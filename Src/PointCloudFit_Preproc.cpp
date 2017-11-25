@@ -326,8 +326,16 @@ double PCFit::RoughnessAna(bool leftNoisePts)
 	vcg::KdTree<float>::PriorityQueue queue;
 
     // Key Parameter
-    // rafa = a*miu + b*std
-	const int knn = 20;
+    // rafa = a*miu + b*std	
+    // const int knn = 20;
+#if  _RECON_DATA_
+    const int knn = 40;
+#elif  _SYN_DATA_
+    const int knn = 20;
+#else
+    const int knn = 20;
+#endif
+
 	const int a = 1.0;
 	const int b = 3.0;
 	const int N = leftNoisePts ? mesh.vn : mesh.vert.size();

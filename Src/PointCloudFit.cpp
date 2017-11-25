@@ -118,17 +118,32 @@ void PCFit::initMParams(const char *iniFile)
 {
 	Threshold_NPts    = 100;
     RefA_Ratio        = 0.01;
-	PlaneNum_Expected = 20;
+	PlaneNum_Expected = 30;
 
 	DeNoise_MaxIteration      = 0;
 	DeNoise_KNNNeighbors      = 50;
     DeNoise_GrowNeighbors     = 20;
     DeNoise_DisRatioOfOutlier = 0.1;
 
-	Precision_HT          = 0.01;
-	Threshold_NPtsPlane   = 0.05;
-	Threshold_DisToPlane  = 2.0;
-	Threshold_AngToPlane  = 15.0;
+    Precision_HT         = 0.01;
+    Threshold_NPtsPlane  = 0.05;
+    Threshold_DisToPlane = 2.0;
+    Threshold_AngToPlane = 15.0;
+
+#if  _RECON_DATA_
+    Precision_HT         = 0.01;
+    Threshold_NPtsPlane  = 0.025;
+    Threshold_DisToPlane = 2.0;
+    Threshold_AngToPlane = 30.0;
+#endif //  _RECON_DATA_
+
+#ifdef _SYN_DATA_
+    Precision_HT         = 0.01;
+    Threshold_NPtsPlane  = 0.05;
+    Threshold_DisToPlane = 2.0;
+    Threshold_AngToPlane = 15.0;
+#endif // _SYN_DATA_
+
     
 	Threshold_PRAng = 15.0;
 	Threshold_PRDis = 0.50;
@@ -415,7 +430,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 #endif
     }
 
-    /*
+    
 	// -- 3. Detect Cube from Planes
 	std::vector<ObjCube*> cubes;
 	if (planes.size() >= 2) {
@@ -429,7 +444,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
     for (int i = 0; i < cubes.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
 
-    
+    /*
     
 	// -- 4. Detect Cylinder
     ObjCylinder *objCylinder = 0;

@@ -331,11 +331,12 @@ vcg::Point3f RobustOneD(
     if (!FaceD.empty()) {
         if (FaceD.size() == 1)
             N = FaceD.at(0).first;
-        else
-        {
+        else {
             double r1 = FaceD.at(0).second * FaceD.at(0).second;
             double r2 = FaceD.at(1).second * FaceD.at(1).second;
-            N = ((FaceD.at(0).first * r2) + (FaceD.at(1).first * r1)) / ((r1 + r2) / 2.0);
+            double k1 = r2 / (r1 + r2);
+            double k2 = r1 / (r1 + r2);
+            N = (FaceD.at(0).first * k1) + (FaceD.at(1).first * k2);
         }
     }
     else {
@@ -343,45 +344,49 @@ vcg::Point3f RobustOneD(
         double w = 0.0;
         for (int i = 0; i<EdgeD.size(); i++)
         {
-            N += EdgeD.at(i).first * EdgeD.at(i).second * EdgeD.at(i).second;
-            w += EdgeD.at(i).second * EdgeD.at(i).second;
+            double r = EdgeD.at(i).second * EdgeD.at(i).second;
+            N += EdgeD.at(i).first * r;
+            w += r;
         }
         N = N / w;
     }
     N.Normalize();
-    return N; /// 未归一化的向量
-              /*
-              std::pair< vcg::Point3f,double > retDW;
-              if (!FaceD.empty()) {
-              if (FaceD.size()==1)
-              {
-              retDW.first = FaceD.at(0).first;
-              retDW.second = 1.0;
-              }
-              else
-              {
-              double r1 = FaceD.at(0).second * FaceD.at(0).second;
-              double r2 = FaceD.at(1).second * FaceD.at(1).second;
-              retDW.first = ((FaceD.at(0).first * r2) + (FaceD.at(1).first * r1))/((r1+r2)/2.0);
-              retDW.second = 1.0 + FaceD.at(0).first*FaceD.at(1).first;
-              }
-              } else {
-              vcg::Point3f d;
-              double w;
-              d.SetZero();
-              w = 0.0;
-              for (int i=0; i<EdgeD.size(); i++)
-              {
-              d += EdgeD.at(i).first * EdgeD.at(i).second * EdgeD.at(i).second;
-              if (EdgeD.at(i).second>w)
-              w = EdgeD.at(i).second;
-              }
-              retDW.first = d;
-              retDW.second = w;
-              }
-              retDW.first.Normalize();
-              return retDW; /// 未归一化的向量
-              */
+    return N; 
+        
+    /*
+    std::pair< vcg::Point3f, double > retDW;
+    if (!FaceD.empty()) {
+        if (FaceD.size() == 1)
+        {
+            retDW.first = FaceD.at(0).first;
+            retDW.second = 1.0;
+        }
+        else
+        {
+            double r1 = FaceD.at(0).second * FaceD.at(0).second;
+            double r2 = FaceD.at(1).second * FaceD.at(1).second;
+            retDW.first = ((FaceD.at(0).first * r2) + (FaceD.at(1).first * r1)) / ((r1 + r2) / 2.0);
+            retDW.second = 1.0 + FaceD.at(0).first*FaceD.at(1).first;
+        }
+    }
+    else {
+        vcg::Point3f d;
+        double w;
+        d.SetZero();
+        w = 0.0;
+        for (int i = 0; i<EdgeD.size(); i++)
+        {
+            d += EdgeD.at(i).first * EdgeD.at(i).second * EdgeD.at(i).second;
+            if (EdgeD.at(i).second>w)
+                w = EdgeD.at(i).second;
+        }
+        retDW.first = d;
+        retDW.second = w;
+    }
+    retDW.first.Normalize();
+    return retDW;
+    */
+              
 }
 void RobustDirections(
     const std::vector< std::pair< vcg::Point3f, double > > &FaceNX,
@@ -489,53 +494,36 @@ void RobustOrientation(
         double zvar = PP->m_varN;
         double xyweight = std::min(PP->m_EIConfX, PP->m_EIConfY);
         if (IsParallel(nz, NZRef, TAng))
-        { // 平行
-            pZ = &NZRef;
-            pZV = &FaceNZ;
-            if (IsParallel(nx, NXRef, TAng)) {
-                pX = &NXRef;
-                pXV = &EdgeNX;
-                pY = &NYRef;
-                pYV = &EdgeNY;
-            }
-            else {
-                pX = &NYRef;
-                pXV = &EdgeNY;
-                pY = &NXRef;
-                pYV = &EdgeNX;
+        { // Z平行于Zref
+            pZ = &NZRef; pZV = &FaceNZ;
+            if (IsParallel(nx, NXRef, TAng)) { // X平行于XRef,Y平行于YRef
+                pX = &NXRef; pXV = &EdgeNX;
+                pY = &NYRef; pYV = &EdgeNY;
+            } else { // Y平行于XRef,X平行于YRef
+                pX = &NYRef; pXV = &EdgeNY;
+                pY = &NXRef; pYV = &EdgeNX;
             }
         }
-        else
-        { // 垂直
-          // 同名边相连的配置假设
-            if (IsParallel(nz, NXRef, TAng)) {
-                pZ = &NXRef;
-                pZV = &FaceNX;
-
-                pX = &NZRef;
-                pXV = &EdgeNZ;
-                pY = &NYRef;
-                pYV = &EdgeNY;
+        else if(IsParallel(nz, NXRef, TAng))
+        { // Z平行于XRef
+            pZ = &NXRef; pZV = &FaceNX;
+            if (IsParallel(nx, NZRef, TAng)) { // X平行于ZRef,Y平行于YRef
+                pX = &NZRef; pXV = &EdgeNZ;
+                pY = &NYRef; pYV = &EdgeNY;
+            } else { // X平行于YRef,Y平行于ZRef
+                pX = &NYRef; pXV = &EdgeNY;
+                pY = &NZRef; pYV = &EdgeNZ;
             }
-            else {
-                pZ = &NYRef;
-                pZV = &FaceNY;
-
-                pX = &NXRef;
-                pXV = &EdgeNX;
-                pY = &NZRef;
-                pYV = &EdgeNZ;
-            }
-
-            // 与假设相反->替换位置
-            if (!(IsParallel(nx, NXRef, TAng) ||
-                IsPerpendicular(nx, NXRef, TAng))) {
-                vcg::Point3f *pTemp = pX;
-                std::vector< std::pair< vcg::Point3f, double > > *pVTemp = pXV;
-                pX = pY;
-                pXV = pYV;
-                pY = pTemp;
-                pYV = pVTemp;
+        }
+        else {
+            // Z平行于YRef
+            pZ = &NYRef; pZV = &FaceNY;
+            if (IsParallel(nx, NXRef, TAng)) { // X平行于XRef,Y平行于ZRef
+                pX = &NXRef; pXV = &EdgeNX;
+                pY = &NZRef; pYV = &EdgeNZ;
+            } else { // X平行于ZRef,Y平行于XRef
+                pX = &NZRef; pXV = &EdgeNZ;
+                pY = &NXRef; pYV = &EdgeNX;
             }
         }
 
@@ -707,59 +695,35 @@ void RobustDimention(
         double xyweight = std::min(PP->m_EIConfX, PP->m_EIConfY);
         if (IsParallel(nz, NX, TAng))
         { // YZ平面平行
-            pNZ = &NX;
-            pFZ = &FaceInterX;
-            if (IsParallel(nx, NY, TAng))
-            { // x//Y y//Z
-                pNX = &NY;
-                pEX = &EdgeInterY;
-                pNY = &NZ;
-                pEY = &EdgeInterZ;
-            }
-            else
-            {// x//Z y//Y
-                pNX = &NZ;
-                pEX = &EdgeInterZ;
-                pNY = &NY;
-                pEY = &EdgeInterY;
+            pNZ = &NX; pFZ = &FaceInterX;
+            if (IsParallel(nx, NY, TAng)) { // x//Y y//Z
+                pNX = &NY; pEX = &EdgeInterY;
+                pNY = &NZ; pEY = &EdgeInterZ;
+            } else {// x//Z y//Y
+                pNX = &NZ; pEX = &EdgeInterZ;
+                pNY = &NY; pEY = &EdgeInterY;
             }
         }
         else if (IsParallel(nz, NY, TAng))
         { // XZ平面平行
-            pNZ = &NY;
-            pFZ = &FaceInterY;
-            if (IsParallel(nx, NX, TAng))
-            { // x//X y//Z
-                pNX = &NX;
-                pEX = &EdgeInterX;
-                pNY = &NZ;
-                pEY = &EdgeInterZ;
-            }
-            else
-            {// x//Z y//X
-                pNX = &NZ;
-                pEX = &EdgeInterZ;
-                pNY = &NX;
-                pEY = &EdgeInterX;
+            pNZ = &NY; pFZ = &FaceInterY;
+            if (IsParallel(nx, NX, TAng)) { // x//X y//Z
+                pNX = &NX; pEX = &EdgeInterX;
+                pNY = &NZ; pEY = &EdgeInterZ;
+            } else {// x//Z y//X
+                pNX = &NZ; pEX = &EdgeInterZ;
+                pNY = &NX; pEY = &EdgeInterX;
             }
         }
         else
         { // XY平面平行
-            pNZ = &NZ;
-            pFZ = &FaceInterZ;
-            if (IsParallel(nx, NX, TAng))
-            { // x//X y//Y
-                pNX = &NX;
-                pEX = &EdgeInterX;
-                pNY = &NY;
-                pEY = &EdgeInterY;
-            }
-            else
-            {// x//Y y//X
-                pNX = &NY;
-                pEX = &EdgeInterY;
-                pNY = &NX;
-                pEY = &EdgeInterX;
+            pNZ = &NZ; pFZ = &FaceInterZ;
+            if (IsParallel(nx, NX, TAng)) { // x//X y//Y
+                pNX = &NX; pEX = &EdgeInterX;
+                pNY = &NY; pEY = &EdgeInterY;
+            } else {// x//Y y//X
+                pNX = &NY; pEX = &EdgeInterY;
+                pNY = &NX; pEY = &EdgeInterX;
             }
         }
         std::pair< double, double > IF = FaceInter(*pNZ, op, nx, ny);
@@ -810,9 +774,11 @@ void RobustDimention(
 }
 
 
-ObjCube* CubeMeasure(const std::vector<ObjRect*> &CubePlanes, const double TAng)
+void CubeMeasure(
+    ObjCube *cube,
+    const std::vector<ObjRect*> &CubePlanes,
+    const double TAng)
 {
-    ObjCube *cube = new ObjCube(0);
     // 1.Direction
     vcg::Point3f NX, NY, NZ;
     RobustOrientation(CubePlanes, NX, NY, NZ, TAng);
@@ -827,7 +793,6 @@ ObjCube* CubeMeasure(const std::vector<ObjRect*> &CubePlanes, const double TAng)
     cube->m_EIConfX = sizeweights.X();
     cube->m_EIConfY = sizeweights.Y();
     cube->m_EIConfZ = sizeweights.Z();
-    return cube;
 }
 
 // [4] Incorporation

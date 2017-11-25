@@ -5,7 +5,7 @@
 #include <eigenlib/Eigen/Eigenvalues>
 
 
-std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjRect*> &planes)
+std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPatch*> &planes)
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
     std::vector<ObjCube*> cubes;
@@ -13,20 +13,31 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjRect*> &planes)
     const double TRDis = Threshold_PRDis;
     const double TAng = Threshold_PRAng;
     const double TIoU = Threshold_PRIoU;
+    // A. Split Rect and Circle
+    std::vector<ObjRect*> rects;
+    std::vector<ObjCircle*> circles;
+    for (int i = 0; i < planes.size(); ++i) {
+        ObjPatch *patch = planes.at(i);
+        if (patch->type() == Patch_Rectangle)
+            rects.push_back((ObjRect*)patch);
+        if (patch->type() == Patch_Circle)
+            circles.push_back((ObjCircle*)patch);
+    }
 
-	// A. Find Correlate Planes
+	// B. Find Correlate Planes
     std::vector< std::vector<ObjRect*> > CubeFaces;
-    int nGroups = CubeFaceInferring(CubeFaces, planes, TRDis, TAng, TIoU, true);
+    int nGroups = CubeFaceInferring(CubeFaces, rects, TRDis, TAng, TIoU, true);
     
-	// B. Estimate Cube
+	// C. Estimate Cube
     for (int i = 0; i < nGroups; ++i) {
-        ObjCube *Cube = CubeMeasure(CubeFaces.at(i), TAng);
+        ObjCube *Cube = new ObjCube(Pt_OnCube + i);
+        CubeMeasure(Cube, CubeFaces.at(i), TAng);
         cubes.push_back(Cube);
     }
-	// C. Attach Planes To Cube
-    int nAdded = AttachToCube(planes, CubeFaces, cubes, TAng, true);
+	// D. Attach Planes To Cube
+    // int nAdded = AttachToCube(rects, CubeFaces, cubes, TAng, true);
    
-	// D. Set Label And Remove Surface Planes
+	// E. Set Label
 	CMeshO::PerVertexAttributeHandle<PtType> type_hi = 
         vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
     std::vector<int> IdCubePlanes;
@@ -49,6 +60,15 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjRect*> &planes)
             }
 		}
 	}
+
+    // F. Return planes
+    std::vector<ObjPatch*> _planes;
+    for (int i = 0; i < rects.size(); ++i)
+        _planes.push_back(rects.at(i));
+    for (int i = 0; i < circles.size(); ++i)
+        _planes.push_back(circles.at(i));
+    planes.swap(_planes);
+
 
 	return cubes;
 }

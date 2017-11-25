@@ -1,6 +1,12 @@
 #ifndef _POINT_CLOUD_FIT_H_FILE_
 #define _POINT_CLOUD_FIT_H_FILE_
 
+#if 0
+#define _RECON_DATA_ 1
+#else
+#define _SYN_DATA_ 1
+#endif
+
 #include "MeshDoc.h"
 #include "GeometryObject.h"
 #include "utility/flog.h"
@@ -98,7 +104,7 @@ private:
     std::vector<ObjPatch*> DetectPlanesGCO(const int expPN, const int iteration = -1);
 	
 	// Detect Cude
-    std::vector<ObjCube*> DetectCubeFromPlanes(std::vector<ObjRect*> &planes);
+    std::vector<ObjCube*> DetectCubeFromPlanes(std::vector<ObjPatch*> &planes);
 	
 	// Detect Cylinder
 	ObjCylinder* DetectCylinderSymAxis();
