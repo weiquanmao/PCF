@@ -75,9 +75,9 @@ void SaveObjSet(ObjSet *objSet, const char *file)
                 ObjCube *cube = (ObjCube*)solid;
                 out << "1" << '\t' << cube->m_index << "\n";
                 out << cube->m_O.X() << '\t' << cube->m_O.Y() << '\t' << cube->m_O.Z() << '\n'
-                    << cube->m_AX.X() << '\t' << cube->m_AX.Y() << '\t' << cube->m_AX.Z() << cube->m_EIConfX << '\n'
-                    << cube->m_AY.X() << '\t' << cube->m_AY.Y() << '\t' << cube->m_AY.Z() << cube->m_EIConfY << '\n'
-                    << cube->m_AZ.X() << '\t' << cube->m_AZ.Y() << '\t' << cube->m_AZ.Z() << cube->m_EIConfZ << '\n';
+                    << cube->m_AX.X() << '\t' << cube->m_AX.Y() << '\t' << cube->m_AX.Z() << '\t' << cube->m_EIConfX << '\n'
+                    << cube->m_AY.X() << '\t' << cube->m_AY.Y() << '\t' << cube->m_AY.Z() << '\t' << cube->m_EIConfY << '\n'
+                    << cube->m_AZ.X() << '\t' << cube->m_AZ.Y() << '\t' << cube->m_AZ.Z() << '\t' << cube->m_EIConfZ << '\n';
             }
             if (solid->type() == Solid_Cylinder) { // Cylinder
                 ObjCylinder *cyl = (ObjCylinder*)solid;

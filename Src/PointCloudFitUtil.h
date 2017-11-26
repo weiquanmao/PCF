@@ -67,7 +67,6 @@ static double EIConfidence(const std::vector<double> &list)
 }
 
 
-
 /////////////////////////////////
 // ------- For Plane -------
 /////////////////////////////////
@@ -227,12 +226,14 @@ std::vector<double> GCOReEstimat(
 /////////////////////////////////
 // ------- For Cube -------
 /////////////////////////////////
+
+bool IsParallel(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
+bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
+double PlaneIoU(const ObjRect *P1, const ObjRect *P2);
 void RemovePlanes(
     std::vector<ObjRect*> &planes,
     const std::vector<ObjRect*> &planesTobeRemoved,
     const bool memRelease = false);
-bool IsParallel(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
-bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
 
 // [1] Infer Cube Faces
 enum PlaneRelation {
@@ -254,7 +255,6 @@ enum PlaneRelation {
     PlaneRelation_Adjacency_R = 0x07,
     PlaneRelation_AtOppo      = 0x08,
 };
-double PlaneIoU(const ObjRect *P1, const ObjRect *P2);
 bool IsOppoFaces(
     const ObjRect *P1, const ObjRect *P2,
     const double TAng, const double TIoU);
@@ -298,15 +298,18 @@ void CubeMeasure(
     const double TAng);
 
 // [3] Attach Planes To Cube
-bool BelongToCube(
-    const ObjRect *plane,
+bool MergeToCube(
+    CMeshO &mesh,
+    ObjRect *plane,
+    std::vector<ObjRect*> &planeSplit,
     const ObjCube *Cube,
-    const double TAng);
+    const double TAng, const double TDis);
 int AttachToCube(
+    CMeshO &mesh,
     std::vector<ObjRect*> &planes, 
     std::vector< std::vector<ObjRect*>> &CubeFaces,
     const std::vector<ObjCube*> &cubes,   
-    const double TAng,
+    const double TAng, const double TDis,
     const bool remove = true);
 
 /////////////////////////////////

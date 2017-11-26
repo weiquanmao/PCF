@@ -1,7 +1,7 @@
 #ifndef _POINT_CLOUD_FIT_H_FILE_
 #define _POINT_CLOUD_FIT_H_FILE_
 
-#if 1
+#if 0
 #define _RECON_DATA_ 1
 #else
 #define _SYN_DATA_ 1
@@ -29,7 +29,8 @@ enum _PtType {
     Pt_OnCylinder = 0x0800, // 01000
     Pt_OnCone     = 0x1800  // 11000
 };
-
+int _ResetPlaneCode();
+int _GetPlaneCode();
 
 class PCFit
 {

@@ -28,7 +28,17 @@ void doFailure() {
 	system("pause");
 	exit(1);
 }
-
+int _i = 0;
+int _ResetPlaneCode()
+{
+    int old = _i;
+    _i = 0;
+    return old;
+}
+int _GetPlaneCode()
+{
+    return Pt_OnPlane + _i++;
+}
 
 PCFit::PCFit(const int nThread)
 	: m_GEOObjSet(0)
@@ -61,7 +71,7 @@ void PCFit::printLogo()
 	flog(
 		"\n\n"
 		"    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   \n"
-		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.6.0                \n"
+		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.7.0                \n"
 		"  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA  \n"
 		" /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  \n"
 		"                                                 |  Email: weiqm@buaa.edu.cn  \n"
@@ -472,7 +482,7 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 
 	// -- 5. Set Planes
 	{
-		flog("\n\n[=PlanesCheck=]: %d plane(s) are left. \n", planes.size());
+		flog("\n\n[=PlanesCheck=]: -->> %d plane(s) are left. << -- \n", planes.size());
 		m_GEOObjSet->m_PlaneList.swap(planes);
 	}
 

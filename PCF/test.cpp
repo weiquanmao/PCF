@@ -13,6 +13,8 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
+    DWORD T1, T2;
+    T1 = timeGetTime();
 #if _RECON_DATA_ // Reconstructed Models
 	const string InputDir = "../../../Data/PCModelRecon";
 	const string OutputDir = "../../../Data/ResultRecon";
@@ -35,8 +37,8 @@ int main(int argc, char *argv[])
 			{
 				const string FileName = fileinfo.name;
                 SetConsoleTitleA(FileName.c_str());
-#if 1 // Test Only One
-				if (FileName != "RadarSat.ply")
+#if 0 // Test Only One
+				if (FileName != "spot.ply")
 					continue;
 #endif
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));
@@ -78,9 +80,15 @@ int main(int argc, char *argv[])
 		} while (_findnext(hFile, &fileinfo) == 0);
 		_findclose(hFile);
 	}
+    T2 = timeGetTime();
+    clog << "\n\n"
+        << "===========================================\n"
+        << " # Total Elapsed Time: " << (T2 - T1)*1.0 / 1000 << " Seconds.\n"
+        << "===========================================\n"
+        << "\n\n";
     
-    // MelodyPlay_Notice();
     SetConsoleTitleA("-- Finished --");
+    //MelodyPlay_Notice();
 	system("pause");
 	return 0;
 }

@@ -13,6 +13,7 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPatch*> &planes
     const double TRDis = Threshold_PRDis;
     const double TAng = Threshold_PRAng;
     const double TIoU = Threshold_PRIoU;
+    const double TDis = m_refa*Threshold_DisToPlane;
     // A. Split Rect and Circle
     std::vector<ObjRect*> rects;
     std::vector<ObjCircle*> circles;
@@ -23,19 +24,23 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPatch*> &planes
         if (patch->type() == Patch_Circle)
             circles.push_back((ObjCircle*)patch);
     }
+    flog("    >> Split [ %d ] patch(es) with [ %d ] rectangle(s) and [ %d ] circles\n",
+        planes.size(), rects.size(), circles.size());
 
 	// B. Find Correlate Planes
+    flog("    >> Infer cubes for [ %d ] planes ... \n", rects.size());
     std::vector< std::vector<ObjRect*> > CubeFaces;
     int nGroups = CubeFaceInferring(CubeFaces, rects, TRDis, TAng, TIoU, true);
     
-	// C. Estimate Cube
+	// C. Estimate Cube  
     for (int i = 0; i < nGroups; ++i) {
+        flog("    >> Estimate [ No.%d ] cube ... \n", i+1);
         ObjCube *Cube = new ObjCube(Pt_OnCube + i);
         CubeMeasure(Cube, CubeFaces.at(i), TAng);
         cubes.push_back(Cube);
     }
 	// D. Attach Planes To Cube
-    // int nAdded = AttachToCube(rects, CubeFaces, cubes, TAng, true);
+    int nAdded = AttachToCube(mesh, rects, CubeFaces, cubes, TAng, TDis, true);
    
 	// E. Set Label
 	CMeshO::PerVertexAttributeHandle<PtType> type_hi = 

@@ -681,6 +681,7 @@ std::vector<vcg::Point4f> DetectHTPlanes(
 
     std::vector<vcg::Point4f> planeVec;
     int planeNum = 0;
+    _ResetPlaneCode();
     while (1)
     {
         if (pointList.empty())
@@ -727,7 +728,7 @@ std::vector<vcg::Point4f> DetectHTPlanes(
             if (bRetPlane) {
 
                 // Extract the Minimum-Bounding-Rectangle
-                ObjRect *onePle = new ObjRect(Pt_OnPlane + planeNum);
+                ObjRect *onePle = new ObjRect(_GetPlaneCode());
                 ExtractMBR(*pMesh, *onePle, plane, pointList, indexList, planeVerList);
                 onePle->m_varN = err;
                 // Circle Check
@@ -791,11 +792,10 @@ std::vector<ObjPatch*> ExtractPatches(
         int label = labels[i];
         planeVerList[label].push_back(i);
     }
-    int PlaneID = Pt_OnPlane;
     for (int k = 1; k < NPlane + 1; k++) {
         if (planeVerList[k].empty())
             continue;
-        ObjRect *onePle = new ObjRect(PlaneID++);
+        ObjRect *onePle = new ObjRect(_GetPlaneCode());
 
         vcg::Point4f plane;
         double err = FineFit(pointList, planeVerList[k], plane);

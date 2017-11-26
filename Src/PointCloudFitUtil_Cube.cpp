@@ -12,26 +12,6 @@ bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const doubl
 {
     return CheckPerpendicular(VCGAngle(L1, L2)) < abs(AngTD);
 }
-
-void RemovePlanes(
-    std::vector<ObjRect*> &planes,
-    const std::vector<ObjRect*> &planesTobeRemoved,
-    const bool memRelease)
-{
-    for (int i = 0; i < planesTobeRemoved.size(); ++i) {
-        ObjRect* toBeRomeved = planesTobeRemoved.at(i);
-        for (int j = 0; j < planes.size(); ++j) {
-            if (planes.at(j) == toBeRomeved) {
-                planes.erase(planes.begin() + j);
-                if (memRelease)
-                    delete toBeRomeved;
-                break;
-            }
-        }
-    }
-}
-
-// [1] Infer Cube Faces
 double PlaneIoU(const ObjRect *P1, const ObjRect *P2)
 {
     double oX = (P2->m_O - P1->m_O) * P1->m_AX / P1->m_AX.SquaredNorm();
@@ -50,14 +30,14 @@ double PlaneIoU(const ObjRect *P1, const ObjRect *P2)
         IOU::Point(1, 0));
     IOU::Quad quad2(
         IOU::Point(oX, oY),
-        IOU::Point(oX+yX, oY+yY),
-        IOU::Point(oX+yX+xX, oY+yY+xY),
-        IOU::Point(oX+xX, oY+xY));
+        IOU::Point(oX + yX, oY + yY),
+        IOU::Point(oX + yX + xX, oY + yY + xY),
+        IOU::Point(oX + xX, oY + xY));
     if (quad2.isAntiClockWiseConvex())
         quad2.flipBack();
 
     double interArea = CalInterArea(quad1, quad2);
-    
+
     double s1 = quad1.area();
     double s2 = quad2.area();
     assert(interArea >= 0.0);
@@ -67,6 +47,26 @@ double PlaneIoU(const ObjRect *P1, const ObjRect *P2)
     return interArea / (s1 + s2 - interArea);
 
 }
+void RemovePlanes(
+    std::vector<ObjRect*> &planes,
+    const std::vector<ObjRect*> &planesTobeRemoved,
+    const bool memRelease)
+{
+    for (int i = 0; i < planesTobeRemoved.size(); ++i) {
+        ObjRect* toBeRomeved = planesTobeRemoved.at(i);
+        for (int j = 0; j < planes.size(); ++j) {
+            if (planes.at(j) == toBeRomeved) {
+                planes.erase(planes.begin() + j);
+                if (memRelease)
+                    delete toBeRomeved;
+                break;
+            }
+        }
+    }
+}
+
+
+// [1] Infer Cube Faces
 bool IsOppoFaces(
     const ObjRect *P1, const ObjRect *P2,
     const double TAng, const double TIoU)
@@ -313,11 +313,19 @@ std::vector<ObjRect*> CubeFaceInferringOne(
             continue;
 
         if (pNum > finalOut.size()) {
+            flog(
+                "        |--------------------- \n"
+                "        |");
             finalOut.clear();
             for (int j = 0; j < 6; ++j) {
-                if (tempList[j] != 0)
+                if (tempList[j] != 0) {
                     finalOut.push_back(tempList[j]);
+                    flog(" %d", tempList[j]->m_index);
+                }
+                else
+                    flog(" 000");
             }
+            flog("\n");
             if (finalOut.size() == 6)
                 break;
         }
@@ -333,6 +341,12 @@ int CubeFaceInferring(
 {
     QTime time;
     time.start();
+    flog(
+        "      [--Cube_Infer--]: #Ple-%d\n"
+        "        | #TRDis   : %.4f \n"
+        "        | #TAng    : %.4f \n",
+        planes.size(),
+        TRDis, TAng);
 
     std::vector<ObjRect*> _planes = planes;
     std::vector< std::vector<ObjRect*> > _cubefaces;
@@ -347,14 +361,10 @@ int CubeFaceInferring(
     }
 
     flog(
-        "      [--Cube_Infer--]: #Ple-%d\n"
-        "        | #TRDis    : %.4f \n"
-        "        | #TAng    : %.4f \n"
+        "        |===================== \n"
         "        | #Cube    : %d \n"
         "        | #LeftPle : %d \n"
         "      [--Cube_Infer--]: Done in %.4f seconds. \n",
-        planes.size(),
-        TRDis, TAng,
         _cubefaces.size(), _planes.size(),
         time.elapsed() / 1000.0);
 
@@ -842,73 +852,152 @@ void CubeMeasure(
     cube->m_EIConfZ = sizeweights.Z();
 }
 
-// [4] Incorporation
-bool BelongToCube(
-    const ObjRect *plane,
+// [4] Merge And Cut
+bool MergeToCube(
+    CMeshO &mesh,
+    ObjRect *plane,
+    std::vector<ObjRect*> &planeSplit,
     const ObjCube *Cube,
-    const double TAng)
+    const double TAng, const double TDis)
 {
     if (plane == 0 || Cube == 0)
         return false;
 
-    double lx = Cube->DimX();
-    double ly = Cube->DimY();
-    double lz = Cube->DimZ();
-    vcg::Point3f centerCube = Cube->m_O + (Cube->m_AX + Cube->m_AY + Cube->m_AZ) / 2.0;
+    vcg::Point3f co = Cube->m_O;
+    vcg::Point3f cx = Cube->m_AX;
+    vcg::Point3f cy = Cube->m_AY;
+    vcg::Point3f cz = Cube->m_AZ;
 
-    vcg::Point3f np = plane->m_N;
-    vcg::Point3f centerPlane = plane->m_O + (plane->m_AX + plane->m_AY) / 2.0;
+    vcg::Point3f po = plane->m_O;
+    vcg::Point3f pn = plane->m_N;
+    vcg::Point3f px = plane->m_AX;
+    vcg::Point3f py = plane->m_AY;
+    vcg::Point3f p_center = po + (px + py) / 2.0;
 
-    double lt, la, lb;
-    vcg::Point3f nt, na, nb;
-    // 1->Æ½ÐÐ
-    if (IsParallel(np, Cube->m_AX, TAng*2.0)) {
-        lt = lx; nt = Cube->m_AX;
-        la = ly; na = Cube->m_AY;
-        lb = lz; nb = Cube->m_AZ;
+    vcg::Point3f _o = co;
+    vcg::Point3f _n = cz;
+    vcg::Point3f _u = cx;
+    vcg::Point3f _v = cy;
+    // 1. Check Close Parallel
+    double _s = 0.0;
+    if (IsParallel(pn, cx,TAng)) { // in Y_Z
+        _s = Cube->DimX();
+        _n = cx; _u = cy; _v = cz;       
     }
-    else if (IsParallel(np, Cube->m_AY, TAng*2.0)) {
-        lt = ly; nt = Cube->m_AY;
-        la = lx; na = Cube->m_AX;
-        lb = lz; nb = Cube->m_AZ;
+    else if (IsParallel(pn, cy, TAng)) { // in X_Z
+        _s = Cube->DimY();
+        _n = cy; _u = cz; _v = cx;
     }
-    else if (IsParallel(np, Cube->m_AZ, TAng*2.0)) {
-        lt = lz; nt = Cube->m_AZ;
-        la = ly; na = Cube->m_AY;
-        lb = lx; nb = Cube->m_AX;
+    else if (IsParallel(pn, cz, TAng)) { // in X_Y
+        _s = Cube->DimZ();
+        _n = cz; _u = cx; _v = cy;
     }
+    double _l = (p_center-co)*_n/_n.Norm();
+    if (abs(_l / _s) < 0.2 &&
+        abs(_l) < 2*TDis)// at near
+        _o = co;
+    else if (abs(_l / _s - 1.0) < 0.2 &&
+        abs(_l - _s) < 2*TDis)// at far
+        _o = co + _n;
     else
         return false;
-
-    // 2.¾àÀë
-    nt.Normalize();
-    na.Normalize();
-    nb.Normalize();
-    double disN = abs(nt*(centerCube - centerPlane));
-    double thresholdN = lt / 2.0;
-    double disA = abs((centerCube - centerPlane)*na);
-    double disB = abs((centerCube - centerPlane)*nb);
-    double thresholdT = sqrt(lx*lx + ly*ly + lz*lz - lt*lt) / 2.0;
-    if (abs(disN - thresholdN) < thresholdN*0.2 &&
-        disA < la / 2.0 && disB < lb / 2.0)
+    // 2. Check Ratio
+    const int nCode = plane->m_index;
+    CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
+    std::vector<int> idxOnPlane, idxOnCube;
+    std::vector<vcg::Point3f> ptsOnPlane, ptsOnCube;
+    int idx = 0;
+    double r1 = 1.0 / _u.SquaredNorm();
+    double r2 = 1.0 / _v.SquaredNorm();
+    double _d1 = -2 * TDis;
+    double _d2 = 1+ 2 * TDis;
+    for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); vi++, idx++) {
+        if (type_hi[vi] == nCode) { // Belong to plane
+            vcg::Point3f &p = vi->cP();
+            
+            double x = ((p-_o)*_u)*r1;
+            double y = ((p-_o)*_v)*r2;
+            if (x >= _d1 && x <= _d2 && y >= _d1 && y <= _d2) {
+                idxOnCube.push_back(idx);
+                ptsOnCube.push_back(p);
+            }
+            else {
+                idxOnPlane.push_back(idx);
+                ptsOnPlane.push_back(p);
+            }               
+        }
+    }
+    double ratio = ptsOnCube.size()*1.0 / (ptsOnCube.size()+ptsOnPlane.size());
+    const double T1 = 0.8;
+    const int T2 = 300;
+    if (ratio >= T1) {// Have Enogh Cover
+        for (int i = ptsOnPlane.size() - 1; i >= 0; --i) {
+            int index = idxOnPlane.at(i);
+            type_hi[index] = Pt_Undefined;
+        }
         return true;
-    else
-        return false;
+    }
+    else if (ptsOnCube.size()>T2){// Need Cut
+        while (1) {
+            // Pick Max
+            std::vector<int> idxList;
+            for (int i = 0; i < ptsOnPlane.size(); ++i)
+                idxList.push_back(i);
+            PicMaxRegion(ptsOnPlane, idxList, TDis);
+            if (idxList.size() < 300) {
+                for (int i = idxList.size() - 1; i >= 0; --i) {
+                    int index = idxList.at(i);
+                    type_hi[idxOnPlane.at(index)] = Pt_Undefined;
+                }
+                break;
+            }
+            // Fit
+            vcg::Point4f infPlane;
+            double err = FineFit(ptsOnPlane, idxList, infPlane);
+
+            // MBR
+            int newCode = _GetPlaneCode();
+            ObjRect *onePle = new ObjRect(newCode);
+            ExtractMBR(mesh, *onePle, infPlane, ptsOnPlane, idxOnPlane, idxList);
+            onePle->m_varN = err;
+
+            // A New Split
+            planeSplit.push_back(onePle);
+            for (int i = idxList.size() - 1; i >= 0; --i) {
+                int index = idxList.at(i);
+                type_hi[idxOnPlane.at(index)] = newCode;
+                ptsOnPlane.erase(ptsOnPlane.begin() + index);
+                idxOnPlane.erase(idxOnPlane.begin() + index);               
+            }
+        }
+        return true;
+    }
+
+    return false;   
 }
 int AttachToCube(
+    CMeshO &mesh,
     std::vector<ObjRect*> &planes,
     std::vector< std::vector<ObjRect*>> &CubeFaces,
     const std::vector<ObjCube*> &cubes,   
-    const double TAng,
+    const double TAng, const double TDis,
     const bool remove)
 {
     std::vector<ObjRect*> planesAdded;
+    std::vector<ObjRect*> planesSplit;
     for (int i = 0; i < planes.size(); i++) {
         ObjRect *ple = planes.at(i);
-        for (int k = 0; k < cubes.size(); ++k) {
-            if (BelongToCube(ple, cubes.at(k), TAng)) {
+        std::vector<ObjRect*> split;
+        flog("    >> Attach [ ID.%d ] ... \n", ple->m_index);
+        for (int k = 0; k < cubes.size(); ++k) {          
+            if (MergeToCube(mesh, ple, split, cubes.at(k), TAng, TDis)) {
+                flog("    [ -- Attached to the [ No.%d ] cube with [ %d ] split(s) ... -- ]\n", k+1, split.size());
                 CubeFaces.at(k).push_back(ple);
                 planesAdded.push_back(ple);
+                for (int r = 0; r < split.size(); ++r) {
+                    planesSplit.push_back(split.at(r));
+                }
                 break;
             }
         }
@@ -916,6 +1005,8 @@ int AttachToCube(
 
     if (remove)
         RemovePlanes(planes, planesAdded, false);
-
+    for (int i = 0; i < planesSplit.size(); ++i) {
+        planes.push_back(planesSplit.at(i));
+    }
     return planesAdded.size();
 }
