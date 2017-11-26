@@ -147,7 +147,7 @@ void PCFit::initMParams(const char *iniFile)
     
 	Threshold_PRAng = 15.0;
 	Threshold_PRDis = 0.50;
-    Threshold_PRIoU = 0.85;
+    Threshold_PRIoU = 0.75;
 
 	Threshold_NPtsCyl = 0.2;
 

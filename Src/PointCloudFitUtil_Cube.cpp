@@ -119,14 +119,34 @@ bool IsAdjacencyFaces(
     vcg::Point3f O1 = P1->m_O + (P1->m_AX + P1->m_AY) / 2.0;
     vcg::Point3f O2 = P2->m_O + (P2->m_AX + P2->m_AY) / 2.0;
     vcg::Point3f O2O = O2 - O1;
+    vcg::Point3f O2O_1 = O2O - (P1->m_N * (O2O*P1->m_N)) / P1->m_N.SquaredNorm();
+    vcg::Point3f O2O_2 = O2O - (P2->m_N * (O2O*P2->m_N)) / P2->m_N.SquaredNorm();
     vcg::Point3f NN = P1->m_N^P2->m_N;
-    if (!IsPerpendicular(O2O, NN, 30.0))
+    if (!IsPerpendicular(O2O_1, NN, 30.0) ||
+        !IsPerpendicular(O2O_2, NN, 30.0))
         return false;
 
     double Dis1 = abs(O2O*P1->m_N);
     double Dis2 = abs(O2O*P2->m_N);
-    double l1 = CheckPerpendicular(VCGAngle(P1->m_AX, NN)) < CheckPerpendicular(VCGAngle(P1->m_AY, NN)) ? P1->width() : P1->height();
-    double l2 = CheckPerpendicular(VCGAngle(P2->m_AX, NN)) < CheckPerpendicular(VCGAngle(P2->m_AY, NN)) ? P2->width() : P2->height();
+    double l1, u1;
+    double l2, u2;
+    if (CheckPerpendicular(VCGAngle(P1->m_AX, NN)) < CheckPerpendicular(VCGAngle(P1->m_AY, NN))) {
+        l1 = P1->width();
+        u1 = P1->height();
+    } else {
+        u1 = P1->width();
+        l1 = P1->height();
+    }
+    if (CheckPerpendicular(VCGAngle(P2->m_AX, NN)) < CheckPerpendicular(VCGAngle(P2->m_AY, NN))) {
+        l2 = P2->width();
+        u2 = P2->height();
+    } else {
+        u2 = P2->width();
+        l2 = P2->height();
+    }
+    if (abs(u1 - u2) / (u1 + u2) > 0.5)
+        return false;
+
     if (
         ((Dis1 - l2*0.5) / l2 > TRDis || (l2*0.5 - Dis1) / l2 > TRDis / 2.0) ||
         ((Dis2 - l1*0.5) / l1 > TRDis || (l1*0.5 - Dis2) / l1 > TRDis / 2.0)
@@ -193,7 +213,7 @@ bool BuildBox(
         }
     }
 
-
+    int inloc = -1;
     if (P[0] == PlaneRelation_Adjacency_U &&
         P[1] == PlaneRelation_NoRetation &&
         P[2] != PlaneRelation_AtOppo &&
@@ -201,7 +221,7 @@ bool BuildBox(
         P[4] != PlaneRelation_AtOppo &&
         P[5] != PlaneRelation_AtOppo
         )
-        cubePlane[1] = plane;
+        inloc = 1;
     else if (P[0] == PlaneRelation_Adjacency_R &&
         P[1] != PlaneRelation_AtOppo &&
         P[2] == PlaneRelation_NoRetation &&
@@ -209,7 +229,7 @@ bool BuildBox(
         (P[4] & 0x01) == 0 &&
         P[5] != PlaneRelation_AtOppo
         )
-        cubePlane[2] = plane;
+        inloc = 2;
     else if (P[0] == PlaneRelation_Adjacency_B &&
         (P[1] & 0x01) == 0 &&
         P[2] != PlaneRelation_AtOppo &&
@@ -217,7 +237,7 @@ bool BuildBox(
         P[4] != PlaneRelation_AtOppo &&
         P[5] != PlaneRelation_AtOppo
         )
-        cubePlane[3] = plane;
+        inloc = 3;
     else if (P[0] == PlaneRelation_Adjacency_L &&
         P[1] != PlaneRelation_AtOppo &&
         (P[2] & 0x01) == 0 &&
@@ -225,7 +245,7 @@ bool BuildBox(
         P[4] == PlaneRelation_NoRetation &&
         P[5] != PlaneRelation_AtOppo
         )
-        cubePlane[4] = plane;
+        inloc = 4;
     else if (P[0] == PlaneRelation_AtOppo &&
         P[1] != PlaneRelation_AtOppo &&
         P[2] != PlaneRelation_AtOppo &&
@@ -233,10 +253,24 @@ bool BuildBox(
         P[4] != PlaneRelation_AtOppo &&
         P[5] == PlaneRelation_NoRetation
         )
-        cubePlane[5] = plane;
+        inloc = 5;
     else
         return false;
+    // Check same side
+    if (inloc == 5) {// Add an oppo
+        for (int i = 1; i <= 4; ++i) {
+            if (cubePlane[i] != 0 &&
+                P[i] == EstPlaneRelation(cubePlane[i], cubePlane[0], TRDis, TAng, TIoU))
+                return false;
+        }
+    }
+    if (cubePlane[5]) {// Already an oppo
+        if (EstPlaneRelation(plane, cubePlane[0], TRDis, TAng, TIoU)
+            == EstPlaneRelation(plane, cubePlane[5], TRDis, TAng, TIoU))
+            return false;
+    }
 
+    cubePlane[inloc] = plane;
     return true;
 }
 std::vector<ObjRect*> CubeFaceInferringOne(
@@ -247,23 +281,37 @@ std::vector<ObjRect*> CubeFaceInferringOne(
     std::vector<ObjRect*> finalOut;
     finalOut.reserve(6);
     for (int i = 0; i < planes.size(); ++i) {
-        // clean
+        // Clean
         for (int j = 0; j < 6; ++j)
             tempList[j] = 0;
-        // init
+        // Init
         tempList[0] = planes.at(i);
         int pNum = 1;
         for (int j = 0; j < planes.size(); j++) {
             if (j == i)
                 continue;
-            if (i == 2 && j == 7)
-                int aa = 0;
+            if ((i == 0 && j == 2) ||
+                (i == 0 && j == 3))
+                int stopMe = 0;
             if (BuildBox(tempList, planes.at(j), TRDis, TAng, TIoU)) {
                 pNum++;
                 if (pNum == 6)
                     break;
             }
         }
+
+        // Less than 2 patches
+        if (pNum < 2)
+            continue;
+        // Have only 2 patches, but not in opposite relation.
+        if (pNum == 2 &&
+            !(
+                (tempList[0] != 0 && tempList[5] != 0) ||
+                (tempList[1] != 0 && tempList[3] != 0) ||
+                (tempList[2] != 0 && tempList[4] != 0))
+            )
+            continue;
+
         if (pNum > finalOut.size()) {
             finalOut.clear();
             for (int j = 0; j < 6; ++j) {
@@ -274,8 +322,7 @@ std::vector<ObjRect*> CubeFaceInferringOne(
                 break;
         }
     }
-    if (finalOut.size() < 2)
-        finalOut.clear();
+    
     return finalOut;
 }
 int CubeFaceInferring(

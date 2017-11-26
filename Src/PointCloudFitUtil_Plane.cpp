@@ -714,7 +714,7 @@ std::vector<vcg::Point4f> DetectHTPlanes(
             flog(
                 "      [ -- The number of the max region is too small,       -- ] \n"
                 "      [ -- and this region result will be DISCARD.          -- ] \n"
-                "      [ -- Detection of the [ No.%02 d ] plane wil be retired. -- ] \n", 
+                "      [ -- Detection of the [ No.%02d ] plane wil be retired. -- ] \n", 
                 planeNum + 1);
         }
         else {

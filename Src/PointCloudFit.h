@@ -1,7 +1,7 @@
 #ifndef _POINT_CLOUD_FIT_H_FILE_
 #define _POINT_CLOUD_FIT_H_FILE_
 
-#if 0
+#if 1
 #define _RECON_DATA_ 1
 #else
 #define _SYN_DATA_ 1
