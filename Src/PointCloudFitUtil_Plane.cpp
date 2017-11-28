@@ -300,7 +300,7 @@ void PicMaxRegion(
 
 
 // [4] LS Fit
-double FineFit(
+double FinePlane(
     const std::vector<vcg::Point3f> &pointList,
     const std::vector<int> &planeVerList,
     vcg::Plane3f &plane)
@@ -712,7 +712,7 @@ int DetectHTPlanes(
         }
         else {
             // Least Squre Fit
-            double err = FineFit(pointList, planeVerList, plane);
+            double err = FinePlane(pointList, planeVerList, plane);
             // planeVerList = AttachToPlane(pointList,directionList,plane,_planeDThreshold); // AGAIN!
             if (bReportErr)
                 errors->push_back(err);
@@ -790,7 +790,7 @@ int ExtractPatches(
         if (planeVerList[k].empty())
             continue;
         vcg::Plane3f plane;
-        double err = FineFit(pointList, planeVerList[k], plane);
+        double err = FinePlane(pointList, planeVerList[k], plane);
         ObjRect *onePatch = ExtractMBR(mesh, plane, pointList, indexList, planeVerList[k]);
         if (onePatch != 0) {
             onePatch->m_varN = err;

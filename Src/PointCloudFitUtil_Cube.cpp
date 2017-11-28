@@ -949,7 +949,7 @@ bool MergeToCube(
             }
             // Fit
             vcg::Plane3f onePlane;
-            double err = FineFit(ptsOnPlane, idxList, onePlane);
+            double err = FinePlane(ptsOnPlane, idxList, onePlane);
 
             // MBR
             int newCode = _GetPlaneCode();

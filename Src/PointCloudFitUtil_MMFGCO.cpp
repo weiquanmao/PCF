@@ -11,74 +11,6 @@
 // GCO    : Graph Cut Optimization (http://vision.csd.uwo.ca/code/)
 // GTE    : Geometric Tools Engine (https://www.geometrictools.com/)
 
-
-MPFGCOCost MPFGCOGeneratCost(
-    const std::vector<vcg::Plane3f> &planes,
-    const std::vector<vcg::Point3f> &points,
-    const std::vector<vcg::Point3f> &norms,
-    const double unit_a,
-    const int cost_noise,
-    const int cost_label)
-{
-    const bool bHasNorm = norms.empty() ? false : true;
-    if (bHasNorm)
-        assert(norms.size() == points.size());
-
-    const double angCost = 15.0;
-    const double angr = 1.0 / (angCost*angCost);
-
-    const int NPts = points.size();
-    const int NPlane = planes.size();
-    const int NLabel = NPlane + 1;
-    // Data Energy
-    // Dp(lp) = ||p-lp||_2 / a + [¡Ï(p,lp)/ang]^2,
-    // |p-lp||_2 / a : distance form p to lp (the plane) in unit a.
-    int *DataCost = new int[NPts *NLabel];
-    for (int i = 0; i < NPts; ++i)
-        DataCost[i*NLabel] = cost_noise;
-
-    for (int i = 1; i < NLabel; ++i) {
-        vcg::Plane3f ple = planes[i - 1];
-        // Dis
-        for (int j = 0; j < NPts; ++j) {
-            double d = abs(vcg::SignedDistancePlanePoint(ple, points.at(j)));
-            DataCost[j*NLabel + i] = int(d / unit_a + 0.5);
-        }
-        // Ang
-        if (bHasNorm) {
-            for (int j = 0; j < NPts; ++j) {
-                double ang = CheckAng00(VCGAngle(ple.Direction(), norms[j]));
-                DataCost[j*NLabel + i] += int(ang*ang*angr);
-            }
-        }
-    }
-    // Smooth Energy
-    // Vpq(lp,lq) = w_{p,q}*d_{lp,lq}
-    // d_{lp,lq} = 1 if lp != lq, otherwise 0; 
-    // w_{p,q} = lambda * exp{ - (||p-q||_2/a) ^ 2 / 2*delta^2}
-    // (see implement of neighbor system in function MPFGCOParseNeighbors())
-    int *SmoothCost = new int[NLabel*NLabel];
-    for (int i = 0; i < NLabel; ++i) {
-        for (int j = 0; j < NLabel; ++j)
-            SmoothCost[i*NLabel + j] = 1;
-        SmoothCost[i*NLabel + i] = 0;
-    }
-
-    MPFGCOCost gcoCost;
-    gcoCost.numLabel = NLabel;
-    gcoCost.numSite = NPts;
-    gcoCost.dataCost = DataCost;
-    gcoCost.smoothCost = SmoothCost;
-    gcoCost.labelCost = cost_label;
-
-#if defined(_ReportOut_)
-    reportMat<int>(DataCost, NPts, NLabel, "../~CostData~.txt");
-    reportMat<int>(SmoothCost, NLabel, NLabel, "../~CostSmooth~.txt");
-#endif
-
-    return gcoCost;
-}
-
 MPFGCONeighbors MPFGCOParseNeighbors(
     CMeshO &mesh,
     const std::vector<int> &ptIndex,
@@ -158,10 +90,143 @@ MPFGCONeighbors MPFGCOParseNeighbors(
     return gcoNei;
 }
 
+MPFGCOCost MPFGCOGeneratCost(
+    const std::vector<vcg::Plane3f> &planes,
+    const std::vector<vcg::Point3f> &points,
+    const std::vector<vcg::Point3f> &norms,
+    const double unit_a,
+    const int cost_noise,
+    const int cost_label)
+{
+    const bool bHasNorm = norms.empty() ? false : true;
+    if (bHasNorm)
+        assert(norms.size() == points.size());
+
+    const double angCost = 15.0;
+    const double angr = 1.0 / (angCost*angCost);
+
+    const int NPts = points.size();
+    const int NPlane = planes.size();
+    const int NLabel = NPlane + 1;
+    // Data Energy
+    // Dp(lp) = ||p-lp||_2 / a + [¡Ï(p,lp)/ang]^2,
+    // |p-lp||_2 / a : distance form p to lp (the plane) in unit a.
+    int *DataCost = new int[NPts *NLabel];
+    for (int i = 0; i < NPts; ++i)
+        DataCost[i*NLabel] = cost_noise;
+
+    for (int i = 1; i < NLabel; ++i) {
+        vcg::Plane3f ple = planes[i - 1];
+        // Dis
+        for (int j = 0; j < NPts; ++j) {
+            double d = abs(vcg::SignedDistancePlanePoint(ple, points.at(j)));
+            DataCost[j*NLabel + i] = int(d / unit_a + 0.5);
+        }
+        // Ang
+        if (bHasNorm) {
+            for (int j = 0; j < NPts; ++j) {
+                double ang = CheckAng00(VCGAngle(ple.Direction(), norms[j]));
+                DataCost[j*NLabel + i] += int(ang*ang*angr);
+            }
+        }
+    }
+    // Smooth Energy
+    // Vpq(lp,lq) = w_{p,q}*d_{lp,lq}
+    // d_{lp,lq} = 1 if lp != lq, otherwise 0; 
+    // w_{p,q} = lambda * exp{ - (||p-q||_2/a) ^ 2 / 2*delta^2}
+    // (see implement of neighbor system in function MPFGCOParseNeighbors())
+    int *SmoothCost = new int[NLabel*NLabel];
+    for (int i = 0; i < NLabel; ++i) {
+        for (int j = 0; j < NLabel; ++j)
+            SmoothCost[i*NLabel + j] = 1;
+        SmoothCost[i*NLabel + i] = 0;
+    }
+
+    MPFGCOCost gcoCost;
+    gcoCost.numLabel = NLabel;
+    gcoCost.numSite = NPts;
+    gcoCost.dataCost = DataCost;
+    gcoCost.smoothCost = SmoothCost;
+    gcoCost.labelCost = cost_label;
+
+#if defined(_ReportOut_)
+    reportMat<int>(DataCost, NPts, NLabel, "../~CostData~.txt");
+    reportMat<int>(SmoothCost, NLabel, NLabel, "../~CostSmooth~.txt");
+#endif
+
+    return gcoCost;
+}
+MPFGCOCost MPFGCOGeneratCost(
+    const std::vector<ObjCylinder*> &cylinders,
+    const std::vector<vcg::Point3f> &points,
+    const std::vector<vcg::Point3f> &norms,
+    const double unit_a,
+    const int cost_noise,
+    const int cost_label)
+{
+    const bool bHasNorm = norms.empty() ? false : true;
+    if (bHasNorm)
+        assert(norms.size() == points.size());
+
+    const double angCost = 15.0;
+    const double angr = 1.0 / (angCost*angCost);
+
+    const int NPts = points.size();
+    const int NCylinders = cylinders.size();
+    const int NLabel = NCylinders + 1;
+    // Data Energy
+    // Dp(lp) = ||p-lp||_2 / a + [¡Ï(p,lp)/ang]^2,
+    // |p-lp||_2 / a : distance form p to lp (the plane) in unit a.
+    int *DataCost = new int[NPts *NLabel];
+    for (int i = 0; i < NPts; ++i)
+        DataCost[i*NLabel] = cost_noise;
+
+    for (int i = 1; i < NLabel; ++i) {
+        ObjCylinder *cyl = cylinders[i - 1];
+        // Dis
+        for (int j = 0; j < NPts; ++j) {
+            double d = abs(SignedDistanceCylinderPoint(*cyl, points.at(j)));
+            DataCost[j*NLabel + i] = int(d / unit_a + 0.5);
+        }
+        // Ang
+        if (bHasNorm) {
+            for (int j = 0; j < NPts; ++j) {
+                double ang = AngCylinderPoint(*cyl, points.at(j), norms.at(j));
+                DataCost[j*NLabel + i] += int(ang*ang*angr);
+            }
+        }
+    }
+    // Smooth Energy
+    // Vpq(lp,lq) = w_{p,q}*d_{lp,lq}
+    // d_{lp,lq} = 1 if lp != lq, otherwise 0; 
+    // w_{p,q} = lambda * exp{ - (||p-q||_2/a) ^ 2 / 2*delta^2}
+    // (see implement of neighbor system in function MPFGCOParseNeighbors())
+    int *SmoothCost = new int[NLabel*NLabel];
+    for (int i = 0; i < NLabel; ++i) {
+        for (int j = 0; j < NLabel; ++j)
+            SmoothCost[i*NLabel + j] = 1;
+        SmoothCost[i*NLabel + i] = 0;
+    }
+
+    MPFGCOCost gcoCost;
+    gcoCost.numLabel = NLabel;
+    gcoCost.numSite = NPts;
+    gcoCost.dataCost = DataCost;
+    gcoCost.smoothCost = SmoothCost;
+    gcoCost.labelCost = cost_label;
+
+#if defined(_ReportOut_)
+    reportMat<int>(DataCost, NPts, NLabel, "../~CostData~.txt");
+    reportMat<int>(SmoothCost, NLabel, NLabel, "../~CostSmooth~.txt");
+#endif
+
+    return gcoCost;
+}
+
 std::vector<double> GCOReEstimat(
     std::vector<vcg::Plane3f> &planes,
     const std::vector<vcg::Point3f> &pointList,
-    const int *labels)
+    const int *labels, const unsigned int TInlier)
 {
     std::vector<double> errors;
 
@@ -171,21 +236,60 @@ std::vector<double> GCOReEstimat(
     std::vector<vcg::Plane3f> optPlanes;
     std::vector<std::vector<int>> planeVerList;
     planeVerList.resize(NPlane + 1);
+    std::vector<int> removeIdx;
     for (int i = 0; i < NPoint; ++i) {
         int label = labels[i];
         planeVerList[label].push_back(i);
     }
     for (int k = 1; k < NPlane + 1; k++) {
-        if (planeVerList[k].empty())
+        if (planeVerList[k].size() <= TInlier) {
+            flog("    >> Quit the [ No.%d ] plane with [ %d ] points ...\n", k, planeVerList[k].size());
             continue;
-
+        }
+        flog("    >> Fine Fit the [ No.%d ] plane ...\n", k);
         vcg::Plane3f plane;
-        double err = FineFit(pointList, planeVerList[k], plane);
+        double err = FinePlane(pointList, planeVerList[k], plane);
         errors.push_back(err);
         optPlanes.push_back(plane);
     }
 
     planes.swap(optPlanes);
+
+    return errors;
+}
+
+std::vector<double> GCOReEstimat(
+    std::vector<ObjCylinder*> &cylinders,
+    const std::vector<vcg::Point3f> &pointList,
+    const int *labels, const unsigned int TInlier)
+{
+    std::vector<double> errors;
+
+    const int NCylinder = cylinders.size();
+    const int NPoint = pointList.size();
+
+    std::vector<ObjCylinder*> optCylinders;
+    std::vector<std::vector<int>> cylinderVerList;
+    cylinderVerList.resize(NCylinder + 1);
+    for (int i = 0; i < NPoint; ++i) {
+        int label = labels[i];
+        cylinderVerList[label].push_back(i);
+    }
+    for (int k = 1; k < NCylinder + 1; k++) {
+        if (cylinderVerList[k].size() <= TInlier) {
+            flog("    >> Quit the [ No.%d ] cylinder with [ %d ] points ...\n", k, cylinderVerList[k].size());
+            continue;
+        }
+        flog("    >> Fine Fit the [ No.%d ] cylinder ...\n", k);
+        double err = 0;
+        ObjCylinder* cylinder = FineCylinder(pointList, cylinderVerList[k], err);
+        errors.push_back(err);
+        optCylinders.push_back(cylinder);
+    }
+
+    cylinders.swap(optCylinders);
+    for (int i = 0; i < optCylinders.size(); ++i)
+        delete optCylinders.at(i);
 
     return errors;
 }

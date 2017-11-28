@@ -104,13 +104,16 @@ private:
     
 	// Detect Plane
 	std::vector<ObjPatch*> DetectPlanesHT(const int expPlaneNum);
-    std::vector<ObjPatch*> DetectPlanesGCO(const int expPlaneNum, const int iteration = -1);
 	
 	// Detect Cude
     std::vector<ObjCube*> DetectCubeFromPlanes(std::vector<ObjPatch*> &patches);
 	
 	// Detect Cylinder
 	ObjCylinder* DetectCylinderSymAxis();
+
+    // Detect By MMF-GCO
+    // [ -- !!! IMPLEMENTS ARE TOO SIMILAR !!! -- ]
+    std::vector<ObjPatch*> DetectPlanesGCO(const int expPlaneNum, const int iteration = -1);
     std::vector<ObjCylinder*> DetectCylinderGCO(const int expCylinderNum, const int iteration = -1);
 };
 

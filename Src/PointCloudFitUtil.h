@@ -112,7 +112,7 @@ void PicMaxRegion(
     const double _TDis);
 
 // [4] LS Fit
-double FineFit(
+double FinePlane(
     const std::vector<vcg::Point3f> &pointList,
     const std::vector<int> &planeVerList,
     vcg::Plane3f &plane);
@@ -271,6 +271,39 @@ void AttachToCylinder(
     const std::vector<vcg::Point3f> &NormList,    
     const double _a, const double TR);
 
+// [3] Others (Mainly Used in MCF-GCO)
+double SignedDistanceCylinderPoint(
+    const ObjCylinder &cyl, const vcg::Point3f &p);
+double AngCylinderPoint(
+    const ObjCylinder &cyl, const vcg::Point3f &p, const vcg::Point3f &n);
+int CylinderInliers(
+    const ObjCylinder &cyl,
+    const std::vector<vcg::Point3f> &pointList,
+    const std::vector<vcg::Point3f> &normList,
+    const double TDis, const double TAng,
+    std::vector<int> *inlierIdx = 0);
+ObjCylinder *EstCylinderTwoPoint(
+    const vcg::Point3f p1, const vcg::Point3f n1,
+    const vcg::Point3f p2, const vcg::Point3f n2,
+    const double TDisDeviation = (1.0-0.6)/(1.0+0.6),
+    const int TAngRequired = 2);
+ObjCylinder *FineCylinder(
+    const std::vector<vcg::Point3f> &pointList,
+    const std::vector<int> &cylVerList,
+    double &err);
+
+double DetectCylinderRansac(
+    const std::vector<vcg::Point3f> &pointList, 
+    const std::vector<vcg::Point3f> &normList, 
+    std::vector<ObjCylinder*> &cylCandidates,
+    const double TDis, const double TAng,
+    const int maxN = 1, const double inlierRatio = 0.1);
+void ExtractCylinders(
+    CMeshO &mesh,
+    std::vector<ObjCylinder*> &cylinders,
+    const std::vector<int> &indexList,
+    const std::vector<vcg::Point3f> &pointList,
+    const int cyinderNUm, const int *labels);
 ////////////////////////////////////////////////
 // ------- Multi-Model Fitting with GCO -------
 ////////////////////////////////////////////////
@@ -331,6 +364,22 @@ struct MPFGCONeighbors {
         neighborsWeights = 0;;
     }
 };
+
+MPFGCONeighbors MPFGCOParseNeighbors(
+    CMeshO &mesh,
+    const std::vector<int> &ptIndex,
+    const int lambda, const double delta,
+    const int numNeighbors = 0,
+    const double unit_a = 1.0);
+
+// [ -- !!! IMPLEMENTS ARE TOO SIMILAR !!! -- ]
+MPFGCOCost MPFGCOGeneratCost(
+    const std::vector<ObjCylinder*> &cylinders,
+    const std::vector<vcg::Point3f> &points,
+    const std::vector<vcg::Point3f> &norms,
+    const double unit_a = 1.0,
+    const int cost_noise = 0,
+    const int cost_label = 0);
 MPFGCOCost MPFGCOGeneratCost(
     const std::vector<vcg::Plane3f> &planes,
     const std::vector<vcg::Point3f> &points,
@@ -338,15 +387,14 @@ MPFGCOCost MPFGCOGeneratCost(
     const double unit_a = 1.0,
     const int cost_noise = 0,
     const int cost_label = 0);
-MPFGCONeighbors MPFGCOParseNeighbors(
-    CMeshO &mesh,
-    const std::vector<int> &ptIndex,
-    const int lambda, const double delta,
-    const int numNeighbors = 0,
-    const double unit_a = 1.0);
+
+// [ -- !!! IMPLEMENTS ARE TOO SIMILAR !!! -- ]
 std::vector<double> GCOReEstimat(
     std::vector<vcg::Plane3f> &planes,
     const std::vector<vcg::Point3f> &pointList,
-    const int *labels);
-
+    const int *labels, const unsigned int TInlier = 0);
+std::vector<double> GCOReEstimat(
+    std::vector<ObjCylinder*> &planes,
+    const std::vector<vcg::Point3f> &pointList,
+    const int *labels, const unsigned int TInlier = 0);
 #endif // !_POINT_CLOUD_FIT_UTIL_H_FILE_

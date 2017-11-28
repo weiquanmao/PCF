@@ -119,7 +119,7 @@ std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPlaneNum, const int i
         // -- Get Result <& Re-Estimate>
         for (int i = 0; i < numSite; i++)
             gcoResult[i] = gco->whatLabel(i);
-        // errors = GCOReEstimat(infPlanes, pointList, gcoResult);
+        // errors = GCOReEstimat(planeCandidates, pointList, gcoResult, 100);
 
         // -- Cleaning Up
         gcoCost.memRelease();

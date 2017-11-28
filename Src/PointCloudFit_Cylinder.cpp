@@ -101,28 +101,29 @@ ObjCylinder* PCFit::DetectCylinderSymAxis()
     
 	return cylinder;
 }
+
 std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, const int iteration)
 {
     std::vector<ObjCylinder*> clyinders;
-    /*
+    
     CMeshO &mesh = m_meshDoc.mesh->cm;
 
     if (!m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL))
-        flog("\n\n[=DetectCylinderSymAxis=]: [ ): ] Normals are needed to detected cylinder. \n");
+        flog("\n\n[=DetectCylinderGCO=]: [ ): ] Normals are needed to detected cylinder. \n");
 
     // -- Get Normalized Point List (Moved So That the Center is [0,0])
     std::vector<int> indexList;
     std::vector<vcg::Point3f> pointList;
     std::vector<vcg::Point3f> normList;
     vcg::Point3f center = GetPointList(indexList, pointList, normList, true);
+    const double TDis = m_refa * Threshold_DisToSurface;
+    const double TAng = Threshold_AngToSurface;
     const double inlierRatio = Threshold_NPtsCylinder;
     const int maxN = expCylinderNum;
 
     // -- Detect Init Cylinders
-    std::vector<ObjCylinder*> clyCandidates;
-    //double maxRatio = DetectCylinderRansac(
-    //    pointList, normList, inlierRatio,
-    //    clyCandidates, maxN, inlierRatio);
+    std::vector<ObjCylinder*> cylCandidates;
+    double maxRatio = DetectCylinderRansac(pointList, normList, cylCandidates, TDis, TAng, maxN, inlierRatio);
 
     // -- Fit by GCO
     // E(f)       = Sigma_p{Dp(lp)} + lambda*Sigma_(pg:N){Vpg(lq,pq)} + labelEnergy*|L| .
@@ -145,10 +146,10 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
     int *gcoResult = new int[pointList.size()];
     try {
         int numSite = pointList.size();
-        int numLabel = clyCandidates.size() + 1;
+        int numLabel = cylCandidates.size() + 1;
         GCoptimizationGeneralGraph *gco = new GCoptimizationGeneralGraph(numSite, numLabel);
-        MPFGCOCost gcoCost;// =
-           // MPFGCOGeneratCost(clyCandidates, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
+        MPFGCOCost gcoCost =
+            MPFGCOGeneratCost(cylCandidates, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
         MPFGCONeighbors gcoNei =
             MPFGCOParseNeighbors(mesh, indexList, lambda, delta, numNeighbors, m_refa);
         // -- Set [Data Energy]
@@ -167,7 +168,7 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
         // -- Get Result <& Re-Estimate>
         for (int i = 0; i < numSite; i++)
             gcoResult[i] = gco->whatLabel(i);
-        // errors = GCOReEstimat(infPlanes, pointList, gcoResult);
+        GCOReEstimat(cylCandidates, pointList, gcoResult, 100);
 
         // -- Cleaning Up
         gcoCost.memRelease();
@@ -176,6 +177,8 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
     catch (GCException e) {
         e.Report();
     }
+
+    ExtractCylinders(mesh, clyinders, indexList, pointList, cylCandidates.size(), gcoResult);
 
     // -- Move Back
     for (int i = 0; i<clyinders.size(); ++i) {
@@ -186,6 +189,6 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
     pointList.clear();
     normList.clear();
     delete[] gcoResult;
-    */
+    
     return clyinders;
 }

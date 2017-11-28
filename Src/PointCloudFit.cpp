@@ -416,6 +416,34 @@ bool PCFit::GEOFit(bool keepAttribute)
 		flog("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
 
+    // -- 4. Detect Cylinder
+    std::vector<ObjCylinder*> objCylinder;
+    if (m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL)) {
+#if 0 // Detect Planes by Symmetric Axis Detection with Hough Transform
+        flog("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis Detection <<--  \n");
+        time.restart();
+        //-------------------------------
+        ObjCylinder *oneCly = DetectCylinderSymAxis();
+        //-------------------------------
+        if (oneCly != 0)
+            objCylinder.push_back(oneCly);
+        flog("[=DetectCylinder_SA=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
+#else // Detect Planes by Multi-Model Fitting with GCO
+        flog("\n\n[=DetectMCF_GCO=]: -->> Try to Detect Cylinder by Energy-based Multi-Model Fitting with GCO ... <<--  \n");
+        time.restart();
+        //-------------------------------
+        objCylinder = DetectCylinderGCO(Threshold_MaxModelNum);
+        //-------------------------------
+        flog("[=DetectMCF_GCO=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
+
+#endif
+    }
+    else {
+        flog("\n\n[=DetectCylinder=]: [ ): ] Normals are needed to detected cylinder. \n");
+    }
+    for (int i = 0; i < objCylinder.size(); ++i)
+        m_GEOObjSet->m_SolidList.push_back(objCylinder.at(i));
+
 
 	// -- 2. Detect All Planes
 	std::vector<ObjPatch*> planes;
@@ -451,33 +479,7 @@ bool PCFit::GEOFit(bool keepAttribute)
         m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
    
     
-	// -- 4. Detect Cylinder
-    std::vector<ObjCylinder*> objCylinder;
-	if ( m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL) ) {
-#if 0 // Detect Planes by Symmetric Axis Detection with Hough Transform
-		flog("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis Detection <<--  \n");
-		time.restart();
-		//-------------------------------
-        ObjCylinder *oneCly = DetectCylinderSymAxis();
-		//-------------------------------
-		if (oneCly != 0)
-            objCylinder.push_back(oneCly);
-        flog("[=DetectCylinder_SA=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
-#else // Detect Planes by Multi-Model Fitting with GCO
-        flog("\n\n[=DetectMCF_GCO=]: -->> Try to Detect Cylinder by Energy-based Multi-Model Fitting with GCO ... <<--  \n");
-        time.restart();
-        //-------------------------------
-        objCylinder = DetectCylinderGCO(Threshold_MaxModelNum);
-        //-------------------------------
-        flog("[=DetectMCF_GCO=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
-
-#endif
-    }
-	else {
-		flog("\n\n[=DetectCylinder=]: [ ): ] Normals are needed to detected cylinder. \n");
-	}
-    for (int i = 0; i < objCylinder.size(); ++i)
-        m_GEOObjSet->m_SolidList.push_back(objCylinder.at(i));
+	
 
     
 

@@ -1,5 +1,10 @@
 #include "PointCloudFitUtil.h"
+#include "gte/Mathematics/GteApprCylinder3.h"
 #include "tool/PCA.h"
+
+#include <random>
+#include <list>
+
 
 bool DetectSymAxis(
     const std::vector<vcg::Point3f> &PointList,
@@ -255,6 +260,7 @@ void AttachToCylinder(
     const std::vector<vcg::Point3f> &NormList,
     const double _a, const double TR)
 {
+    assert(PointList.size() == NormList.size());
     QTime time;
     time.start();
 
@@ -443,4 +449,283 @@ void AttachToCylinder(
         "      [--AttachToCylinder--]: Done in %.4f seconds. \n",
         cylinder.m_radius, lBegin, lEnd, cylinder.m_length,
         time.elapsed() / 1000.0);
+}
+
+
+//------------------------------------
+double SignedDistanceCylinderPoint(
+    const ObjCylinder &cyl, const vcg::Point3f &p)
+{
+    vcg::Point3f op = p - cyl.m_O;
+    double l1 = (op * cyl.m_N) / (cyl.m_N.Norm());
+    double l2 = op.Norm();
+    assert(l2 >= l1);
+    double l = sqrt(l2*l2 - l1*l1);
+    return l - cyl.m_radius;
+}
+double AngCylinderPoint(
+    const ObjCylinder &cyl, const vcg::Point3f &p, const vcg::Point3f &n)
+{
+    vcg::Point3f op = p - cyl.m_O;
+    double l = (op * cyl.m_N) / (cyl.m_N.SquaredNorm());
+    vcg::Point3f np = op - cyl.m_N*l;
+    return CheckAng00(VCGAngle(np, n));
+}
+int CylinderInliers(
+    const ObjCylinder &cyl,
+    const std::vector<vcg::Point3f> &pointList,
+    const std::vector<vcg::Point3f> &normList,
+    const double TDis, const double TAng,
+    std::vector<int> *inlierIdx)
+{
+    const bool bHasNorm = normList.empty() ? false : true;
+    if (bHasNorm)
+        assert(normList.size() == pointList.size());
+
+    std::vector<int> inliers;
+    inliers.reserve(pointList.size());
+    for (int i = 0; i < pointList.size(); ++i) {
+        if (abs(SignedDistanceCylinderPoint(cyl, pointList.at(i))) < TDis)
+            inliers.push_back(i);
+    }
+    if (bHasNorm) {
+        std::vector<int> _inliers;
+        _inliers.reserve(inliers.size());
+        for (int i = 0; i < inliers.size(); ++i) {
+            int idx = inliers.at(i);
+            if (abs(AngCylinderPoint(cyl, pointList.at(idx), normList.at(idx))) < TAng)
+                _inliers.push_back(idx);
+        }
+        inliers.swap(_inliers);
+    }
+    int retN = inliers.size();
+    if (inlierIdx != 0)
+        inlierIdx->swap(inliers);
+    return retN;
+}
+ObjCylinder *EstCylinderTwoPoint(
+    const vcg::Point3f p1, const vcg::Point3f n1,
+    const vcg::Point3f p2, const vcg::Point3f n2,
+    const double TDisDeviation, const int TAngRequired)
+{
+    if (CheckAng00(VCGAngle(n1, n2)) < TAngRequired)
+        return 0;
+
+    vcg::Point3f N = n1 ^ n2; N.normalized();
+
+    // x1 := n1, z1 := N
+    vcg::Point3f y1 = N ^ n1; 
+    double p2_in_y1 = (p2 - p1)*y1;
+    double n2_in_y1 = n2*y1;
+    double lambda2  = p2_in_y1 / n2_in_y1;
+    vcg::Point3f a2 = p2 - n2 * lambda2;
+    double       r2 = (n2 * lambda2).Norm();
+    // x2 := n2, z1 := N
+    vcg::Point3f y2 = N ^ n2;
+    double p1_in_y2 = (p1 - p2)*y2;
+    double n1_in_y2 = n1*y2;
+    double lambda1  = p1_in_y2 / n1_in_y2;
+    vcg::Point3f a1 = p1 - n1 * lambda1;
+    double       r1 = (n1 * lambda1).Norm();
+
+    assert(CheckAng00(VCGAngle(N, a1 - a2))<0.5);
+
+    if (abs(r1 - r2) / (r1 + r2) > TDisDeviation)
+        return 0;
+
+    
+    vcg::Point3f O = (a1 + a2) / 2.0;
+    double R = (r1 + r2) / 2.0;
+    ObjCylinder *cyl = new ObjCylinder(-1);
+    cyl->m_O = O;
+    cyl->m_N = N;
+    cyl->m_radius = R;
+    cyl->m_length = 1.0;
+
+    return cyl;
+}
+ObjCylinder *FineCylinder(
+    const std::vector<vcg::Point3f> &pointList,
+    const std::vector<int> &cylVerList,
+    double &err)
+{
+    QTime time;
+    time.start();
+
+    std::vector<gte::Vector3<double>> positions;
+    positions.reserve(cylVerList.size());
+    for (unsigned int i = 0; i < cylVerList.size(); ++i)
+    {
+        vcg::Point3f pt = pointList.at(cylVerList.at(i));
+        gte::Vector3<double> data;
+        data[0] = pt.X();
+        data[1] = pt.Y();
+        data[2] = pt.Z();
+        positions.push_back(data);
+    }
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    gte::ApprCylinder3<double> fitter(numThreads, 1024, 512);
+
+    unsigned int numVertices = static_cast<unsigned int>(positions.size());
+    gte::Cylinder3<double> cylinder;
+    double minError = fitter(numVertices, positions.data(), cylinder);
+
+    ObjCylinder *cyl = new ObjCylinder(0);
+    cyl->m_O.X() = cylinder.axis.origin[0];
+    cyl->m_O.Y() = cylinder.axis.origin[1];
+    cyl->m_O.Z() = cylinder.axis.origin[2];
+    cyl->m_N.X() = cylinder.axis.direction[0];
+    cyl->m_N.Y() = cylinder.axis.direction[1];
+    cyl->m_N.Z() = cylinder.axis.direction[2];
+    cyl->m_radius = cylinder.radius;
+    cyl->m_length = cylinder.height;
+    err = minError;
+    
+    
+
+    flog(
+        "      [--Fit_LS--]: #Pts-%d\n"
+        "        | #min error : %7.4f\n"
+        "        | #Center    : < %7.4f, %7.4f, %7.4f > \n"
+        "        | #direction : < %7.4f, %7.4f, %7.4f > \n"
+        "        | #radius    : %7.4f\n"
+        "        | #height    : %7.4f\n"
+        "      [--Fit_LS--]: Done in %.4f seconds. \n",
+        cylVerList.size(), err,
+        cyl->m_O.X(), cyl->m_O.Y(), cyl->m_O.Z(),
+        cyl->m_N.X(), cyl->m_N.Y(), cyl->m_N.Z(),
+        cyl->m_radius, cyl->m_length,
+        time.elapsed() / 1000.0);
+
+    return cyl;
+}
+
+
+typedef std::pair<ObjCylinder*, double> WCylinder;
+int RansacTimes(const double Percentage, const double InlierRatio, const int MiniSupportNum) {
+    // P := Percentage
+    // I := InlierRatio
+    // N := MiniSupportNum
+    // P = 1 - (1-I^N)^T
+    // >> T = log(1-P)/log(1-I^N)
+    return log(1 - Percentage) / log(1 - pow(InlierRatio, MiniSupportNum)) + 0.5;
+}
+void AddLimitList(
+    std::list<WCylinder> &cyls, const WCylinder &cyl, const int maxN)
+{
+    if (cyls.size() < maxN) {
+        // Just Add One
+        cyls.push_back(cyl);
+    }
+    else {
+        // Add One And Pop The Last
+        auto iter = cyls.begin();
+        for (;iter != cyls.end();iter++) {
+            if (iter->second < cyl.second)
+                break;
+        }
+        if (iter != cyls.end()) {
+            cyls.insert(iter, cyl);
+            cyls.pop_back();
+        }
+    }
+}
+double DetectCylinderRansac(
+    const std::vector<vcg::Point3f> &pointList,
+    const std::vector<vcg::Point3f> &normList,
+    std::vector<ObjCylinder*> &cylCandidates,
+    const double TDis, const double TAng,
+    const int maxN, const double inlierRatio)
+{
+    assert(pointList.size() == normList.size());
+    assert(inlierRatio > 0.0 && inlierRatio < 1.0);
+    QTime time;
+    time.start();
+
+    if (pointList.size() == 0)
+        return -1.0;
+
+    const int NPts = pointList.size();
+
+    const double Percentage = 0.9;
+    const double TDisDeviation = (1-0.6) / (1+0.6);
+    const int TAngRequired = 2;
+    const int SupportN = 2;
+    const int TheoryIteration = RansacTimes(Percentage, inlierRatio/2.0, SupportN);
+    const int MaxIteration = TheoryIteration < 10 ? 10 : (TheoryIteration > 1e4 ? 1e4 : TheoryIteration);
+    
+
+    std::list<WCylinder> cyls;
+    double maxInlierRatio = 0.0;
+    int iter = 0;
+    int AdjMaxIteration = MaxIteration;
+    std::default_random_engine randomEngine; // Keep the result same
+    std::vector<int> idx;
+    idx.reserve(NPts);
+    for (int i = 0; i < NPts; ++i)
+        idx.push_back(i);
+    while (iter < AdjMaxIteration) {
+        iter++;       
+        vcg::Point3f p[2], n[2];
+        // Random Pick
+        for (int i = 0; i < 2; ++i) {
+            // Random distribution
+            std::uniform_int_distribution<int> distribution(i, NPts - 1);
+            int k = distribution(randomEngine);
+            std::swap(idx[i], idx[k]);
+            p[i] = pointList.at(idx[i]);
+            n[i] = normList.at(idx[i]);
+        }
+        
+        // Estimate
+        ObjCylinder *cyl = EstCylinderTwoPoint(p[0], n[0], p[1], n[1], TDisDeviation, TAngRequired);
+        if (cyl == 0) // Not A Good Model 
+            continue;
+        double inlierRatio_this = CylinderInliers(*cyl, pointList, normList, TDis, TAng) * 1.0 / NPts;
+        if (inlierRatio_this < inlierRatio) { // Not A Good Model 
+            delete cyl;
+            continue;
+        }
+
+        // A Good Model
+        AddLimitList(cyls, WCylinder(cyl, inlierRatio_this), maxN);
+
+        // Update Param
+        if (inlierRatio_this > maxInlierRatio) {
+            maxInlierRatio = inlierRatio_this;
+            int newMaxIteration = RansacTimes(Percentage, maxInlierRatio, SupportN);
+            if (newMaxIteration < AdjMaxIteration)
+                AdjMaxIteration = newMaxIteration;
+        }
+    }
+
+    std::vector<ObjCylinder*> _cylCandidates;
+    _cylCandidates.reserve(cyls.size());
+    for (auto iter = cyls.begin(); iter != cyls.end(); ++iter)
+        _cylCandidates.push_back(iter->first);
+    cylCandidates.swap(_cylCandidates);
+    flog(
+        "      [--DetectCylinderRansac--]: #nPts-%d...\n"
+        "        | #ExpCand    : %d \n"
+        "        | #ExpInlier  : %7.4f \n",
+        "        | #CanNum     : %d \n"
+        "        | #MaxInlier  : %d \n"
+        "        | #Iteration  : %d - %d [ %d | %d ] \n"
+        "      [--DetectCylinderRansac--]: Done in %.4f seconds. \n",
+        NPts, maxN, inlierRatio,
+        cyls.size(), maxInlierRatio,
+        iter, AdjMaxIteration, MaxIteration, TheoryIteration,
+        time.elapsed() / 1000.0);    
+
+    return maxInlierRatio;
+}
+
+void ExtractCylinders(
+    CMeshO &mesh,
+    std::vector<ObjCylinder*> &cylinders,
+    const std::vector<int> &indexList,
+    const std::vector<vcg::Point3f> &pointList,
+    const int cyinderNUm, const int *labels)
+{
+    
 }
