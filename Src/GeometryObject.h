@@ -2,7 +2,7 @@
 #define _GEOMETRY_OBJECT_H_FILE_
 
 #include <vector>
-#include <vcg/space/deprecated_point3.h>
+#include <vcg/space/point3.h>
 
 enum GeoObjType {
     GeoObj_Patch     = 0x100,    

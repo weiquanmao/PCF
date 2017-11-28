@@ -1,16 +1,14 @@
 #include "PointCloudFitUtil.h"
 #include "tool/IOU.h"
 
-#define VCGAngle(N1, N2) R2D(abs(vcg::Angle(N1, N2)))
-#define CheckParallel(ang) (90.0 - abs(90.0 - ang))
-#define CheckPerpendicular(ang) abs(90.0 - ang)
+
 bool IsParallel(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD)
 {
-    return CheckParallel(VCGAngle(L1, L2)) < abs(AngTD);
+    return CheckAng00(VCGAngle(L1, L2)) < abs(AngTD);
 }
 bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD)
 {
-    return CheckPerpendicular(VCGAngle(L1, L2)) < abs(AngTD);
+    return CheckAng90(VCGAngle(L1, L2)) < abs(AngTD);
 }
 double PlaneIoU(const ObjRect *P1, const ObjRect *P2)
 {
@@ -107,11 +105,11 @@ bool IsAdjacencyFaces(
     double angYY = VCGAngle(P1->m_AY, P2->m_AY);
     double angYX = VCGAngle(P1->m_AY, P2->m_AX);
     bool solu1 = 
-        (CheckPerpendicular(angXX) < TAng && CheckPerpendicular(angXY) < TAng) && // X1 -| X2 and Y2
-        (CheckParallel(angYY) < TAng || CheckParallel(angYX) < TAng);             // Y1 // X2 or Y2
+        (CheckAng90(angXX) < TAng && CheckAng90(angXY) < TAng) && // X1 -| X2 and Y2
+        (CheckAng00(angYY) < TAng || CheckAng00(angYX) < TAng);             // Y1 // X2 or Y2
     bool solu2 =
-        (CheckPerpendicular(angYX) < TAng && CheckPerpendicular(angYY) < TAng) && // Y1 -| X2 and Y2
-        (CheckParallel(angXY) < TAng || CheckParallel(angXX) < TAng);             // X1 // X2 or Y2
+        (CheckAng90(angYX) < TAng && CheckAng90(angYY) < TAng) && // Y1 -| X2 and Y2
+        (CheckAng00(angXY) < TAng || CheckAng00(angXX) < TAng);             // X1 // X2 or Y2
     if (!solu1 && !solu2)
         return false;
 
@@ -130,14 +128,14 @@ bool IsAdjacencyFaces(
     double Dis2 = abs(O2O*P2->m_N);
     double l1, u1;
     double l2, u2;
-    if (CheckPerpendicular(VCGAngle(P1->m_AX, NN)) < CheckPerpendicular(VCGAngle(P1->m_AY, NN))) {
+    if (CheckAng90(VCGAngle(P1->m_AX, NN)) < CheckAng90(VCGAngle(P1->m_AY, NN))) {
         l1 = P1->width();
         u1 = P1->height();
     } else {
         u1 = P1->width();
         l1 = P1->height();
     }
-    if (CheckPerpendicular(VCGAngle(P2->m_AX, NN)) < CheckPerpendicular(VCGAngle(P2->m_AY, NN))) {
+    if (CheckAng90(VCGAngle(P2->m_AX, NN)) < CheckAng90(VCGAngle(P2->m_AY, NN))) {
         l2 = P2->width();
         u2 = P2->height();
     } else {
@@ -156,7 +154,7 @@ bool IsAdjacencyFaces(
     // All Passed
     if (adjType != 0) {
         vcg::Point3f O2O_proj = O2O - (P1->m_N * (O2O*P1->m_N)) / P1->m_N.SquaredNorm();
-        if (CheckPerpendicular(VCGAngle(O2O_proj, P1->m_AX)) < CheckPerpendicular(VCGAngle(O2O_proj, P1->m_AY))) {
+        if (CheckAng90(VCGAngle(O2O_proj, P1->m_AX)) < CheckAng90(VCGAngle(O2O_proj, P1->m_AY))) {
             // U or B
             if (O2O*P1->m_AY > 0)
                 _adjType = PlaneRelation_Adjacency_B;
@@ -175,7 +173,6 @@ bool IsAdjacencyFaces(
 
     return true;
 }
-
 PlaneRelation EstPlaneRelation(
     const ObjRect *P1, const ObjRect *P2,
     const double TRDis, const double TAng, const double TIoU)
@@ -189,24 +186,25 @@ PlaneRelation EstPlaneRelation(
 
     return PlaneRelation_NoRetation;
 }
+
 bool BuildBox(
-    ObjRect* cubePlane[6], ObjRect* plane,
+    ObjRect* cubeFace[6], ObjRect* Rect,
     const double TRDis, const double TAng, const double TIoU)
 {
     //  [0]       [1]       [2]          [3]         [4]        [5]
     //   |         |         |            |           |          |
     //RefPlane  UpPlane  RightPlane  BottomPlane  LeftPlane  OppoPlane
     assert(
-        cubePlane[0] != 0 &&
-        plane != 0
+        cubeFace[0] != 0 &&
+        Rect != 0
     );
 
     PlaneRelation P[6];
     for (int i = 0; i < 6; ++i) {
-        if (cubePlane[i] == 0)
+        if (cubeFace[i] == 0)
             P[i] = PlaneRelation_NoRetation;
         else {
-            PlaneRelation Pi = EstPlaneRelation(cubePlane[i], plane, TRDis, TAng, TIoU);
+            PlaneRelation Pi = EstPlaneRelation(cubeFace[i], Rect, TRDis, TAng, TIoU);
             if (Pi == PlaneRelation_NoRetation)
                 return false;
             P[i] = Pi;
@@ -259,41 +257,41 @@ bool BuildBox(
     // Check same side
     if (inloc == 5) {// Add an oppo
         for (int i = 1; i <= 4; ++i) {
-            if (cubePlane[i] != 0 &&
-                P[i] == EstPlaneRelation(cubePlane[i], cubePlane[0], TRDis, TAng, TIoU))
+            if (cubeFace[i] != 0 &&
+                P[i] == EstPlaneRelation(cubeFace[i], cubeFace[0], TRDis, TAng, TIoU))
                 return false;
         }
     }
-    if (cubePlane[5]) {// Already an oppo
-        if (EstPlaneRelation(plane, cubePlane[0], TRDis, TAng, TIoU)
-            == EstPlaneRelation(plane, cubePlane[5], TRDis, TAng, TIoU))
+    if (cubeFace[5]) {// Already an oppo
+        if (EstPlaneRelation(Rect, cubeFace[0], TRDis, TAng, TIoU)
+            == EstPlaneRelation(Rect, cubeFace[5], TRDis, TAng, TIoU))
             return false;
     }
 
-    cubePlane[inloc] = plane;
+    cubeFace[inloc] = Rect;
     return true;
 }
 std::vector<ObjRect*> CubeFaceInferringOne(
-    const std::vector<ObjRect*> &planes,
+    const std::vector<ObjRect*> &Rects,
     const double TRDis, const double TAng, const double TIoU)
 {
     ObjRect* tempList[6];
     std::vector<ObjRect*> finalOut;
     finalOut.reserve(6);
-    for (int i = 0; i < planes.size(); ++i) {
+    for (int i = 0; i < Rects.size(); ++i) {
         // Clean
         for (int j = 0; j < 6; ++j)
             tempList[j] = 0;
         // Init
-        tempList[0] = planes.at(i);
+        tempList[0] = Rects.at(i);
         int pNum = 1;
-        for (int j = 0; j < planes.size(); j++) {
+        for (int j = 0; j < Rects.size(); j++) {
             if (j == i)
                 continue;
             if ((i == 0 && j == 2) ||
                 (i == 0 && j == 3))
                 int stopMe = 0;
-            if (BuildBox(tempList, planes.at(j), TRDis, TAng, TIoU)) {
+            if (BuildBox(tempList, Rects.at(j), TRDis, TAng, TIoU)) {
                 pNum++;
                 if (pNum == 6)
                     break;
@@ -313,19 +311,27 @@ std::vector<ObjRect*> CubeFaceInferringOne(
             continue;
 
         if (pNum > finalOut.size()) {
+            //------
             flog(
                 "        |--------------------- \n"
                 "        |");
+            //------
             finalOut.clear();
             for (int j = 0; j < 6; ++j) {
                 if (tempList[j] != 0) {
                     finalOut.push_back(tempList[j]);
+                    //------
                     flog(" %d", tempList[j]->m_index);
-                }
-                else
+                    //------
+                } else {
+                    //------
                     flog(" 000");
+                    //------
+                }
             }
+            //------
             flog("\n");
+            //------
             if (finalOut.size() == 6)
                 break;
         }
@@ -334,8 +340,8 @@ std::vector<ObjRect*> CubeFaceInferringOne(
     return finalOut;
 }
 int CubeFaceInferring(
-    std::vector< std::vector<ObjRect*> > &cubefaces,
-    std::vector<ObjRect*> &planes,
+    std::vector< std::vector<ObjRect*> > &CubeFaces,
+    std::vector<ObjRect*> &Rects,
     const double TRDis, const double TAng, const double TIoU,
     const bool remove)
 {
@@ -345,44 +351,45 @@ int CubeFaceInferring(
         "      [--Cube_Infer--]: #Ple-%d\n"
         "        | #TRDis   : %.4f \n"
         "        | #TAng    : %.4f \n",
-        planes.size(),
+        Rects.size(),
         TRDis, TAng);
 
-    std::vector<ObjRect*> _planes = planes;
+    std::vector<ObjRect*> _rects = Rects;
     std::vector< std::vector<ObjRect*> > _cubefaces;
-    while (_planes.size() > 1) {
-        std::vector<ObjRect*> faces = CubeFaceInferringOne(_planes, TRDis, TAng, TIoU);
+    while (_rects.size() > 1) {
+        std::vector<ObjRect*> faces = CubeFaceInferringOne(_rects, TRDis, TAng, TIoU);
         if (!faces.empty()) {
             _cubefaces.push_back(faces);
-            RemovePlanes(_planes, faces, false);
+            RemovePlanes(_rects, faces, false);
         }
         else
             break;
     }
+
+    if (remove) {
+        for (int i=0; i<_cubefaces.size(); ++i)
+            RemovePlanes(Rects, _cubefaces.at(i), false);
+    }
+    CubeFaces.swap(_cubefaces);
 
     flog(
         "        |===================== \n"
         "        | #Cube    : %d \n"
         "        | #LeftPle : %d \n"
         "      [--Cube_Infer--]: Done in %.4f seconds. \n",
-        _cubefaces.size(), _planes.size(),
+        CubeFaces.size(), _rects.size(),
         time.elapsed() / 1000.0);
 
-    if (remove) {
-        for (int i=0; i<_cubefaces.size(); ++i)
-            RemovePlanes(planes, _cubefaces.at(i), false);
-    }
-    cubefaces.swap(_cubefaces); 
-
-    return cubefaces.size();
+    return CubeFaces.size();
 }
 
 
 // [2] Estimate Cube
 // [2.1] Estimate Orientation
+typedef std::pair< vcg::Point3f, double > WPoint3f;
 vcg::Point3f RobustOneD(
-    const std::vector< std::pair< vcg::Point3f, double > > &FaceD,
-    const std::vector< std::pair< vcg::Point3f, double > > &EdgeD)
+    const std::vector< WPoint3f > &FaceD,
+    const std::vector< WPoint3f > &EdgeD)
 {// ！！！同向单位向量输入！！！
     vcg::Point3f N;
     if (!FaceD.empty()) {
@@ -446,12 +453,12 @@ vcg::Point3f RobustOneD(
               
 }
 void RobustDirections(
-    const std::vector< std::pair< vcg::Point3f, double > > &FaceNX,
-    const std::vector< std::pair< vcg::Point3f, double > > &FaceNY,
-    const std::vector< std::pair< vcg::Point3f, double > > &FaceNZ,
-    const std::vector< std::pair< vcg::Point3f, double > > &EdgeNX,
-    const std::vector< std::pair< vcg::Point3f, double > > &EdgeNY,
-    const std::vector< std::pair< vcg::Point3f, double > > &EdgeNZ,
+    const std::vector< WPoint3f > &FaceNX,
+    const std::vector< WPoint3f > &FaceNY,
+    const std::vector< WPoint3f > &FaceNZ,
+    const std::vector< WPoint3f > &EdgeNX,
+    const std::vector< WPoint3f > &EdgeNY,
+    const std::vector< WPoint3f > &EdgeNZ,
     vcg::Point3f &NX, vcg::Point3f &NY, vcg::Point3f &NZ)
 {
     vcg::Point3f nx = RobustOneD(FaceNX, EdgeNX);
@@ -534,14 +541,14 @@ void RobustOrientation(
     vcg::Point3f NZRef = PP->m_N; NZRef.Normalize();
     double ZVar = PP->m_varN;
     double XYWeight = std::min(PP->m_EIConfX, PP->m_EIConfY);
-    std::vector< std::pair< vcg::Point3f, double > > FaceNX, FaceNY, FaceNZ; // 由面法向提供的指向信息
-    std::vector< std::pair< vcg::Point3f, double > > EdgeNX, EdgeNY, EdgeNZ; // 由边方向提供的指向信息
-    FaceNZ.push_back(std::pair<vcg::Point3f, double>(NZRef, ZVar));
-    EdgeNX.push_back(std::pair<vcg::Point3f, double>(NXRef, XYWeight));
-    EdgeNY.push_back(std::pair<vcg::Point3f, double>(NYRef, XYWeight));
+    std::vector< WPoint3f > FaceNX, FaceNY, FaceNZ; // 由面法向提供的指向信息
+    std::vector< WPoint3f > EdgeNX, EdgeNY, EdgeNZ; // 由边方向提供的指向信息
+    FaceNZ.push_back(WPoint3f(NZRef, ZVar));
+    EdgeNX.push_back(WPoint3f(NXRef, XYWeight));
+    EdgeNY.push_back(WPoint3f(NYRef, XYWeight));
 
     vcg::Point3f *pX, *pY, *pZ;
-    std::vector< std::pair< vcg::Point3f, double > > *pXV, *pYV, *pZV;
+    std::vector< WPoint3f > *pXV, *pYV, *pZV;
     for (int i = 1; i<CubePlanes.size(); ++i)
     {
         PP = CubePlanes.at(i);
@@ -590,9 +597,9 @@ void RobustOrientation(
         nx.Normalize();
         ny.Normalize();
         nz.Normalize();
-        pZV->push_back(std::pair<vcg::Point3f, double>(nz, zvar));
-        pXV->push_back(std::pair<vcg::Point3f, double>(nx, xyweight));
-        pYV->push_back(std::pair<vcg::Point3f, double>(ny, xyweight));
+        pZV->push_back(WPoint3f(nz, zvar));
+        pXV->push_back(WPoint3f(nx, xyweight));
+        pYV->push_back(WPoint3f(ny, xyweight));
     }
     assert((FaceNX.size() + EdgeNX.size()) == CubePlanes.size());
     assert((FaceNY.size() + EdgeNY.size()) == CubePlanes.size());
@@ -615,7 +622,9 @@ void RobustOrientation(
 
 
 // [2.2] Estimate Dimenstion
-std::pair< double, double > FaceInter(
+typedef std::pair< double, double > WLoc;
+typedef std::pair< WLoc, WLoc > WLocPair;
+WLoc FaceInter(
     const vcg::Point3f &NRef,
     const vcg::Point3f &O,
     const vcg::Point3f &NX,
@@ -624,15 +633,15 @@ std::pair< double, double > FaceInter(
     double sum = 0.0;
     double sum2 = 0.0;
     double loc = 0.0;
-    loc = NRef*O;			sum += loc;	sum2 += loc*loc;
+    loc = NRef*O;               sum += loc;	sum2 += loc*loc;
     loc = NRef*(O + NX);		sum += loc;	sum2 += loc*loc;
     loc = NRef*(O + NY);		sum += loc;	sum2 += loc*loc;
     loc = NRef*(O + NX + NY);	sum += loc;	sum2 += loc*loc;
     double locMiu = sum / 4.0;
     double locVar = sqrt(sum2 / 4.0 - locMiu*locMiu);
-    return std::pair< double, double >(locMiu, locVar);
+    return WLoc(locMiu, locVar);
 }
-std::pair< double, double > LineProj(
+WLoc LineProj(
     const vcg::Point3f &NRef,
     const vcg::Point3f &O,
     const vcg::Point3f &NMain,
@@ -646,13 +655,13 @@ std::pair< double, double > LineProj(
     double loc1 = (loc11 + loc21) / 2.0;
     double loc2 = (loc12 + loc22) / 2.0;
     if (loc1>loc2)
-        return std::pair< double, double >(loc1, loc2);
+        return WLoc(loc1, loc2);
     else
-        return std::pair< double, double >(loc2, loc1);
+        return WLoc(loc2, loc1);
 }
 double RobustLengthOneD(
-    const std::vector< std::pair< double, double > > &FaceInter,
-    std::vector< std::pair< std::pair< double, double >, std::pair< double, double > > > &EdgeInter,
+    const std::vector< WLoc > &FaceInter,
+    std::vector< WLocPair > &EdgeInter,
     double &minProj, double &maxProj)
 {
     double w = 0.0;
@@ -671,7 +680,7 @@ double RobustLengthOneD(
     }
     else {
         int N = EdgeInter.size();
-        std::vector<std::pair< double, double >> upList, downList;
+        std::vector<WLoc> upList, downList;
         for (int i = 0; i<N; i++) {
             upList.push_back(EdgeInter.at(i).first);
             downList.push_back(EdgeInter.at(i).second);
@@ -728,7 +737,7 @@ double RobustLengthOneD(
 }
 void RobustDimention(
     const std::vector<ObjRect*> &CubePlanes,
-    vcg::Point3f &NX, vcg::Point3f &NY, vcg::Point3f &NZ,
+    const vcg::Point3f &NX, const vcg::Point3f &NY, const vcg::Point3f &NZ,
     vcg::Point3f &OP, vcg::Point3f &SIZE, vcg::Point3f &WEIGHTS,
     const double TAng)
 {
@@ -736,12 +745,12 @@ void RobustDimention(
     time.start();
 
     // <位置,权值>
-    std::vector< std::pair< double, double > > FaceInterX, FaceInterY, FaceInterZ;
-    std::vector< std::pair< std::pair< double, double >, std::pair< double, double > > > EdgeInterX, EdgeInterY, EdgeInterZ;
+    std::vector< WLoc > FaceInterX, FaceInterY, FaceInterZ;
+    std::vector< WLocPair > EdgeInterX, EdgeInterY, EdgeInterZ;
 
-    vcg::Point3f *pNX, *pNY, *pNZ;
-    std::vector< std::pair< double, double > > *pFZ;
-    std::vector< std::pair< std::pair< double, double >, std::pair< double, double > > > *pEX, *pEY;
+    const vcg::Point3f *pNX, *pNY, *pNZ;
+    std::vector< WLoc > *pFZ;
+    std::vector< WLocPair > *pEX, *pEY;
     for (int i = 0; i<CubePlanes.size(); ++i)
     {
         ObjRect *PP = CubePlanes.at(i);
@@ -783,23 +792,12 @@ void RobustDimention(
                 pNY = &NX; pEY = &EdgeInterX;
             }
         }
-        std::pair< double, double > IF = FaceInter(*pNZ, op, nx, ny);
+        WLoc IF = FaceInter(*pNZ, op, nx, ny);
         pFZ->push_back(IF);
-
-        std::pair< double, double > IX = LineProj(*pNX, op, nx, ny);
-        pEX->push_back(
-            std::pair< std::pair< double, double >, std::pair< double, double > >(
-                std::pair< double, double >(IX.first, xyweight),
-                std::pair< double, double >(IX.second, xyweight)
-                )
-        );
-        std::pair< double, double > IY = LineProj(*pNY, op, ny, nx);
-        pEY->push_back(
-            std::pair< std::pair< double, double >, std::pair< double, double > >(
-                std::pair< double, double >(IY.first, xyweight),
-                std::pair< double, double >(IY.second, xyweight)
-                )
-        );
+        WLoc IX = LineProj(*pNX, op, nx, ny);
+        pEX->push_back( WLocPair( WLoc(IX.first, xyweight), WLoc(IX.second, xyweight) ) );
+        WLoc IY = LineProj(*pNY, op, ny, nx);
+        pEY->push_back( WLocPair( WLoc(IY.first, xyweight), WLoc(IY.second, xyweight) ) );
 
     }
     assert((FaceInterX.size() + EdgeInterX.size()) == CubePlanes.size());
@@ -817,7 +815,7 @@ void RobustDimention(
     flog(
         "      [--Cube_Dimention--]: #Ple-%d\n"
         "        | #TAng  : %.4f \n"
-        "        | #OP    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"
+        "        | #OP    : < %.4f, %.4f, %.4f > \n"
         "        | #NX    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"
         "        | #NY    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"
         "        | #NZ    : %.4f - [%.4f%] - < %.4f, %.4f, %.4f > \n"
@@ -830,11 +828,9 @@ void RobustDimention(
         time.elapsed() / 1000.0);
 }
 
-
-void CubeMeasure(
-    ObjCube *cube,
+void CubeMeasure(    
     const std::vector<ObjRect*> &CubePlanes,
-    const double TAng)
+    ObjCube *cube, const double TAng)
 {
     // 1.Direction
     vcg::Point3f NX, NY, NZ;
@@ -855,12 +851,11 @@ void CubeMeasure(
 // [4] Merge And Cut
 bool MergeToCube(
     CMeshO &mesh,
-    ObjRect *plane,
+    const ObjRect *rect, const ObjCube *Cube,
     std::vector<ObjRect*> &planeSplit,
-    const ObjCube *Cube,
     const double TAng, const double TDis)
 {
-    if (plane == 0 || Cube == 0)
+    if (rect == 0 || Cube == 0)
         return false;
 
     vcg::Point3f co = Cube->m_O;
@@ -868,10 +863,10 @@ bool MergeToCube(
     vcg::Point3f cy = Cube->m_AY;
     vcg::Point3f cz = Cube->m_AZ;
 
-    vcg::Point3f po = plane->m_O;
-    vcg::Point3f pn = plane->m_N;
-    vcg::Point3f px = plane->m_AX;
-    vcg::Point3f py = plane->m_AY;
+    vcg::Point3f po = rect->m_O;
+    vcg::Point3f pn = rect->m_N;
+    vcg::Point3f px = rect->m_AX;
+    vcg::Point3f py = rect->m_AY;
     vcg::Point3f p_center = po + (px + py) / 2.0;
 
     vcg::Point3f _o = co;
@@ -902,23 +897,24 @@ bool MergeToCube(
     else
         return false;
     // 2. Check Ratio
-    const int nCode = plane->m_index;
+    const int nCode = rect->m_index;
     CMeshO::PerVertexAttributeHandle<PtType> type_hi =
         vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
     std::vector<int> idxOnPlane, idxOnCube;
     std::vector<vcg::Point3f> ptsOnPlane, ptsOnCube;
     int idx = 0;
-    double r1 = 1.0 / _u.SquaredNorm();
-    double r2 = 1.0 / _v.SquaredNorm();
-    double _d1 = -2 * TDis;
-    double _d2 = 1+ 2 * TDis;
+    double _d1 = _u.Norm();
+    double _d2 = _v.Norm();
+    double _d = 2 * TDis;
+    double r1 = 1.0 / _d1;
+    double r2 = 1.0 / _d2;   
     for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); vi++, idx++) {
         if (type_hi[vi] == nCode) { // Belong to plane
             vcg::Point3f &p = vi->cP();
             
             double x = ((p-_o)*_u)*r1;
             double y = ((p-_o)*_v)*r2;
-            if (x >= _d1 && x <= _d2 && y >= _d1 && y <= _d2) {
+            if (x >= -_d && x <= _d1+_d && y >= -_d && y <= _d2+_d) {
                 idxOnCube.push_back(idx);
                 ptsOnCube.push_back(p);
             }
@@ -930,7 +926,6 @@ bool MergeToCube(
     }
     double ratio = ptsOnCube.size()*1.0 / (ptsOnCube.size()+ptsOnPlane.size());
     const double T1 = 0.8;
-    const int T2 = 300;
     if (ratio >= T1) {// Have Enogh Cover
         for (int i = ptsOnPlane.size() - 1; i >= 0; --i) {
             int index = idxOnPlane.at(i);
@@ -938,7 +933,7 @@ bool MergeToCube(
         }
         return true;
     }
-    else if (ptsOnCube.size()>T2){// Need Cut
+    else {// Need Cut
         while (1) {
             // Pick Max
             std::vector<int> idxList;
@@ -953,23 +948,25 @@ bool MergeToCube(
                 break;
             }
             // Fit
-            vcg::Point4f infPlane;
-            double err = FineFit(ptsOnPlane, idxList, infPlane);
+            vcg::Plane3f onePlane;
+            double err = FineFit(ptsOnPlane, idxList, onePlane);
 
             // MBR
             int newCode = _GetPlaneCode();
-            ObjRect *onePle = new ObjRect(newCode);
-            ExtractMBR(mesh, *onePle, infPlane, ptsOnPlane, idxOnPlane, idxList);
-            onePle->m_varN = err;
-
-            // A New Split
-            planeSplit.push_back(onePle);
-            for (int i = idxList.size() - 1; i >= 0; --i) {
-                int index = idxList.at(i);
-                type_hi[idxOnPlane.at(index)] = newCode;
-                ptsOnPlane.erase(ptsOnPlane.begin() + index);
-                idxOnPlane.erase(idxOnPlane.begin() + index);               
+            ObjRect *oneRect = ExtractMBR(mesh, onePlane, ptsOnPlane, idxOnPlane, idxList);
+            if (oneRect != 0) {
+                oneRect->m_varN = err;
+                // A New Split
+                planeSplit.push_back(oneRect);
+                for (int i = idxList.size() - 1; i >= 0; --i) {
+                    int index = idxList.at(i);
+                    type_hi[idxOnPlane.at(index)] = newCode;
+                    ptsOnPlane.erase(ptsOnPlane.begin() + index);
+                    idxOnPlane.erase(idxOnPlane.begin() + index);
+                }
             }
+            else
+                break;
         }
         return true;
     }
@@ -991,7 +988,7 @@ int AttachToCube(
         std::vector<ObjRect*> split;
         flog("    >> Attach [ ID.%d ] ... \n", ple->m_index);
         for (int k = 0; k < cubes.size(); ++k) {          
-            if (MergeToCube(mesh, ple, split, cubes.at(k), TAng, TDis)) {
+            if (MergeToCube(mesh, ple, cubes.at(k), split, TAng, TDis)) {
                 flog("    [ -- Attached to the [ No.%d ] cube with [ %d ] split(s) ... -- ]\n", k+1, split.size());
                 CubeFaces.at(k).push_back(ple);
                 planesAdded.push_back(ple);

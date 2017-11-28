@@ -6,6 +6,10 @@ const int melody_hold = 128;
 
 void MelodyPlay_Notice()
 {
+    Beep(note_la, melody_halfBeat);
+    Beep(note_si, melody_halfBeat);
+    Sleep(melody_hold);
+
     Beep(note_do1, melody_oneBeat + melody_halfBeat);
     Beep(note_si, melody_halfBeat);
     Sleep(melody_hold);
@@ -13,9 +17,19 @@ void MelodyPlay_Notice()
     Sleep(melody_hold);
     Beep(note_mi1, melody_oneBeat);
     Sleep(melody_hold);
+
     Beep(note_si, 3 * melody_oneBeat);
     Sleep(melody_hold);
+    Beep(note_mi, melody_halfBeat);
+    Beep(note_mi, melody_halfBeat);
 
+    Beep(note_la, melody_halfBeat + melody_oneBeat);
+    Beep(note_so, melody_halfBeat);
+    Sleep(melody_hold);
+    Beep(note_la, melody_oneBeat);
+    Sleep(melody_hold);
+    Beep(note_do1, melody_oneBeat);
+    Sleep(melody_hold);
 }
 void MelodyPlay_CIS()
 {

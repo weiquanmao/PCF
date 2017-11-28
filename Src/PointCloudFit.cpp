@@ -88,26 +88,26 @@ void PCFit::printParams()
 		" |------------------------------------------------------|\n"
 		" | [Threshold_NPts              ]:       < %000008d >   |\n"
         " | [RefA_Ratio                  ]:       < %0008.3f >   |\n"
-		" | [PlaneNum_Expected           ]:       < %000008d >   |\n"
 		" | [DeNoise_MaxIteration        ]:       < %000008d >   |\n"
 		" | [DeNoise_KNNNeighbors        ]:       < %000008d >   |\n"
         " | [DeNoise_GrowNeighbors       ]:       < %000008d >   |\n"
         " | [DeNoise_DisRatioOfOutlier   ]:       < %0008.3f >   |\n"
 		" | [Precision_HT                ]:       < %0008.3f >   |\n"
+        " | [Threshold_MaxModelNum       ]:       < %000008d >   |\n"
 		" | [Threshold_NPtsPlane         ]:       < %0008.3f >   |\n"
-		" | [Threshold_DisToPlane        ]:       < %0008.3f >   |\n"
-		" | [Threshold_AngToPlane        ]:       < %0008.3f >   |\n"
+        " | [Threshold_NPtsCylinder      ]:       < %0008.3f >   |\n"
+		" | [Threshold_DisToSurface      ]:       < %0008.3f >   |\n"
+		" | [Threshold_AngToSurface      ]:       < %0008.3f >   |\n"
 		" | [Threshold_PRAng             ]:       < %0008.3f >   |\n"
 		" | [Threshold_PRDis             ]:       < %0008.3f >   |\n"
-        " | [Threshold_PRIoU             ]:       < %0008.3f >   |\n"
-		" | [Threshold_NPtsCyl           ]:       < %0008.3f >   |\n"
+        " | [Threshold_PRIoU             ]:       < %0008.3f >   |\n"		
 		" +------------------------------------------------------+\n",
-		Threshold_NPts, RefA_Ratio, PlaneNum_Expected,
+		Threshold_NPts, RefA_Ratio,
 		DeNoise_MaxIteration, DeNoise_KNNNeighbors, DeNoise_GrowNeighbors, DeNoise_DisRatioOfOutlier,
-		Precision_HT, Threshold_NPtsPlane,
-		Threshold_DisToPlane, Threshold_AngToPlane, 
-		Threshold_PRAng, Threshold_PRDis, Threshold_PRIoU,
-		Threshold_NPtsCyl);
+		Precision_HT, Threshold_MaxModelNum,
+        Threshold_NPtsPlane, Threshold_NPtsCylinder,
+		Threshold_DisToSurface, Threshold_AngToSurface, 
+		Threshold_PRAng, Threshold_PRDis, Threshold_PRIoU);
 }
 
 
@@ -128,30 +128,27 @@ void PCFit::initMParams(const char *iniFile)
 {
 	Threshold_NPts    = 100;
     RefA_Ratio        = 0.01;
-	PlaneNum_Expected = 30;
 
 	DeNoise_MaxIteration      = 0;
 	DeNoise_KNNNeighbors      = 50;
     DeNoise_GrowNeighbors     = 20;
     DeNoise_DisRatioOfOutlier = 0.1;
 
-    Precision_HT         = 0.01;
-    Threshold_NPtsPlane  = 0.05;
-    Threshold_DisToPlane = 2.0;
-    Threshold_AngToPlane = 15.0;
+    Precision_HT           = 0.01;
+    Threshold_MaxModelNum   = 30;
+    Threshold_NPtsPlane    = 0.05;
+    Threshold_NPtsCylinder = 0.1;
+    Threshold_DisToSurface = 2.0;
+    Threshold_AngToSurface = 15.0;
 
 #if  _RECON_DATA_
-    Precision_HT         = 0.01;
-    Threshold_NPtsPlane  = 0.025;
-    Threshold_DisToPlane = 2.0;
-    Threshold_AngToPlane = 30.0;
+    Threshold_NPtsPlane    = 0.025;
+    Threshold_AngToSurface = 30.0;
 #endif //  _RECON_DATA_
 
 #ifdef _SYN_DATA_
-    Precision_HT         = 0.01;
-    Threshold_NPtsPlane  = 0.05;
-    Threshold_DisToPlane = 2.0;
-    Threshold_AngToPlane = 15.0;
+    Threshold_NPtsPlane    = 0.05;
+    Threshold_AngToSurface = 15.0;
 #endif // _SYN_DATA_
 
     
@@ -159,7 +156,6 @@ void PCFit::initMParams(const char *iniFile)
 	Threshold_PRDis = 0.50;
     Threshold_PRIoU = 0.75;
 
-	Threshold_NPtsCyl = 0.2;
 
 	if (!iniFile && QFileInfo(iniFile).exists()) {
 		QSettings conf(iniFile, QSettings::IniFormat);
@@ -168,8 +164,6 @@ void PCFit::initMParams(const char *iniFile)
 			Threshold_NPts = conf.value("Threshold_NPts").toInt();
         if (keys.contains("RefA_Ratio"))
             RefA_Ratio = conf.value("RefA_Ratio").toInt();
-		if (keys.contains("PlaneNum_Expected"))
-			PlaneNum_Expected = conf.value("PlaneNum_Expected").toInt();
 
 		if (keys.contains("DeNoise_MaxIteration"))
 			DeNoise_MaxIteration = conf.value("DeNoise_MaxIteration").toInt();
@@ -182,23 +176,25 @@ void PCFit::initMParams(const char *iniFile)
 	
 		if (keys.contains("Precision_HT"))
 			Precision_HT = conf.value("Precision_HT").toDouble();
+        if (keys.contains("Threshold_MaxModelNum"))
+            Threshold_MaxModelNum = conf.value("Threshold_MaxModelNum").toInt();
+
 		if (keys.contains("Threshold_NPtsPlane"))
 			Threshold_NPtsPlane = conf.value("Threshold_NPtsPlane").toDouble();
-		if (keys.contains("Threshold_DisToPlane"))
-			Threshold_DisToPlane = conf.value("Threshold_DisToPlane").toDouble();
-		if (keys.contains("Threshold_AngToPlane"))
-			Threshold_AngToPlane = conf.value("Threshold_AngToPlane").toDouble();
+        if (keys.contains("Threshold_NPtsCylinder"))
+            Threshold_NPtsCylinder = conf.value("Threshold_NPtsCylinder").toDouble();
+
+		if (keys.contains("Threshold_DisToSurface"))
+			Threshold_DisToSurface = conf.value("Threshold_DisToSurface").toDouble();
+		if (keys.contains("Threshold_AngToSurface"))
+			Threshold_AngToSurface = conf.value("Threshold_AngToSurface").toDouble();
         
 		if (keys.contains("Threshold_PRAng"))
 			Threshold_PRAng = conf.value("Threshold_PRAng").toDouble();
 		if (keys.contains("Threshold_PRDis"))
 			Threshold_PRDis = conf.value("Threshold_PRDis").toDouble();
         if (keys.contains("Threshold_PRIoU"))
-            Threshold_PRIoU = conf.value("Threshold_PRIoU").toDouble();
-
-		if (keys.contains("Threshold_NPtsCyl"))
-			Threshold_NPtsCyl = conf.value("Threshold_NPtsCyl").toDouble();
-		
+            Threshold_PRIoU = conf.value("Threshold_PRIoU").toDouble();		
 	}
 	
 }
@@ -351,7 +347,7 @@ void PCFit::autoColor()
 	}
 }
 
-bool PCFit::Fit_Sate(bool keepAttribute)
+bool PCFit::GEOFit(bool keepAttribute)
 {
 	if (m_meshDoc.mesh == 0 || m_meshDoc.svn() < Threshold_NPts)
 		return false;
@@ -411,35 +407,35 @@ bool PCFit::Fit_Sate(bool keepAttribute)
         //----[[
 		vcg::Point3f PSize;
 		std::vector<vcg::Point3f> PDirection;
-        PCADimensionAna(PSize, PDirection, true);
+        PCADimensions(PDirection, PSize);
         double PCASize = PSize.V(2)*RefA_Ratio;
-        double RoughSize = RoughnessAna(true);
+        double RoughSize = Roughness();
         m_refa = RoughSize > PCASize ? RoughSize : PCASize;
 
 		//----]]
 		flog("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
 
+
 	// -- 2. Detect All Planes
 	std::vector<ObjPatch*> planes;
 	{
 #if 1 // Detect Planes by Hough Transform
-		flog("\n\n[=PlaneFit_HT=]: -->> Try to Detect %d Planes by Hough Translation <<--  \n", PlaneNum_Expected);
+		flog("\n\n[=PlaneFit_HT=]: -->> Try to Detect %d Planes by Hough Translation <<--  \n", Threshold_MaxModelNum);
 		time.restart();
 		//-------------------------------
-		planes = DetectPlanesHT(PlaneNum_Expected);
+		planes = DetectPlanesHT(Threshold_MaxModelNum);
 		//-------------------------------
 		flog("[=PlaneFit_HT=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);
 #else // Detect Planes by Multi-Model Fitting with GCO
-        flog("\n\n[=PlaneFit_MPFGCO=]: -->> Try to Fit by Multi-Planes Fitting in GCO with %d Expected Initial Planes <<--  \n", PlaneNum_Expected);
+        flog("\n\n[=PlaneFit_MPFGCO=]: -->> Try to Fit by Multi-Planes Fitting in GCO with %d Expected Initial Planes <<--  \n", Threshold_MaxModelNum);
         time.restart();
         //-------------------------------
-        planes = DetectPlanesGCO(PlaneNum_Expected, 10);
+        planes = DetectPlanesGCO(Threshold_MaxModelNum, 10);
         //-------------------------------
         flog("[=PlaneFit_MPFGCO=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);      
 #endif
     }
-
     
 	// -- 3. Detect Cube from Planes
 	std::vector<ObjCube*> cubes;
@@ -453,32 +449,37 @@ bool PCFit::Fit_Sate(bool keepAttribute)
 	}
     for (int i = 0; i < cubes.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
-
-    /*
+   
     
 	// -- 4. Detect Cylinder
-    ObjCylinder *objCylinder = 0;
+    std::vector<ObjCylinder*> objCylinder;
 	if ( m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL) ) {
-#if 1 // Detect Planes by Symmetric Axis Detection with Hough Transform
+#if 0 // Detect Planes by Symmetric Axis Detection with Hough Transform
 		flog("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis Detection <<--  \n");
 		time.restart();
 		//-------------------------------
-        objCylinder = DetectCylinderSymAxis();
+        ObjCylinder *oneCly = DetectCylinderSymAxis();
 		//-------------------------------
-		if (objCylinder != 0)
-			flog("[=DetectCylinder_SA=]: Done, cylinder is detected in %.4f seconds.\n", time.elapsed() / 1000.0);
-		else
-			flog("[=DetectCylinder_SA=]: No cylinder is detected. Elapsed %.4f seconds.\n", time.elapsed() / 1000.0);
+		if (oneCly != 0)
+            objCylinder.push_back(oneCly);
+        flog("[=DetectCylinder_SA=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
 #else // Detect Planes by Multi-Model Fitting with GCO
+        flog("\n\n[=DetectMCF_GCO=]: -->> Try to Detect Cylinder by Energy-based Multi-Model Fitting with GCO ... <<--  \n");
+        time.restart();
+        //-------------------------------
+        objCylinder = DetectCylinderGCO(Threshold_MaxModelNum);
+        //-------------------------------
+        flog("[=DetectMCF_GCO=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
+
 #endif
     }
 	else {
 		flog("\n\n[=DetectCylinder=]: [ ): ] Normals are needed to detected cylinder. \n");
 	}
-    if (objCylinder != 0)
-        m_GEOObjSet->m_SolidList.push_back(objCylinder);
+    for (int i = 0; i < objCylinder.size(); ++i)
+        m_GEOObjSet->m_SolidList.push_back(objCylinder.at(i));
 
-    */
+    
 
 	// -- 5. Set Planes
 	{

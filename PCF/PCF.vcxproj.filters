@@ -114,6 +114,9 @@
     <ClCompile Include="..\Src\tool\PCA.cpp">
       <Filter>SRC\Tool</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\PointCloudFitUtil_MMFGCO.cpp">
+      <Filter>SRC</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\PointCloudFit.h">

@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 				const string FileName = fileinfo.name;
                 SetConsoleTitleA(FileName.c_str());
 #if 0 // Test Only One
-				if (FileName != "spot.ply")
+				if (FileName != "helios.ply")
 					continue;
 #endif
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 				PCFit Fit;
 				Fit.printParams();
 				Fit.loadPly(FilePath.c_str());
-				Fit.Fit_Sate();
+				Fit.GEOFit();
 				Fit.clearD();
 				Fit.recolorPts(Pt_Noise, 255, 0, 0);
 				Fit.savePly(FileNameOpt.c_str());
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         << "\n\n";
     
     SetConsoleTitleA("-- Finished --");
-    //MelodyPlay_Notice();
+    MelodyPlay_Notice();
 	system("pause");
 	return 0;
 }

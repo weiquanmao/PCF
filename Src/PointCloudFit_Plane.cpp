@@ -2,7 +2,7 @@
 #include "PointCloudFitUtil.h"
 #include "gco/GCoptimization.h"
 
-std::vector<ObjPatch*> PCFit::DetectPlanesHT(const int expPN)
+std::vector<ObjPatch*> PCFit::DetectPlanesHT(const int expPlaneNum)
 {
     CMeshO &mesh = m_meshDoc.mesh->cm;
 
@@ -13,42 +13,42 @@ std::vector<ObjPatch*> PCFit::DetectPlanesHT(const int expPN)
     vcg::Point3f center = GetPointList(indexList, pointList, normList, true);
 
 	// -- Calculate intercept
-	double candicate1 = mesh.bbox.Diag() * sqrt(3.0) / 2.0;
-	double candicate2 = mesh.bbox.DimX() + mesh.bbox.DimY() + mesh.bbox.DimZ();
-	double intercept = (candicate1 < candicate2) ? candicate1 : candicate2;
+	double candidate1 = mesh.bbox.Diag() * sqrt(3.0) / 2.0;
+	double candidate2 = mesh.bbox.DimX() + mesh.bbox.DimY() + mesh.bbox.DimZ();
+	double intercept = (candidate1 < candidate2) ? candidate1 : candidate2;
 
     // -- Calculate Thresholds
-	const double _planeDisThreshold = m_refa*Threshold_DisToPlane;
-	const double _planeAngThreshold = Threshold_AngToPlane;
+	const double _planeDisThreshold = m_refa*Threshold_DisToSurface;
+	const double _planeAngThreshold = Threshold_AngToSurface;
 	const int _THard = fmax(300, pointList.size()*0.01);
 
     // -- Detect Planes
-    std::vector<ObjPatch*> planes;
-    std::vector<vcg::Point4f> infPlanes; // Useless
+    std::vector<ObjPatch*> patches;
+    std::vector<vcg::Plane3f> planes; // Useless
 
-    infPlanes = DetectHTPlanes(
-        pointList, normList,
+    DetectHTPlanes(
+        planes, pointList, normList,
         intercept, m_refa, Precision_HT,
         _planeDisThreshold, _planeAngThreshold,
-        Threshold_NPtsPlane, _THard, expPN,
+        Threshold_NPtsPlane, _THard, expPlaneNum,
         0,
-        &planes, &mesh, &indexList);
+        &patches, &mesh, &indexList);
 
     // -- Move Back
-    for (int i = 0; i<planes.size(); ++i) {
-        planes.at(i)->m_O += center;
+    for (int i = 0; i<patches.size(); ++i) {
+        patches.at(i)->m_O += center;
     }
 
 	indexList.clear();
 	pointList.clear();
     normList.clear();
 
-	return planes;
+	return patches;
 }
 
-std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPN, const int iteration)
+std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPlaneNum, const int iteration)
 { 
-    std::vector<ObjPatch*> planes;
+    std::vector<ObjPatch*> patches;
     CMeshO &mesh = m_meshDoc.mesh->cm;
 
     // -- Get Normalized Point List (Moved So That the Center is [0,0])
@@ -63,19 +63,19 @@ std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPN, const int iterati
     double intercept = (candicate1 < candicate2) ? candicate1 : candicate2;
 
     // -- Calculate Thresholds
-    const double _planeDisThreshold = m_refa*Threshold_DisToPlane;
-    const double _planeAngThreshold = Threshold_AngToPlane;
+    const double _planeDisThreshold = m_refa*Threshold_DisToSurface;
+    const double _planeAngThreshold = Threshold_AngToSurface;
     const int _THard = fmax(300, pointList.size()*0.01);
 
     // -- Detect Init Planes
-    std::vector<vcg::Point4f> infPlanes;
+    std::vector<vcg::Plane3f> planeCandidates;
     std::vector<double> errors;
-    infPlanes = DetectHTPlanes(
-        pointList, normList,
+    DetectHTPlanes(
+        planeCandidates, pointList, normList,
         intercept, m_refa, Precision_HT,
         _planeDisThreshold, _planeAngThreshold,
         //0.0, 0, expPN,
-        Threshold_NPtsPlane, _THard, expPN,
+        Threshold_NPtsPlane, _THard, expPlaneNum,
         &errors);
 
     // -- Fit by GCO
@@ -93,14 +93,14 @@ std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPN, const int iterati
     int delta = 10;
 
     int numNeighbors = 7;
-
+    int maxIteration = iteration > 0 ? iteration : 100;
     int *gcoResult = new int[pointList.size()];
 	try{
         int numSite = pointList.size();
-        int numLabel = infPlanes.size() + 1;
+        int numLabel = planeCandidates.size() + 1;
 		GCoptimizationGeneralGraph *gco = new GCoptimizationGeneralGraph(numSite, numLabel);
         MPFGCOCost gcoCost = 
-            MPFGCOGeneratCost(infPlanes, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
+            MPFGCOGeneratCost(planeCandidates, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
         MPFGCONeighbors gcoNei = 
             MPFGCOParseNeighbors(mesh, indexList, lambda, delta, numNeighbors, m_refa);
         // -- Set [Data Energy]
@@ -114,7 +114,7 @@ std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPN, const int iterati
 
         gco->setLabelOrder(true);
         gco->setVerbosity(1);
-        gco->expansion(iteration);
+        gco->expansion(maxIteration);
         
         // -- Get Result <& Re-Estimate>
         for (int i = 0; i < numSite; i++)
@@ -128,12 +128,12 @@ std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPN, const int iterati
 	catch (GCException e){
 		e.Report();
 	}
-    planes = ExtractPatches(mesh, indexList, pointList, infPlanes.size(), gcoResult);
+    ExtractPatches(mesh, patches, indexList, pointList, planeCandidates.size(), gcoResult);
 
 
     // -- Move Back
-    for (int i = 0; i<planes.size(); ++i) {
-        planes.at(i)->m_O += center;
+    for (int i = 0; i<patches.size(); ++i) {
+        patches.at(i)->m_O += center;
     }
     
     
@@ -142,5 +142,5 @@ std::vector<ObjPatch*> PCFit::DetectPlanesGCO(const int expPN, const int iterati
     normList.clear();
     delete[] gcoResult;
 
-    return planes;
+    return patches;
 }

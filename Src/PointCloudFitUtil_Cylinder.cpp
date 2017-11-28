@@ -4,12 +4,14 @@
 bool DetectSymAxis(
     const std::vector<vcg::Point3f> &PointList,
     const std::vector<vcg::Point3f> &NormList,
-    const double _a,
-    vcg::Point3f &PO, vcg::Point3f &NN
-)
+    vcg::Point3f &PO, vcg::Point3f &NN,
+    const double _a)
 {
     const int PNum = PointList.size();
     assert(NormList.size() == PNum);
+
+    QTime time;
+    time.start();
 
 
     vcg::Box3f box;
@@ -55,8 +57,6 @@ bool DetectSymAxis(
         }
     }
 
-    
-#if 0
     // -- Find Max Vote
     int maxVote = (facPlane[0])[0];
     for (int c = 0; c<C; c++) {
@@ -68,9 +68,10 @@ bool DetectSymAxis(
             ptemp += A;
         }
     }
-    int TVote = maxVote * 0.5;
+#if 1
+    const int TVote = maxVote * 0.5;
 #else
-    int TVote = 5;
+    const int TVote = 5;
 #endif
 
 
@@ -140,13 +141,28 @@ bool DetectSymAxis(
     double PC[9], V[3];//V[3] IS USELESS
     int ret = PCA(data, row, col, PC, V);
     delete[] data;
-    if (ret == -1)
+    if (ret == -1) {
+        flog("    [--DetectSymAxis--] PCA failed. [--DetectSymAxis--]\n");
+        doFailure();
         return false;
+    }
 
     // -- [Assign Norm]
     NN.X() = PC[0];
     NN.Y() = PC[3];
     NN.Z() = PC[6];
+
+    flog(
+        "      [--DetectSymAxis--]: #nPts-%d...\n"
+        "        | #RefA : %.4f\n"
+        "        | #TVote: %d vs [ %d ]\n"
+        "        | #Axis : < %7.4f, %7.4f, %7.4f > \n"
+        "        | #Loc  : < %7.4f, %7.4f, %7.4f > \n"
+        "      [--DetectSymAxis--]: Done in %.4f seconds. \n",
+        PNum, _a, TVote, maxVote,
+        PO.X(), PO.Y(), PO.Z(),
+        NN.X(), NN.Y(), NN.Z(),
+        time.elapsed() / 1000.0);
 
     return true;
 }
@@ -162,6 +178,7 @@ void StdVar(const std::vector<T> &data, const int begin, const int end, double &
     assert(begin >= 0 && begin < data.size());
     assert(end >= 0 && end < data.size());
     assert(begin <= end);
+
 
     double u = 0.0;
     double v = 0.0;
@@ -238,6 +255,9 @@ void AttachToCylinder(
     const std::vector<vcg::Point3f> &NormList,
     const double _a, const double TR)
 {
+    QTime time;
+    time.start();
+
     const bool bTR = TR > 0 ? true : false;
     const double TDis = bTR ? TR * 0.5 : _a * 20;
     const double TRMax = TR * 1.5;
@@ -247,10 +267,19 @@ void AttachToCylinder(
     const double TLayerPtRMax = 1.2;
     const double TLayerPtRMin = 0.8;
 
-
     const vcg::Point3f NN = cylinder.m_N;
-    const vcg::Point3f PO = cylinder.m_N;
+    const vcg::Point3f PO = cylinder.m_O;
 
+
+    flog(
+        "      [--AttachToCylinder--]: #nPts-%d...\n"
+        "        | #Axis       : < %7.4f, %7.4f, %7.4f > \n"
+        "        | #Loc        : < %7.4f, %7.4f, %7.4f > \n",
+        PointList.size(),
+        PO.X(), PO.Y(), PO.Z(),
+        NN.X(), NN.Y(), NN.Z());
+
+   
     // 1. Initial
     std::vector<CylinderPointInfo> CPI;
     CPI.reserve(PointList.size());
@@ -303,6 +332,18 @@ void AttachToCylinder(
     int MaxPartEnd = CPI.size()-1;
     double MaxPartLength = *(CPI.end()-1) - *(CPI.begin());
 #endif
+
+    flog(
+        "        | ---------INIT---------\n"
+        "        | #nPts       : %d\n"
+        "        | #Thresholds : %7.4f [ %7.4f, %7.4f ]\n"
+        "        | #Reslut_R   : %7.4f\n"
+        "        | #Reslut_L   : [ %d : %7.4f : %d] -> %7.4f\n"
+        "        | ---------INIT---------\n",
+        CPI.size(),
+        TDis, TRMin, TRMax,
+        MeanR,
+        MaxPartBegin, maxGap, MaxPartEnd, MaxPartLength);
 
     // 4. Identify at Each Layer
     const double TLayerContinueRMax = MeanR * TLayerContinueMax;
@@ -369,6 +410,9 @@ void AttachToCylinder(
                     maxLength = maxL - minL;
                     if (i != MaxPartEnd)
                         minL = maxL = CPI[i + 1].l;
+
+                    flog("        | #CircleGap  : %d [ %7.4f, %7.4f ] -> %7.4f \n",
+                        PtOnCylList.size(), lBegin, lEnd, maxLength);
                 }
             }
             //---------------------
@@ -392,4 +436,11 @@ void AttachToCylinder(
     cylinder.m_O = PO + NN*(lEnd + lBegin) / 2.0;
 
     PtOnCylinder.swap(PtOnCylList);
+
+    flog(
+        "        | #FReslut_R  : %7.4f\n"
+        "        | #FReslut_L  : [ %7.4f, %7.4f ] -> %7.4f\n"
+        "      [--AttachToCylinder--]: Done in %.4f seconds. \n",
+        cylinder.m_radius, lBegin, lEnd, cylinder.m_length,
+        time.elapsed() / 1000.0);
 }

@@ -80,6 +80,7 @@
     <ClCompile Include="..\Src\PointCloudFit.cpp" />
     <ClCompile Include="..\Src\PointCloudFitUtil_Cube.cpp" />
     <ClCompile Include="..\Src\PointCloudFitUtil_Cylinder.cpp" />
+    <ClCompile Include="..\Src\PointCloudFitUtil_MMFGCO.cpp" />
     <ClCompile Include="..\Src\PointCloudFitUtil_Plane.cpp" />
     <ClCompile Include="..\Src\PointCloudFit_Cube.cpp" />
     <ClCompile Include="..\Src\PointCloudFit_Cylinder.cpp" />

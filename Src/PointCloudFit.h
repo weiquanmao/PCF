@@ -1,7 +1,7 @@
 #ifndef _POINT_CLOUD_FIT_H_FILE_
 #define _POINT_CLOUD_FIT_H_FILE_
 
-#if 0
+#if 1
 #define _RECON_DATA_ 1
 #else
 #define _SYN_DATA_ 1
@@ -54,7 +54,7 @@ public:
 	int recolorPts(const int mask, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a = 255);
 	void autoColor();
 
-	bool Fit_Sate(bool keepAttribute = true);
+	bool GEOFit(bool keepAttribute = true);
 	ObjSet *getGEOObjSet() { return m_GEOObjSet; }
 private:
 	MeshDocument m_meshDoc;
@@ -65,7 +65,6 @@ private:
     // 基础参数-[基本不用改]
 	int Threshold_NPts;                      // 整体点云数小于[Threshold_NPts]不进行处理
 	double RefA_Ratio;                       // 单位长度比例
-	int PlaneNum_Expected;                   // 期望平面个数
 
     // 去噪参数-[基本不用改]
 	int DeNoise_MaxIteration;                // 去噪迭代阈值, 默认100(<=0)
@@ -73,42 +72,46 @@ private:
     int DeNoise_GrowNeighbors;               // 去噪时KNN最近邻个数(区域生长)
 	double DeNoise_DisRatioOfOutlier;        // 去噪距离比例阈值
 
-    // 平面检测参数
+    // 平面+圆柱检测参数
 	double Precision_HT;                     // HT系数
+    int Threshold_MaxModelNum;               // 最大模型个数
 	double Threshold_NPtsPlane;              // 平面点个数比例阈值
-	double Threshold_DisToPlane;             // 平面检测距离阈值系数
-	double Threshold_AngToPlane;             // 平面检测角度阈值
+    double Threshold_NPtsCylinder;           // 圆柱点个数阈值系数
+	double Threshold_DisToSurface;           // 平面+圆柱检测距离阈值系数
+	double Threshold_AngToSurface;           // 平面+圆柱检测角度阈值
     
-    // 立方体检测参数
+    // 立方体推断参数
 	double Threshold_PRAng;                  // 平面关系角度阈值
 	double Threshold_PRDis;                  // 平面关系距离阈值系数
     double Threshold_PRIoU;                  // 平面关系交并比阈值
 
-    // 圆柱体检测参数
-	double Threshold_NPtsCyl;                // 圆柱点个数阈值系数
 private:
-	// Preproc
-	int DeNoiseKNN();
-	int DeNoiseRegGrw();
-	double GetMeshSizeAlongN(const vcg::Point3f n);
-	bool PCADimensionAna(vcg::Point3f &PSize, std::vector<vcg::Point3f> &PDirections, bool leftNoisePts);
-	double RoughnessAna(bool leftNoisePts = true);
 
     vcg::Point3f GetPointList(
         std::vector<int> &indexList,
         std::vector<vcg::Point3f> &pointList,
         std::vector<vcg::Point3f> &normList,
-        const bool bNormalize = false);
+        const bool moveToCenter = false);
 
+	// Preproc
+	int DeNoiseKNN();
+	int DeNoiseRegGrw();
+	bool PCADimensions(
+        std::vector<vcg::Point3f> &PDirections, 
+        vcg::Point3f &PSize);
+	double Roughness();
+
+    
 	// Detect Plane
-	std::vector<ObjPatch*> DetectPlanesHT(const int expPN);
-    std::vector<ObjPatch*> DetectPlanesGCO(const int expPN, const int iteration = -1);
+	std::vector<ObjPatch*> DetectPlanesHT(const int expPlaneNum);
+    std::vector<ObjPatch*> DetectPlanesGCO(const int expPlaneNum, const int iteration = -1);
 	
 	// Detect Cude
-    std::vector<ObjCube*> DetectCubeFromPlanes(std::vector<ObjPatch*> &planes);
+    std::vector<ObjCube*> DetectCubeFromPlanes(std::vector<ObjPatch*> &patches);
 	
 	// Detect Cylinder
 	ObjCylinder* DetectCylinderSymAxis();
+    std::vector<ObjCylinder*> DetectCylinderGCO(const int expCylinderNum, const int iteration = -1);
 };
 
 #endif // !_POINT_CLOUD_FIT_H_FILE_
