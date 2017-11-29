@@ -768,35 +768,35 @@ int DetectHTPlanes(
 }
 
 int ExtractPatches(
-    CMeshO &mesh,
-    std::vector<ObjPatch*> &patches,
-    const std::vector<int> &indexList,
-    const std::vector<vcg::Point3f> &pointList,
-    const int planeNum, const int *labels)
+	CMeshO &mesh,
+	std::vector<ObjPatch*> &patches,
+	const std::vector<int> &indexList,
+	const std::vector<vcg::Point3f> &pointList,
+	const int planeNum, const int *labels)
 {
-    std::vector<ObjPatch*> _patches;
+	std::vector<ObjPatch*> _patches;
 
-    const int NPlane = planeNum;
-    const int NPoint = pointList.size();
+	const int NPlane = planeNum;
+	const int NPoint = pointList.size();
 
-    std::vector<vcg::Point4f> optPlanes;
-    std::vector<std::vector<int>> planeVerList;
-    planeVerList.resize(NPlane + 1);
-    for (int i = 0; i < NPoint; ++i) {
-        int label = labels[i];
-        planeVerList[label].push_back(i);
-    }
-    for (int k = 1; k < NPlane + 1; k++) {
-        if (planeVerList[k].empty())
-            continue;
-        vcg::Plane3f plane;
-        double err = FinePlane(pointList, planeVerList[k], plane);
-        ObjRect *onePatch = ExtractMBR(mesh, plane, pointList, indexList, planeVerList[k]);
-        if (onePatch != 0) {
-            onePatch->m_varN = err;
-            _patches.push_back(onePatch);
-        }
-    }
-    patches.swap(_patches);
-    return patches.size();
+	std::vector<vcg::Point4f> optPlanes;
+	std::vector<std::vector<int>> planeVerList;
+	planeVerList.resize(NPlane + 1);
+	for (int i = 0; i < NPoint; ++i) {
+		int label = labels[i];
+		planeVerList[label].push_back(i);
+	}
+	for (int k = 1; k < NPlane + 1; k++) {
+		if (planeVerList[k].empty())
+			continue;
+		vcg::Plane3f plane;
+		double err = FinePlane(pointList, planeVerList[k], plane);
+		ObjRect *onePatch = ExtractMBR(mesh, plane, pointList, indexList, planeVerList[k]);
+		if (onePatch != 0) {
+			onePatch->m_varN = err;
+			_patches.push_back(onePatch);
+		}
+	}
+	patches.swap(_patches);
+	return patches.size();
 }

@@ -64,21 +64,24 @@ int _GetObjCode(_PtType type)
     switch (type)
     {
     case Pt_OnPlane:
-        _code_ = Pt_OnPlane + _code_plane_++;
+        _code_ =  _code_plane_++;
         break;
     case Pt_OnCube:
-        _code_ = Pt_OnCube + _code_cube_++;
+        _code_ =  _code_cube_++;
         break;
     case Pt_OnCylinder:
-        _code_ = Pt_OnCylinder + _code_cylinder_++;
+        _code_ =  _code_cylinder_++;
         break;
     case Pt_OnCone:
-        _code_ = Pt_OnCone + _code_cone_++;
+        _code_ = _code_cone_++;
         break;
     default:
         break;
     }
-    return _code_;
+	if (_code_ > MaxModelNum)
+		flog("[=_GetObjCode=]: [Warrning] Model Num Exceed the Maximum %d.\n", MaxModelNum);
+
+    return type+_code_;
 }
 
 PCFit::PCFit(const int nThread)
@@ -112,7 +115,7 @@ void PCFit::printLogo()
 	flog(
 		"\n\n"
 		"    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   \n"
-		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 0.8.0                \n"
+		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 1.0.0                \n"
 		"  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA  \n"
 		" /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  \n"
 		"                                                 |  Email: weiqm@buaa.edu.cn  \n"
@@ -182,23 +185,17 @@ void PCFit::initMParams(const char *iniFile)
     Threshold_NPtsPlane      = 0.05;
     Threshold_NPtsCylinder   = 0.1;
     Threshold_DisToSurface   = 2.0;
-    Threshold_AngToSurface   = 15.0;
+    Threshold_AngToSurface   = 20.0;
 
 #if  _RECON_DATA_
-    Threshold_NPtsPlane    = 0.05;
     Threshold_AngToSurface = 30.0;
-#endif //  _RECON_DATA_
-
-#ifdef _SYN_DATA_
-    Threshold_NPtsPlane    = 0.05;
+#elif _SYN_DATA_
     Threshold_AngToSurface = 15.0;
 #endif // _SYN_DATA_
-
     
 	Threshold_PRAng = 15.0;
 	Threshold_PRDis = 0.50;
     Threshold_PRIoU = 0.75;
-
 
 	if (!iniFile && QFileInfo(iniFile).exists()) {
 		QSettings conf(iniFile, QSettings::IniFormat);
@@ -294,9 +291,12 @@ void PCFit::inverseD()
 	m_meshDoc.inverseD();
 }
 
-int PCFit::deletePts(const int mask)
+typedef bool(*_PtrFunc_)(const int a, const int b); 
+typedef _PtrFunc_ _OP_;
+inline bool _Comp_Equ_(const int a, const int b) { return a == b; }
+inline bool _Comp_Con_(const int a, const int b) { return (a & b) == b; }
+int _deletePts(CMeshO &mesh, _OP_ op, const int mask)
 {
-	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
 	if (vcg::tri::HasPerVertexAttribute(mesh, PtAttri_GeoType))
 	{
@@ -304,7 +304,7 @@ int PCFit::deletePts(const int mask)
 			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
-			if ((type_hi[vi] & mask) != 0) {
+			if (op(type_hi[vi],mask)) {
 				cnt++;
 				if (!vi->IsD())
 					vcg::tri::Allocator<CMeshO>::DeleteVertex(mesh, *vi);
@@ -312,9 +312,8 @@ int PCFit::deletePts(const int mask)
 	}
 	return cnt;
 }
-int PCFit::keepPts(const int mask)
+int _keepPts(CMeshO &mesh, _OP_ op, const int mask)
 {
-	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
 	if (vcg::tri::HasPerVertexAttribute(mesh, PtAttri_GeoType))
 	{
@@ -322,7 +321,7 @@ int PCFit::keepPts(const int mask)
 			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi) {
-			if ((type_hi[vi] & mask) != 0) {
+			if (op(type_hi[vi],mask)) {
 				cnt++;
 				vi->ClearD();
 			}
@@ -334,8 +333,65 @@ int PCFit::keepPts(const int mask)
 	mesh.vn = cnt;
 	return cnt;
 }
+int _recolorPts(CMeshO &mesh, _OP_ op, const int mask, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a)
+{
+	int cnt = 0;
+	if (vcg::tri::HasPerVertexAttribute(mesh, PtAttri_GeoType))
+	{
+		CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
+		CMeshO::VertexIterator vi;
+		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
+		{
+			if (op(mask,type_hi[vi])) {
+				vi->C().X() = r;
+				vi->C().Y() = g;
+				vi->C().Z() = b;
+				vi->C().W() = a;
+				++cnt;
+			}
+		}
+	}
+	return cnt;
+}
 
-int PCFit::recolorPts(const int mask, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a)
+int PCFit::deletePts(const int maskID)
+{
+	CMeshO &mesh = m_meshDoc.mesh->cm;
+	_OP_ op = _Comp_Equ_;
+	return _deletePts(mesh, op, maskID);
+}
+int PCFit::keepPts(const int maskID)
+{
+	CMeshO &mesh = m_meshDoc.mesh->cm;
+	_OP_ op = _Comp_Equ_;
+	return _keepPts(mesh, op, maskID);
+}
+int PCFit::recolorPts(const int maskID, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a)
+{
+	CMeshO &mesh = m_meshDoc.mesh->cm;
+	_OP_ op = _Comp_Equ_;
+	return _recolorPts(mesh, op, maskID, r, g, b, a);
+}
+int PCFit::deletePtType(const _PtType type)
+{
+	CMeshO &mesh = m_meshDoc.mesh->cm;
+	_OP_ op = _Comp_Con_;
+	return _deletePts(mesh, op, type);
+}
+int PCFit::keepPtType(const _PtType type)
+{
+	CMeshO &mesh = m_meshDoc.mesh->cm;
+	_OP_ op = _Comp_Con_;
+	return _keepPts(mesh, op, type);
+}
+int PCFit::recolorPtType(const _PtType type, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a)
+{
+	CMeshO &mesh = m_meshDoc.mesh->cm;
+	_OP_ op = _Comp_Con_;
+	return _recolorPts(mesh, op, type, r, g, b, a);
+}
+int PCFit::resetType(const _PtType type)
 {
 	CMeshO &mesh = m_meshDoc.mesh->cm;
 	int cnt = 0;
@@ -345,16 +401,10 @@ int PCFit::recolorPts(const int mask, const unsigned char r, const unsigned char
 			vcg::tri::Allocator<CMeshO>::GetPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
 		CMeshO::VertexIterator vi;
 		for (vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
-		{
-			if ( (mask == 0 && type_hi[vi] == 0) ||
-                (mask & type_hi[vi]) != 0) {
-				vi->C().X() = r;
-				vi->C().Y() = g;
-				vi->C().Z() = b;
-				vi->C().W() = a;
-				++cnt;
+			if (!vi->IsD() && _Comp_Con_(type_hi[vi], type)) {
+				type_hi[vi] = Pt_Undefined;
+				cnt++;
 			}
-		}
 	}
 	return cnt;
 }
@@ -369,17 +419,17 @@ void PCFit::autoColor()
 		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); ++vi)
 		{
             int code = type_hi[vi];
-			if (code == Pt_Undefined || vi->IsD())
+			if (code == Pt_Undefined)
 				continue;
 
 			const unsigned char* pColor = Color_Gray;
-			if (code == Pt_OnCube)
-				pColor = Color_Solid_Cube;
-			else if (code == Pt_OnCylinder)
-				pColor = Color_Solid_Cylinder;
-			else if (code == Pt_Noise)
+			if (code == Pt_Noise)
 				pColor = Color_Noise;
-			else if (code >= Pt_OnPlane) {
+			else if (_Comp_Con_(code,Pt_OnCube))
+				pColor = Color_Solid_Cube;
+			else if (_Comp_Con_(code,Pt_OnCylinder))
+				pColor = Color_Solid_Cylinder;
+			else if (_Comp_Con_(code,Pt_OnPlane)) {
 				PlaneColor[0] = Color_Plane[(code - Pt_OnPlane) % 10][0];
 				PlaneColor[1] = Color_Plane[(code - Pt_OnPlane) % 10][1];
 				PlaneColor[2] = Color_Plane[(code - Pt_OnPlane) % 10][2];
@@ -461,7 +511,7 @@ bool PCFit::GEOFit(bool keepAttribute)
 		flog("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
 
-    // -- 1. Pre Planes Detect
+    // -- 1.1 Pre Planes Detect
     std::vector<ObjPatch*> prePlanes;
     {
         flog("\n\n[=PrePlaneFit_HT=]: -->> Try to Remove %d Planes by Hough Translation <<--  \n", Threshold_MaxModelNumPre);
@@ -472,7 +522,7 @@ bool PCFit::GEOFit(bool keepAttribute)
         flog("[=PlaneFit_HT=]: Done, %d plane(s) were removed in %.4f seconds.\n", prePlanes.size(), time.elapsed() / 1000.0);
     }
 
-    // -- 2. Detect Cylinder
+    // -- 1.2 Detect Cylinder
     std::vector<ObjCylinder*> objCylinder;
     if (m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL)) {
 #if 0 // Detect Planes by Symmetric Axis Detection with Hough Transform
@@ -499,12 +549,16 @@ bool PCFit::GEOFit(bool keepAttribute)
     }
     for (int i = 0; i < objCylinder.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(objCylinder.at(i));
+	
+	// -- 1.3 Remove Pre-Plane
+	// m_GEOObjSet->m_PlaneList.swap(prePlanes); // It May Be Useful
 
-#if 1
-    m_GEOObjSet->m_PlaneList.swap(prePlanes);
-#endif
+	resetType(Pt_OnPlane);
+	for (int i = 0; i < prePlanes.size(); ++i)
+		delete prePlanes.at(i);
+	
 
- /*
+ 
 	// -- 2. Detect All Planes
 	std::vector<ObjPatch*> planes;
 	{
@@ -524,7 +578,7 @@ bool PCFit::GEOFit(bool keepAttribute)
         flog("[=PlaneFit_MPFGCO=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);      
 #endif
     }
-   
+   /*
 	// -- 3. Detect Cube from Planes
 	std::vector<ObjCube*> cubes;
 	if (planes.size() >= 2) {
@@ -536,19 +590,16 @@ bool PCFit::GEOFit(bool keepAttribute)
 		flog("[=DetectCube=]: Done, %d cube(s) is detected in %.4f seconds, the other %d plane(s) are left.\n", cubes.size(), time.elapsed() / 1000.0, planes.size());
 	}
     for (int i = 0; i < cubes.size(); ++i)
-        m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
- */    
-	
+        m_GEOObjSet->m_SolidList.push_back(cubes.at(i));   
+	*/
 
-    
-/*
-	// -- 5. Set Planes
+	// -- 4. Set Planes
 	{
 		flog("\n\n[=PlanesCheck=]: -->> %d plane(s) are left. << -- \n", planes.size());
 		m_GEOObjSet->m_PlaneList.swap(planes);
 	}
 
-*/
+	
 	// -- *Remove Added Attribute
 	if (bAttriAdded && !keepAttribute) {
 		flog("\n\n[=CleanPtAttri=]: -->> Delete Point Sate Attribute <<--\n");

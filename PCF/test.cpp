@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 				const string FileName = fileinfo.name;
                 SetConsoleTitleA(FileName.c_str());
 #if 0 // Test Only One
-				if (FileName != "cube.ply")
+				if (FileName != "dsp.ply")
 					continue;
 #endif
 				const string BaseName = FileName.substr(0, FileName.rfind('.'));

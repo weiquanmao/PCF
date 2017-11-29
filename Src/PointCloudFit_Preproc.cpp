@@ -368,14 +368,7 @@ double PCFit::Roughness()
     // 2. Fit at Each Point
     // Key Parameter
     // rafa = a*miu + b*std	
-    // const int knn = 20;
-#if  _RECON_DATA_
-    const int knn = 40;
-#elif  _SYN_DATA_
-    const int knn = 20;
-#else
-    const int knn = 20;
-#endif
+    const int knn = 30;
 	const int a = 1.0;
 	const int b = 3.0;
 	const int N = mesh.vn;

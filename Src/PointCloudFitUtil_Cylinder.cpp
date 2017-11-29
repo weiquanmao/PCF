@@ -471,32 +471,67 @@ double AngCylinderPoint(
     vcg::Point3f np = op - cyl.m_N*l;
     return CheckAng00(VCGAngle(np, n));
 }
+bool CylinderInlier(
+	const ObjCylinder &cyl,
+	const vcg::Point3f &p, const double TDis,
+	const bool containInner)
+{
+	bool isInlier = false;
+	double d = SignedDistanceCylinderPoint(cyl, p);
+	double l = (p - cyl.m_O)*cyl.m_N / cyl.m_N.Norm();
+
+	if (containInner)
+		isInlier = (d < TDis) && (abs(l) - cyl.m_length/2.0 < TDis);
+	else
+		isInlier = (abs(d) < TDis);
+	return isInlier;
+}
+bool CylinderInlier(
+	const ObjCylinder &cyl,
+	const vcg::Point3f &p, const double TDis,
+	const vcg::Point3f &n, const double TAng,
+	const bool containInner)
+{
+	bool isInlier = false;
+	double d = SignedDistanceCylinderPoint(cyl, p);
+	double l = (p - cyl.m_O)*cyl.m_N / cyl.m_N.Norm();
+
+	if (containInner) {
+		if ((d < -TDis) && (abs(l) - cyl.m_length / 2.0 < -TDis))
+			isInlier = true;
+		else
+			isInlier = 
+			(d < TDis) && (abs(l) - cyl.m_length / 2.0 < TDis) &&
+			(AngCylinderPoint(cyl, p, n) < TAng);
+	}
+	else
+		isInlier = (abs(d) < TDis) && (AngCylinderPoint(cyl, p, n) < TAng);
+
+
+	return isInlier;
+}
 int CylinderInliers(
     const ObjCylinder &cyl,
     const std::vector<vcg::Point3f> &pointList,
     const std::vector<vcg::Point3f> &normList,
     const double TDis, const double TAng,
+	const bool containInner,
     std::vector<int> *inlierIdx)
 {
     const bool bHasNorm = normList.empty() ? false : true;
     if (bHasNorm)
         assert(normList.size() == pointList.size());
-
+	
     std::vector<int> inliers;
     inliers.reserve(pointList.size());
     for (int i = 0; i < pointList.size(); ++i) {
-        if (abs(SignedDistanceCylinderPoint(cyl, pointList.at(i))) < TDis)
+		bool isInlier = false;
+		if (bHasNorm)
+			isInlier = CylinderInlier(cyl, pointList[i], TDis, normList.at(i), TAng, containInner);
+		else
+			isInlier = CylinderInlier(cyl, pointList[i], TDis, containInner);
+        if (isInlier)
             inliers.push_back(i);
-    }
-    if (bHasNorm) {
-        std::vector<int> _inliers;
-        _inliers.reserve(inliers.size());
-        for (int i = 0; i < inliers.size(); ++i) {
-            int idx = inliers.at(i);
-            if (abs(AngCylinderPoint(cyl, pointList.at(idx), normList.at(idx))) < TAng)
-                _inliers.push_back(idx);
-        }
-        inliers.swap(_inliers);
     }
     int retN = inliers.size();
     if (inlierIdx != 0)
@@ -553,7 +588,7 @@ ObjCylinder *EstCylinderTwoPoint(
     
     vcg::Point3f O = (a1 + a2) / 2.0;
     double R = (r1 + r2) / 2.0;
-    ObjCylinder *cyl = new ObjCylinder(_GetObjCode(Pt_OnCylinder));
+    ObjCylinder *cyl = new ObjCylinder(0);
     cyl->m_O = O;
     cyl->m_N = N;
     cyl->m_radius = R;
@@ -601,14 +636,14 @@ ObjCylinder *FineCylinder(
     
 
     flog(
-        "      [--Fit_LS--]: #Pts-%d\n"
+        "      [--Fit_Cylinder--]: #Pts-%d\n"
         "        | #ID        : %d\n"
         "        | #min error : %7.4f\n"
         "        | #Center    : < %7.4f, %7.4f, %7.4f > \n"
         "        | #direction : < %7.4f, %7.4f, %7.4f > \n"
         "        | #radius    : %7.4f\n"
         "        | #height    : %7.4f\n"
-        "      [--Fit_LS--]: Done in %.4f seconds. \n",
+        "      [--Fit_Cylinder--]: Done in %.4f seconds. \n",
         cylVerList.size(), cyl->m_index, err,
         cyl->m_O.X(), cyl->m_O.Y(), cyl->m_O.Z(),
         cyl->m_N.X(), cyl->m_N.Y(), cyl->m_N.Z(),
@@ -674,7 +709,6 @@ double DetectCylinderRansac(
     const int MaxIteration = TheoryIteration < 10 ? 10 : (TheoryIteration > 1e4 ? 1e4 : TheoryIteration);
     const double MaxR = (constriantBox == 0) ? 0.0 : constriantBox->Dim().V(constriantBox->MinDim());
 
-    _ResetObjCode(Pt_OnCylinder);
     std::list<WCylinder> cyls;
     double maxInlierRatio = 0.0;
     int iter = 0;
@@ -742,25 +776,57 @@ double DetectCylinderRansac(
 
     return maxInlierRatio;
 }
-
-void ExtractCylinders(
-    CMeshO &mesh,
-    std::vector<ObjCylinder*> &cylinders,
-    const std::vector<int> &indexList,
-    const std::vector<vcg::Point3f> &pointList,
-    const int cylinderNum, const int *labels)
+int AttachToCylinder(
+	CMeshO &mesh,
+	std::vector<ObjCylinder*> &cylinders,
+	const double TDis, const double TAng,
+	const double TInlierRatio)
 {
+	QTime time;
+	time.start();
+	CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+		vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
+	int count = 0;
+	for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); vi++) {
+		if (!vi->IsD() && type_hi[vi] == Pt_Undefined)
+			count++;
+	}
+	const int T = count*TInlierRatio;
+	flog(
+		"      [--AttachToCylinder--]: #NPts-%d...\n"
+		"        | #InputCyl   : %d \n"
+		"        | #TInlier    : %.4f \n",
+		count,
+		cylinders.size(), TInlierRatio);
 
-    const int NPoint = pointList.size();
+	count = 0;
+	for (int k = 0; k < cylinders.size(); ++k) {
+		ObjCylinder *cyl = cylinders.at(k);
+		std::vector<int> inlierIdx;
+		int idx = 0;
+		for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); vi++, idx++) {
+			if (!vi->IsD() && type_hi[vi] == Pt_Undefined &&
+				CylinderInlier(*cyl, vi->cP(), TDis, vi->cN(), TAng, false))
+				inlierIdx.push_back(idx);
+		}
+		if (inlierIdx.size() < T) {
+			flog("        | >> Quit [ Id.%d ] plane with inliers [ %d < %d ] \n", cyl->m_index, inlierIdx.size(), T);
+			delete cyl;
+			cylinders.erase(cylinders.begin() + k);
+			k--;			
+		}
+		else {
+			for (int i = 0; i < inlierIdx.size(); ++i)
+				type_hi[inlierIdx[i]] = Pt_OnCylinder;
+			count += inlierIdx.size();
+		}
+	}
+	flog(
+		"        | #OutPutCyl  : %d \n"
+		"        | #NPts       : %d \n"
+		"      [--AttachToCylinder--]: Done in %.4f seconds. \n",
+		cylinders.size(), count,
+		time.elapsed() / 1000.0);
 
-    CMeshO::PerVertexAttributeHandle<PtType> type_hi =
-        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
-    for (int i = 0; i < NPoint; ++i) {
-        int label = labels[i];
-        if (label != 0) {
-            int idx = indexList.at(i);
-            type_hi[idx] = Pt_OnCylinder;
-        }
-    }
-  
+	return count;
 }

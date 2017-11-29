@@ -20,7 +20,7 @@ void doFailure();
 
 #define PtAttri_GeoType "PerVerAttri_PtType"
 typedef int PtType;
-#define MaxPlaneNum 256
+#define MaxModelNum 256
 enum _PtType {
 	Pt_Undefined  = 0x0000, // 00000
 	Pt_Noise      = 0x0100, // 00001
@@ -49,9 +49,14 @@ public:
 	bool savePly(const char *plyFilePath);
 	void clearD();
 	void inverseD();
-	int deletePts(const int mask);
-	int keepPts(const int mask);
-	int recolorPts(const int mask, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a = 255);
+	int deletePts(const int maskID);
+	int keepPts(const int maskID);
+	int recolorPts(const int maskID, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a = 255);
+	int deletePtType(const _PtType type);
+	int keepPtType(const _PtType type);
+	int recolorPtType(const _PtType type, const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a = 255);
+	int resetType(const _PtType type);
+
 	void autoColor();
 
 	bool GEOFit(bool keepAttribute = true);

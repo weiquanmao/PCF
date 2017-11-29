@@ -927,10 +927,10 @@ bool MergeToCube(
     double ratio = ptsOnCube.size()*1.0 / (ptsOnCube.size()+ptsOnPlane.size());
     const double T1 = 0.8;
     if (ratio >= T1) {// Have Enogh Cover
-        for (int i = ptsOnPlane.size() - 1; i >= 0; --i) {
-            int index = idxOnPlane.at(i);
-            type_hi[index] = Pt_Undefined;
-        }
+        //for (int i = ptsOnPlane.size() - 1; i >= 0; --i) {
+        //    int index = idxOnPlane.at(i);
+        //    type_hi[index] = Pt_Undefined;
+        //}
         return true;
     }
     else {// Need Cut
@@ -952,9 +952,9 @@ bool MergeToCube(
             double err = FinePlane(ptsOnPlane, idxList, onePlane);
 
             // MBR
-            int newCode = _GetObjCode(Pt_OnPlane);
-            ObjRect *oneRect = ExtractMBR(mesh, onePlane, ptsOnPlane, idxOnPlane, idxList);
+            ObjRect *oneRect = ExtractMBR(mesh, onePlane, ptsOnPlane, idxOnPlane, idxList);			
             if (oneRect != 0) {
+				int newCode = oneRect->m_index;
                 oneRect->m_varN = err;
                 // A New Split
                 planeSplit.push_back(oneRect);
@@ -975,7 +975,7 @@ bool MergeToCube(
 }
 int AttachToCube(
     CMeshO &mesh,
-    std::vector<ObjRect*> &planes,
+    std::vector<ObjRect*> &rects,
     std::vector< std::vector<ObjRect*>> &CubeFaces,
     const std::vector<ObjCube*> &cubes,   
     const double TAng, const double TDis,
@@ -983,8 +983,8 @@ int AttachToCube(
 {
     std::vector<ObjRect*> planesAdded;
     std::vector<ObjRect*> planesSplit;
-    for (int i = 0; i < planes.size(); i++) {
-        ObjRect *ple = planes.at(i);
+    for (int i = 0; i < rects.size(); i++) {
+        ObjRect *ple = rects.at(i);
         std::vector<ObjRect*> split;
         flog("    >> Attach [ ID.%d ] ... \n", ple->m_index);
         for (int k = 0; k < cubes.size(); ++k) {          
@@ -1001,9 +1001,9 @@ int AttachToCube(
     }
 
     if (remove)
-        RemovePlanes(planes, planesAdded, false);
+        RemovePlanes(rects, planesAdded, false);
     for (int i = 0; i < planesSplit.size(); ++i) {
-        planes.push_back(planesSplit.at(i));
+		rects.push_back(planesSplit.at(i));
     }
     return planesAdded.size();
 }

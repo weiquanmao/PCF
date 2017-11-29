@@ -51,7 +51,7 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPatch*> &patche
             delete CubeFaces[i][j];
         }
 	for (CMeshO::VertexIterator vi = mesh.vert.begin(); vi != mesh.vert.end(); vi++) {      
-        if (!(*vi).IsD() && ((type_hi[vi] & Pt_OnPlane) != 0)) {
+        if (!(*vi).IsD() && ((type_hi[vi] & Pt_OnPlane) == Pt_OnPlane)) {
             for (int k = 0; k < CubeFaceId.size(); ++k) {
                 if (type_hi[vi] == CubeFaceId.at(k)) {
                     type_hi[vi] = Pt_OnCube;

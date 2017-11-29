@@ -167,6 +167,7 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
     int *gcoResult = new int[pointList.size()];
     try {
         for (int _iter = 0; _iter < maxLoop; ++_iter) {
+			flog("    >> [ No.%d ] loop for MCF-GCO ...\n", _iter+1);
             int numSite = pointList.size();
             int numLabel = cylCandidates.size() + 1;
             GCoptimizationGeneralGraph *gco = new GCoptimizationGeneralGraph(numSite, numLabel);
@@ -237,20 +238,21 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
     catch (GCException e) {
         e.Report();
     }
-    
-    clyinders.swap(cylCandidates);
-    // if (!cylCandidates.empty())
-    //ExtractCylinders(mesh, clyinders, indexList, pointList, cylCandidates.size(), gcoResult);
+	// -- Cleaning Up GCO Memory
+	indexList.clear();
+	pointList.clear();
+	normList.clear();
+	delete[] gcoResult;
 
-    // -- Move Back
-    for (int i = 0; i<clyinders.size(); ++i) {
-        clyinders.at(i)->m_O += center;
-    }
 
-    indexList.clear();
-    pointList.clear();
-    normList.clear();
-    delete[] gcoResult;
-    
+	// -- Move Back
+	for (int i = 0; i<cylCandidates.size(); ++i)
+		cylCandidates.at(i)->m_O += center;
+
+	// -- Attach
+	clyinders.swap(cylCandidates);
+	resetType(Pt_OnPlane);
+	AttachToCylinder(mesh, clyinders, TDis, TAng, inlierRatio);
+   
     return clyinders;
 }

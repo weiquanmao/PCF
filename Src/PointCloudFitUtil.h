@@ -162,8 +162,8 @@ int ExtractPatches(
 // ------- For Cube -------
 /////////////////////////////////
 
-bool IsParallel(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
-bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
+inline bool IsParallel(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
+inline bool IsPerpendicular(const vcg::Point3f &L1, const vcg::Point3f &L2, const double AngTD);
 double PlaneIoU(const ObjRect *P1, const ObjRect *P2);
 void RemovePlanes(
     std::vector<ObjRect*> &planes,
@@ -238,7 +238,7 @@ bool MergeToCube(
     const double TAng, const double TDis);
 int AttachToCube(
     CMeshO &mesh,
-    std::vector<ObjRect*> &planes, 
+    std::vector<ObjRect*> &rects, 
     std::vector< std::vector<ObjRect*>> &CubeFaces,
     const std::vector<ObjCube*> &cubes,   
     const double TAng, const double TDis,
@@ -276,11 +276,20 @@ double SignedDistanceCylinderPoint(
     const ObjCylinder &cyl, const vcg::Point3f &p);
 double AngCylinderPoint(
     const ObjCylinder &cyl, const vcg::Point3f &p, const vcg::Point3f &n);
+bool CylinderInlier(
+	const ObjCylinder &cyl,
+	const vcg::Point3f &p, const double TDis,
+	const bool containInner = false);
+bool CylinderInlier(
+	const ObjCylinder &cyl,
+	const vcg::Point3f &p, const double TDis,
+	const vcg::Point3f &n, const double TAng, const bool containInner = false);
 int CylinderInliers(
     const ObjCylinder &cyl,
     const std::vector<vcg::Point3f> &pointList,
     const std::vector<vcg::Point3f> &normList,
     const double TDis, const double TAng,
+	const bool containInner = false,
     std::vector<int> *inlierIdx = 0);
 bool CloseCylinders(
     const ObjCylinder &cyl1,
@@ -303,12 +312,12 @@ double DetectCylinderRansac(
     const double TDis, const double TAng,
     const int maxN = 1, const double inlierRatio = 0.1,
     const vcg::Box3f *constriantBox = 0);
-void ExtractCylinders(
+int AttachToCylinder(
     CMeshO &mesh,
     std::vector<ObjCylinder*> &cylinders,
-    const std::vector<int> &indexList,
-    const std::vector<vcg::Point3f> &pointList,
-    const int cylinderNum, const int *labels);
+	const double TDis, const double TAng,
+	const double TInlierRatio = 0.0);
+
 ////////////////////////////////////////////////
 // ------- Multi-Model Fitting with GCO -------
 ////////////////////////////////////////////////
