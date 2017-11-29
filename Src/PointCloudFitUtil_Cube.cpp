@@ -952,7 +952,7 @@ bool MergeToCube(
             double err = FinePlane(ptsOnPlane, idxList, onePlane);
 
             // MBR
-            int newCode = _GetPlaneCode();
+            int newCode = _GetObjCode(Pt_OnPlane);
             ObjRect *oneRect = ExtractMBR(mesh, onePlane, ptsOnPlane, idxOnPlane, idxList);
             if (oneRect != 0) {
                 oneRect->m_varN = err;

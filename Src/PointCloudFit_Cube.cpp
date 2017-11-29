@@ -29,10 +29,11 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPatch*> &patche
     std::vector< std::vector<ObjRect*> > CubeFaces;
     int nGroups = CubeFaceInferring(CubeFaces, rects, TRDis, TAng, TIoU, true);
     
-	// C. Estimate Cube  
+	// C. Estimate Cube 
+    _ResetObjCode(Pt_OnCube);
     for (int i = 0; i < nGroups; ++i) {
         flog("    >> Estimate [ No.%d ] cube ... \n", i+1);
-        ObjCube *oneCube = new ObjCube(Pt_OnCube + i);
+        ObjCube *oneCube = new ObjCube(_GetObjCode(Pt_OnCube));
         CubeMeasure(CubeFaces.at(i), oneCube, TAng);
         cubes.push_back(oneCube);
     }

@@ -54,7 +54,8 @@ MPFGCONeighbors MPFGCOParseNeighbors(
         int neiNum = 0;
         for (int k = 0; k < neiNumQuery; k++) {
             int neightId = queue.getIndex(k);
-            if ((vi + neightId)->IsD())
+            if ((vi + neightId)->IsD() ||
+                indexMap[neightId] == -1)
                 continue;
             // Vpq(lp,lq) = w_{p,q}*d_{lp,lq}
             // d_{lp,lq} = 1 if lp != lq, otherwise 0; 
@@ -168,14 +169,14 @@ MPFGCOCost MPFGCOGeneratCost(
     if (bHasNorm)
         assert(norms.size() == points.size());
 
-    const double angCost = 15.0;
-    const double angr = 1.0 / (angCost*angCost);
+    const double angCost = 30.0;
+    const double angr = 1.0 / angCost;
 
     const int NPts = points.size();
     const int NCylinders = cylinders.size();
     const int NLabel = NCylinders + 1;
     // Data Energy
-    // Dp(lp) = ||p-lp||_2 / a + [¡Ï(p,lp)/ang]^2,
+    // Dp(lp) = ||p-lp||_2 / a + [¡Ï(p,lp)/ang],
     // |p-lp||_2 / a : distance form p to lp (the plane) in unit a.
     int *DataCost = new int[NPts *NLabel];
     for (int i = 0; i < NPts; ++i)
@@ -192,7 +193,7 @@ MPFGCOCost MPFGCOGeneratCost(
         if (bHasNorm) {
             for (int j = 0; j < NPts; ++j) {
                 double ang = AngCylinderPoint(*cyl, points.at(j), norms.at(j));
-                DataCost[j*NLabel + i] += int(ang*ang*angr);
+                DataCost[j*NLabel + i] += int(ang*angr);
             }
         }
     }
@@ -241,6 +242,7 @@ std::vector<double> GCOReEstimat(
         int label = labels[i];
         planeVerList[label].push_back(i);
     }
+    
     for (int k = 1; k < NPlane + 1; k++) {
         if (planeVerList[k].size() <= TInlier) {
             flog("    >> Quit the [ No.%d ] plane with [ %d ] points ...\n", k, planeVerList[k].size());
@@ -275,12 +277,13 @@ std::vector<double> GCOReEstimat(
         int label = labels[i];
         cylinderVerList[label].push_back(i);
     }
+    _ResetObjCode(Pt_OnCylinder);
     for (int k = 1; k < NCylinder + 1; k++) {
         if (cylinderVerList[k].size() <= TInlier) {
-            flog("    >> Quit the [ No.%d ] cylinder with [ %d ] points ...\n", k, cylinderVerList[k].size());
+            flog("    >> Quit the [ No.%d ] cylinder with [ %d < %d ] points ...\n", k, cylinderVerList[k].size(), TInlier);
             continue;
         }
-        flog("    >> Fine Fit the [ No.%d ] cylinder ...\n", k);
+        flog("    >> Fine Fit the [ No.%d ] cylinder with [ %d > %d ] points ...\n", k, cylinderVerList[k].size(), TInlier);
         double err = 0;
         ObjCylinder* cylinder = FineCylinder(pointList, cylinderVerList[k], err);
         errors.push_back(err);

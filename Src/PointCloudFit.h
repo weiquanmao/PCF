@@ -29,8 +29,8 @@ enum _PtType {
     Pt_OnCylinder = 0x0800, // 01000
     Pt_OnCone     = 0x1800  // 11000
 };
-int _ResetPlaneCode();
-int _GetPlaneCode();
+int _ResetObjCode(_PtType type);
+int _GetObjCode(_PtType type);
 
 class PCFit
 {
@@ -74,6 +74,7 @@ private:
 
     // 平面+圆柱检测参数
 	double Precision_HT;                     // HT系数
+    int Threshold_MaxModelNumPre;            // 圆检测前预提取最大平面数
     int Threshold_MaxModelNum;               // 最大模型个数
 	double Threshold_NPtsPlane;              // 平面点个数比例阈值
     double Threshold_NPtsCylinder;           // 圆柱点个数阈值系数

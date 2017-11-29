@@ -459,8 +459,8 @@ double SignedDistanceCylinderPoint(
     vcg::Point3f op = p - cyl.m_O;
     double l1 = (op * cyl.m_N) / (cyl.m_N.Norm());
     double l2 = op.Norm();
-    assert(l2 >= l1);
-    double l = sqrt(l2*l2 - l1*l1);
+    double l = (l2*l2 - l1*l1);
+    l = l < 0 ? 0 : sqrt(l);
     return l - cyl.m_radius;
 }
 double AngCylinderPoint(
@@ -503,6 +503,23 @@ int CylinderInliers(
         inlierIdx->swap(inliers);
     return retN;
 }
+bool CloseCylinders(
+    const ObjCylinder &cyl1,
+    const ObjCylinder &cyl2,
+    const double TRDis, const double TAng)
+{
+    double meanR = (cyl1.m_radius + cyl2.m_radius)/2.0;
+    double dR = abs(cyl1.m_radius - cyl2.m_radius) / 2.0;
+    if (dR/meanR > TRDis)
+        return false;
+    double ang = CheckAng00(VCGAngle(cyl1.m_N, cyl2.m_N));
+    if (ang > TAng)
+        return false;
+    if (abs(SignedDistanceCylinderPoint(cyl1, cyl2.m_O)) / meanR > TRDis)
+        return false;
+
+    return true;
+}
 ObjCylinder *EstCylinderTwoPoint(
     const vcg::Point3f p1, const vcg::Point3f n1,
     const vcg::Point3f p2, const vcg::Point3f n2,
@@ -518,14 +535,14 @@ ObjCylinder *EstCylinderTwoPoint(
     double p2_in_y1 = (p2 - p1)*y1;
     double n2_in_y1 = n2*y1;
     double lambda2  = p2_in_y1 / n2_in_y1;
-    vcg::Point3f a2 = p2 - n2 * lambda2;
+    vcg::Point3f a2 = p2 - (n2 * lambda2);
     double       r2 = (n2 * lambda2).Norm();
     // x2 := n2, z1 := N
     vcg::Point3f y2 = N ^ n2;
     double p1_in_y2 = (p1 - p2)*y2;
     double n1_in_y2 = n1*y2;
     double lambda1  = p1_in_y2 / n1_in_y2;
-    vcg::Point3f a1 = p1 - n1 * lambda1;
+    vcg::Point3f a1 = p1 - (n1 * lambda1);
     double       r1 = (n1 * lambda1).Norm();
 
     assert(CheckAng00(VCGAngle(N, a1 - a2))<0.5);
@@ -536,7 +553,7 @@ ObjCylinder *EstCylinderTwoPoint(
     
     vcg::Point3f O = (a1 + a2) / 2.0;
     double R = (r1 + r2) / 2.0;
-    ObjCylinder *cyl = new ObjCylinder(-1);
+    ObjCylinder *cyl = new ObjCylinder(_GetObjCode(Pt_OnCylinder));
     cyl->m_O = O;
     cyl->m_N = N;
     cyl->m_radius = R;
@@ -570,7 +587,7 @@ ObjCylinder *FineCylinder(
     gte::Cylinder3<double> cylinder;
     double minError = fitter(numVertices, positions.data(), cylinder);
 
-    ObjCylinder *cyl = new ObjCylinder(0);
+    ObjCylinder *cyl = new ObjCylinder(_GetObjCode(Pt_OnCylinder));
     cyl->m_O.X() = cylinder.axis.origin[0];
     cyl->m_O.Y() = cylinder.axis.origin[1];
     cyl->m_O.Z() = cylinder.axis.origin[2];
@@ -585,13 +602,14 @@ ObjCylinder *FineCylinder(
 
     flog(
         "      [--Fit_LS--]: #Pts-%d\n"
+        "        | #ID        : %d\n"
         "        | #min error : %7.4f\n"
         "        | #Center    : < %7.4f, %7.4f, %7.4f > \n"
         "        | #direction : < %7.4f, %7.4f, %7.4f > \n"
         "        | #radius    : %7.4f\n"
         "        | #height    : %7.4f\n"
         "      [--Fit_LS--]: Done in %.4f seconds. \n",
-        cylVerList.size(), err,
+        cylVerList.size(), cyl->m_index, err,
         cyl->m_O.X(), cyl->m_O.Y(), cyl->m_O.Z(),
         cyl->m_N.X(), cyl->m_N.Y(), cyl->m_N.Z(),
         cyl->m_radius, cyl->m_length,
@@ -635,7 +653,8 @@ double DetectCylinderRansac(
     const std::vector<vcg::Point3f> &normList,
     std::vector<ObjCylinder*> &cylCandidates,
     const double TDis, const double TAng,
-    const int maxN, const double inlierRatio)
+    const int maxN, const double inlierRatio,
+    const vcg::Box3f *constriantBox)
 {
     assert(pointList.size() == normList.size());
     assert(inlierRatio > 0.0 && inlierRatio < 1.0);
@@ -649,22 +668,22 @@ double DetectCylinderRansac(
 
     const double Percentage = 0.9;
     const double TDisDeviation = (1-0.6) / (1+0.6);
-    const int TAngRequired = 2;
+    const int TAngRequired = 15;
     const int SupportN = 2;
-    const int TheoryIteration = RansacTimes(Percentage, inlierRatio/2.0, SupportN);
+    const int TheoryIteration = RansacTimes(Percentage, inlierRatio*0.1, SupportN);
     const int MaxIteration = TheoryIteration < 10 ? 10 : (TheoryIteration > 1e4 ? 1e4 : TheoryIteration);
-    
+    const double MaxR = (constriantBox == 0) ? 0.0 : constriantBox->Dim().V(constriantBox->MinDim());
 
+    _ResetObjCode(Pt_OnCylinder);
     std::list<WCylinder> cyls;
     double maxInlierRatio = 0.0;
     int iter = 0;
-    int AdjMaxIteration = MaxIteration;
     std::default_random_engine randomEngine; // Keep the result same
     std::vector<int> idx;
     idx.reserve(NPts);
     for (int i = 0; i < NPts; ++i)
         idx.push_back(i);
-    while (iter < AdjMaxIteration) {
+    while (iter < MaxIteration) {
         iter++;       
         vcg::Point3f p[2], n[2];
         // Random Pick
@@ -675,14 +694,21 @@ double DetectCylinderRansac(
             std::swap(idx[i], idx[k]);
             p[i] = pointList.at(idx[i]);
             n[i] = normList.at(idx[i]);
-        }
-        
+        }     
         // Estimate
         ObjCylinder *cyl = EstCylinderTwoPoint(p[0], n[0], p[1], n[1], TDisDeviation, TAngRequired);
-        if (cyl == 0) // Not A Good Model 
+        if (cyl == 0) // Fail to Est by Two Points
             continue;
+
+        // Good Model Check
+        if (constriantBox != 0 && (
+            !constriantBox->IsIn(cyl->m_O) ||
+            cyl->m_radius > MaxR / 2.0)) { // Not A Good Model For Loc & Size
+            delete cyl;
+            continue;
+        }
         double inlierRatio_this = CylinderInliers(*cyl, pointList, normList, TDis, TAng) * 1.0 / NPts;
-        if (inlierRatio_this < inlierRatio) { // Not A Good Model 
+        if (inlierRatio_this < inlierRatio) { // Not A Good Model For Inlier Ratio
             delete cyl;
             continue;
         }
@@ -693,9 +719,6 @@ double DetectCylinderRansac(
         // Update Param
         if (inlierRatio_this > maxInlierRatio) {
             maxInlierRatio = inlierRatio_this;
-            int newMaxIteration = RansacTimes(Percentage, maxInlierRatio, SupportN);
-            if (newMaxIteration < AdjMaxIteration)
-                AdjMaxIteration = newMaxIteration;
         }
     }
 
@@ -707,14 +730,14 @@ double DetectCylinderRansac(
     flog(
         "      [--DetectCylinderRansac--]: #nPts-%d...\n"
         "        | #ExpCand    : %d \n"
-        "        | #ExpInlier  : %7.4f \n",
+        "        | #ExpInlier  : %7.4f \n"
         "        | #CanNum     : %d \n"
-        "        | #MaxInlier  : %d \n"
-        "        | #Iteration  : %d - %d [ %d | %d ] \n"
+        "        | #MaxInlier  : %7.4f \n"
+        "        | #Iteration  : %d - [ %d | %d ] \n"
         "      [--DetectCylinderRansac--]: Done in %.4f seconds. \n",
         NPts, maxN, inlierRatio,
         cyls.size(), maxInlierRatio,
-        iter, AdjMaxIteration, MaxIteration, TheoryIteration,
+        iter, MaxIteration, TheoryIteration,
         time.elapsed() / 1000.0);    
 
     return maxInlierRatio;
@@ -725,7 +748,19 @@ void ExtractCylinders(
     std::vector<ObjCylinder*> &cylinders,
     const std::vector<int> &indexList,
     const std::vector<vcg::Point3f> &pointList,
-    const int cyinderNUm, const int *labels)
+    const int cylinderNum, const int *labels)
 {
-    
+
+    const int NPoint = pointList.size();
+
+    CMeshO::PerVertexAttributeHandle<PtType> type_hi =
+        vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
+    for (int i = 0; i < NPoint; ++i) {
+        int label = labels[i];
+        if (label != 0) {
+            int idx = indexList.at(i);
+            type_hi[idx] = Pt_OnCylinder;
+        }
+    }
+  
 }

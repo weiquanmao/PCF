@@ -472,7 +472,7 @@ ObjRect* ExtractMBR(
     CMeshO::PerVertexAttributeHandle<PtType> type_hi =
         vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
     std::vector<vcg::Point3f> OnPPt;
-    const int PlaneCode = _GetPlaneCode();
+    const int PlaneCode = _GetObjCode(Pt_OnPlane);
     for (int i = PlaneVerList.size() - 1; i >= 0; --i)
     {
         int index = PlaneVerList.at(i);
@@ -673,7 +673,7 @@ int DetectHTPlanes(
 
     std::vector<vcg::Plane3f> planeVec;
     int planeNum = 0;
-    _ResetPlaneCode();
+    _ResetObjCode(Pt_OnPlane);
     while (1)
     {
         if (pointList.empty())
@@ -772,11 +772,11 @@ int ExtractPatches(
     std::vector<ObjPatch*> &patches,
     const std::vector<int> &indexList,
     const std::vector<vcg::Point3f> &pointList,
-    const int planeNUm, const int *labels)
+    const int planeNum, const int *labels)
 {
     std::vector<ObjPatch*> _patches;
 
-    const int NPlane = planeNUm;
+    const int NPlane = planeNum;
     const int NPoint = pointList.size();
 
     std::vector<vcg::Point4f> optPlanes;

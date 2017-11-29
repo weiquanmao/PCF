@@ -5,11 +5,16 @@
 
 ObjCylinder* PCFit::DetectCylinderSymAxis()
 {
+    ObjCylinder *cylinder = 0;
 	CMeshO &mesh = m_meshDoc.mesh->cm;
+
+    // Check Norm
     CMeshO::PerVertexAttributeHandle<PtType> type_hi =
         vcg::tri::Allocator<CMeshO>::FindPerVertexAttribute<PtType>(mesh, PtAttri_GeoType);
-    if ( ! m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL))
+    if (!m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL)) {
         flog("\n\n[=DetectCylinderSymAxis=]: [ ): ] Normals are needed to detected cylinder. \n");
+        return 0;
+    }
 
 	// -- Get Point List And Normal List
     std::vector<int> indexList;
@@ -17,13 +22,16 @@ ObjCylinder* PCFit::DetectCylinderSymAxis()
     std::vector<vcg::Point3f> normList;
     vcg::Point3f center = GetPointList(indexList, pointList, normList, true);
     assert(normList.size() == pointList.size());
-    
+    if (pointList.size() < mesh.vn*Threshold_NPtsCylinder)
+        return 0;
+
 	// -- Detect Symmetric Axis
     vcg::Point3f PO, N;
     if (!DetectSymAxis(pointList, normList, PO, N, m_refa))
         return 0;
 
-    ObjCylinder *cylinder = new ObjCylinder(Pt_OnCylinder + 0);
+    _ResetObjCode(Pt_OnCylinder);
+    cylinder = new ObjCylinder(_GetObjCode(Pt_OnCylinder));
     cylinder->m_O = PO;
     cylinder->m_N = N;
 
@@ -104,26 +112,36 @@ ObjCylinder* PCFit::DetectCylinderSymAxis()
 
 std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, const int iteration)
 {
-    std::vector<ObjCylinder*> clyinders;
     
     CMeshO &mesh = m_meshDoc.mesh->cm;
+    std::vector<ObjCylinder*> clyinders;
 
-    if (!m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL))
+    // -- Check Norm
+    if (!m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL)) {
         flog("\n\n[=DetectCylinderGCO=]: [ ): ] Normals are needed to detected cylinder. \n");
+        return clyinders;
+    }
 
     // -- Get Normalized Point List (Moved So That the Center is [0,0])
     std::vector<int> indexList;
     std::vector<vcg::Point3f> pointList;
     std::vector<vcg::Point3f> normList;
     vcg::Point3f center = GetPointList(indexList, pointList, normList, true);
+    assert(normList.size() == pointList.size());
+    if (pointList.size() < mesh.vn*Threshold_NPtsCylinder)
+        return clyinders;
+
+    // -- Detect Init Cylinders
+    std::vector<ObjCylinder*> cylCandidates;
     const double TDis = m_refa * Threshold_DisToSurface;
     const double TAng = Threshold_AngToSurface;
     const double inlierRatio = Threshold_NPtsCylinder;
     const int maxN = expCylinderNum;
+    vcg::Box3f Box = mesh.bbox; Box.Translate(-center);   
+    double maxRatio = DetectCylinderRansac(pointList, normList, cylCandidates, TDis, TAng, maxN, inlierRatio, &Box);
+    if (cylCandidates.empty())
+        return cylCandidates;
 
-    // -- Detect Init Cylinders
-    std::vector<ObjCylinder*> cylCandidates;
-    double maxRatio = DetectCylinderRansac(pointList, normList, cylCandidates, TDis, TAng, maxN, inlierRatio);
 
     // -- Fit by GCO
     // E(f)       = Sigma_p{Dp(lp)} + lambda*Sigma_(pg:N){Vpg(lq,pq)} + labelEnergy*|L| .
@@ -134,51 +152,93 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
     //            = 0 , otherwise (i.e. lp = lq).
     // w_{p,q}    = lambda * exp{ - (||p-q||_2) ^ 2 / 2*delta^2} .
     // numNeighbors := KNN numbers of neighbor system N, i.e. |N| .
-    int NoiseEnergy = 4;
-    int LabelEnergy = 200;
-    int lambda = 20;
-    int delta = 10;
+    const int maxLoop = 3;
+    const int maxGCOIteration = iteration > 0 ? iteration : 10;
+    const int numNeighbors = 7;
+    const int NoiseEnergy = 4;
+    const int LabelEnergy = 500;
+    const int lambda = 20;
+    const int delta = 10;
 
-    int numNeighbors = 7;
-
-    int maxIteration = iteration > 0 ? iteration : 100;
-
+    const int TInlier = inlierRatio*pointList.size();
+    
     int *gcoResult = new int[pointList.size()];
     try {
-        int numSite = pointList.size();
-        int numLabel = cylCandidates.size() + 1;
-        GCoptimizationGeneralGraph *gco = new GCoptimizationGeneralGraph(numSite, numLabel);
-        MPFGCOCost gcoCost =
-            MPFGCOGeneratCost(cylCandidates, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
-        MPFGCONeighbors gcoNei =
-            MPFGCOParseNeighbors(mesh, indexList, lambda, delta, numNeighbors, m_refa);
-        // -- Set [Data Energy]
-        gco->setDataCost(gcoCost.dataCost);
-        // -- Set [Smooth Energy]
-        gco->setSmoothCost(gcoCost.smoothCost);
-        // -- Set [Label Energy]
-        gco->setLabelCost(gcoCost.labelCost);
-        // -- Set Neighbors System
-        gco->setAllNeighbors(gcoNei.neighborsCounts, gcoNei.neighborsIndexes, gcoNei.neighborsWeights);
+        for (int _iter = 0; _iter < maxLoop; ++_iter) {
+            int numSite = pointList.size();
+            int numLabel = cylCandidates.size() + 1;
+            GCoptimizationGeneralGraph *gco = new GCoptimizationGeneralGraph(numSite, numLabel);
+            MPFGCOCost gcoCost =
+                MPFGCOGeneratCost(cylCandidates, pointList, normList, m_refa, NoiseEnergy, LabelEnergy);
+            MPFGCONeighbors gcoNei =
+                MPFGCOParseNeighbors(mesh, indexList, lambda, delta, numNeighbors, m_refa);
+            // -- Set [Data Energy]
+            gco->setDataCost(gcoCost.dataCost);
+            // -- Set [Smooth Energy]
+            gco->setSmoothCost(gcoCost.smoothCost);
+            // -- Set [Label Energy]
+            gco->setLabelCost(gcoCost.labelCost);
+            // -- Set Neighbors System
+            gco->setAllNeighbors(gcoNei.neighborsCounts, gcoNei.neighborsIndexes, gcoNei.neighborsWeights);
 
-        gco->setLabelOrder(true);
-        gco->setVerbosity(1);
-        gco->expansion(maxIteration);
+            gco->setLabelOrder(true);
+            gco->setVerbosity(1);
+            gco->expansion(maxGCOIteration);
 
-        // -- Get Result <& Re-Estimate>
-        for (int i = 0; i < numSite; i++)
-            gcoResult[i] = gco->whatLabel(i);
-        GCOReEstimat(cylCandidates, pointList, gcoResult, 100);
+            // -- Get Result <& Re-Estimate>
+            for (int i = 0; i < numSite; i++)
+                gcoResult[i] = gco->whatLabel(i);
+            GCOReEstimat(cylCandidates, pointList, gcoResult, TInlier);
 
-        // -- Cleaning Up
-        gcoCost.memRelease();
-        gcoNei.memRelease();
+            // -- Check Inlier Ratio
+            std::vector<int> inliers;
+            for (int i = 0; i < cylCandidates.size(); ++i) {
+                int _inliers = CylinderInliers(*cylCandidates.at(i), pointList, normList, TDis, TAng);
+                if (_inliers < TInlier) {
+                    flog("    >> Quit cylinder [ Id.%d ] with [ %d > %d ] points ...\n", cylCandidates[i]->m_index, _inliers, TInlier);
+                    delete cylCandidates[i];
+                    cylCandidates.erase(cylCandidates.begin() + i);
+                    i--;
+                }
+                else
+                    inliers.push_back(_inliers);
+            }
+            assert(inliers.size() == CylinderInliers.size());
+
+            // -- Merge The Closer
+            for (int i = 0; i < cylCandidates.size()-1; ++i) {
+                for (int j = i + 1; j < cylCandidates.size(); ++j) {
+                    if (CloseCylinders(*cylCandidates.at(i), *cylCandidates.at(j))) {
+                        if (inliers.at(i) < inliers.at(j)) {
+                            std::swap(cylCandidates.at(i), cylCandidates.at(j));
+                            std::swap(inliers.at(i), inliers.at(j));
+                        }
+                        flog("    >> Remove cylinder [ Id.%d |%d ] as it is similar to[ Id.%d | %d ]  ...\n",
+                            cylCandidates[i]->m_index, inliers[i],
+                            cylCandidates[j]->m_index, inliers[j]);
+                        cylCandidates.erase(cylCandidates.begin() + j);
+                        inliers.erase(inliers.begin() + j);
+                        j--;                       
+                    }
+                }
+            }
+
+            // -- Cleaning Up GCO Memory
+            gcoCost.memRelease();
+            gcoNei.memRelease();
+
+            // -- Continue OR Break
+            if (cylCandidates.empty())
+                break;
+        }
     }
     catch (GCException e) {
         e.Report();
     }
-
-    ExtractCylinders(mesh, clyinders, indexList, pointList, cylCandidates.size(), gcoResult);
+    
+    clyinders.swap(cylCandidates);
+    if (!cylCandidates.empty())
+    //ExtractCylinders(mesh, clyinders, indexList, pointList, cylCandidates.size(), gcoResult);
 
     // -- Move Back
     for (int i = 0; i<clyinders.size(); ++i) {

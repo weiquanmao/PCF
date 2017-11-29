@@ -28,16 +28,57 @@ void doFailure() {
 	system("pause");
 	exit(1);
 }
-int _i = 0;
-int _ResetPlaneCode()
+int _code_plane_ = 0;
+int _code_cube_ = 0;
+int _code_cylinder_ = 0;
+int _code_cone_ = 0;
+int _ResetObjCode(_PtType type)
 {
-    int old = _i;
-    _i = 0;
-    return old;
+    int _old_ = -1;
+    switch (type)
+    {
+    case Pt_OnPlane:
+        _old_ = _code_plane_;
+        _code_plane_ = 0;
+        break;
+    case Pt_OnCube:
+        _old_ = _code_cube_;
+        _code_cube_ = 0;
+        break;
+    case Pt_OnCylinder:
+        _old_ = _code_cylinder_;
+        _code_cylinder_ = 0;
+        break;
+    case Pt_OnCone:
+        _old_ = _code_cone_;
+        _code_cone_ = 0;
+        break;
+    default:
+        break;
+    }
+    return _old_;
 }
-int _GetPlaneCode()
+int _GetObjCode(_PtType type)
 {
-    return Pt_OnPlane + _i++;
+    int _code_ = -1;
+    switch (type)
+    {
+    case Pt_OnPlane:
+        _code_ = Pt_OnPlane + _code_plane_++;
+        break;
+    case Pt_OnCube:
+        _code_ = Pt_OnCube + _code_cube_++;
+        break;
+    case Pt_OnCylinder:
+        _code_ = Pt_OnCylinder + _code_cylinder_++;
+        break;
+    case Pt_OnCone:
+        _code_ = Pt_OnCone + _code_cone_++;
+        break;
+    default:
+        break;
+    }
+    return _code_;
 }
 
 PCFit::PCFit(const int nThread)
@@ -93,6 +134,7 @@ void PCFit::printParams()
         " | [DeNoise_GrowNeighbors       ]:       < %000008d >   |\n"
         " | [DeNoise_DisRatioOfOutlier   ]:       < %0008.3f >   |\n"
 		" | [Precision_HT                ]:       < %0008.3f >   |\n"
+        " | [Threshold_MaxModelNumPre    ]:       < %000008d >   |\n"
         " | [Threshold_MaxModelNum       ]:       < %000008d >   |\n"
 		" | [Threshold_NPtsPlane         ]:       < %0008.3f >   |\n"
         " | [Threshold_NPtsCylinder      ]:       < %0008.3f >   |\n"
@@ -104,7 +146,7 @@ void PCFit::printParams()
 		" +------------------------------------------------------+\n",
 		Threshold_NPts, RefA_Ratio,
 		DeNoise_MaxIteration, DeNoise_KNNNeighbors, DeNoise_GrowNeighbors, DeNoise_DisRatioOfOutlier,
-		Precision_HT, Threshold_MaxModelNum,
+		Precision_HT, Threshold_MaxModelNumPre, Threshold_MaxModelNum,
         Threshold_NPtsPlane, Threshold_NPtsCylinder,
 		Threshold_DisToSurface, Threshold_AngToSurface, 
 		Threshold_PRAng, Threshold_PRDis, Threshold_PRIoU);
@@ -134,15 +176,16 @@ void PCFit::initMParams(const char *iniFile)
     DeNoise_GrowNeighbors     = 20;
     DeNoise_DisRatioOfOutlier = 0.1;
 
-    Precision_HT           = 0.01;
-    Threshold_MaxModelNum   = 30;
-    Threshold_NPtsPlane    = 0.05;
-    Threshold_NPtsCylinder = 0.1;
-    Threshold_DisToSurface = 2.0;
-    Threshold_AngToSurface = 15.0;
+    Precision_HT             = 0.01;
+    Threshold_MaxModelNumPre = 10;
+    Threshold_MaxModelNum    = 30;
+    Threshold_NPtsPlane      = 0.05;
+    Threshold_NPtsCylinder   = 0.1;
+    Threshold_DisToSurface   = 2.0;
+    Threshold_AngToSurface   = 15.0;
 
 #if  _RECON_DATA_
-    Threshold_NPtsPlane    = 0.025;
+    Threshold_NPtsPlane    = 0.05;
     Threshold_AngToSurface = 30.0;
 #endif //  _RECON_DATA_
 
@@ -176,6 +219,8 @@ void PCFit::initMParams(const char *iniFile)
 	
 		if (keys.contains("Precision_HT"))
 			Precision_HT = conf.value("Precision_HT").toDouble();
+        if (keys.contains("Threshold_MaxModelNumPre"))
+            Threshold_MaxModelNumPre = conf.value("Threshold_MaxModelNumPre").toInt();
         if (keys.contains("Threshold_MaxModelNum"))
             Threshold_MaxModelNum = conf.value("Threshold_MaxModelNum").toInt();
 
@@ -416,7 +461,18 @@ bool PCFit::GEOFit(bool keepAttribute)
 		flog("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
 
-    // -- 4. Detect Cylinder
+    // -- 1. Pre Planes Detect
+    std::vector<ObjPatch*> prePlanes;
+    {
+        flog("\n\n[=PrePlaneFit_HT=]: -->> Try to Remove %d Planes by Hough Translation <<--  \n", Threshold_MaxModelNumPre);
+        time.restart();
+        //-------------------------------
+        prePlanes = DetectPlanesHT(Threshold_MaxModelNumPre);
+        //-------------------------------
+        flog("[=PlaneFit_HT=]: Done, %d plane(s) were removed in %.4f seconds.\n", prePlanes.size(), time.elapsed() / 1000.0);
+    }
+
+    // -- 2. Detect Cylinder
     std::vector<ObjCylinder*> objCylinder;
     if (m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL)) {
 #if 0 // Detect Planes by Symmetric Axis Detection with Hough Transform
@@ -444,7 +500,11 @@ bool PCFit::GEOFit(bool keepAttribute)
     for (int i = 0; i < objCylinder.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(objCylinder.at(i));
 
+#if 1
+    m_GEOObjSet->m_PlaneList.swap(prePlanes);
+#endif
 
+ /*
 	// -- 2. Detect All Planes
 	std::vector<ObjPatch*> planes;
 	{
@@ -464,7 +524,7 @@ bool PCFit::GEOFit(bool keepAttribute)
         flog("[=PlaneFit_MPFGCO=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);      
 #endif
     }
-    
+   
 	// -- 3. Detect Cube from Planes
 	std::vector<ObjCube*> cubes;
 	if (planes.size() >= 2) {
@@ -477,19 +537,18 @@ bool PCFit::GEOFit(bool keepAttribute)
 	}
     for (int i = 0; i < cubes.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
-   
-    
+ */    
 	
 
     
-
+/*
 	// -- 5. Set Planes
 	{
 		flog("\n\n[=PlanesCheck=]: -->> %d plane(s) are left. << -- \n", planes.size());
 		m_GEOObjSet->m_PlaneList.swap(planes);
 	}
 
-
+*/
 	// -- *Remove Added Attribute
 	if (bAttriAdded && !keepAttribute) {
 		flog("\n\n[=CleanPtAttri=]: -->> Delete Point Sate Attribute <<--\n");

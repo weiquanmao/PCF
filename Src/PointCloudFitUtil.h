@@ -155,7 +155,7 @@ int ExtractPatches(
     std::vector<ObjPatch*> &patches,
     const std::vector<int> &indexList,
     const std::vector<vcg::Point3f> &pointList,    
-    const int planeNUm, const int *labels);
+    const int planeNum, const int *labels);
 
 
 /////////////////////////////////
@@ -282,11 +282,15 @@ int CylinderInliers(
     const std::vector<vcg::Point3f> &normList,
     const double TDis, const double TAng,
     std::vector<int> *inlierIdx = 0);
+bool CloseCylinders(
+    const ObjCylinder &cyl1,
+    const ObjCylinder &cyl2,
+    const double TRDis = 0.1, const double TAng = 2);
 ObjCylinder *EstCylinderTwoPoint(
     const vcg::Point3f p1, const vcg::Point3f n1,
     const vcg::Point3f p2, const vcg::Point3f n2,
     const double TDisDeviation = (1.0-0.6)/(1.0+0.6),
-    const int TAngRequired = 2);
+    const int TAngRequired = 15);
 ObjCylinder *FineCylinder(
     const std::vector<vcg::Point3f> &pointList,
     const std::vector<int> &cylVerList,
@@ -297,13 +301,14 @@ double DetectCylinderRansac(
     const std::vector<vcg::Point3f> &normList, 
     std::vector<ObjCylinder*> &cylCandidates,
     const double TDis, const double TAng,
-    const int maxN = 1, const double inlierRatio = 0.1);
+    const int maxN = 1, const double inlierRatio = 0.1,
+    const vcg::Box3f *constriantBox = 0);
 void ExtractCylinders(
     CMeshO &mesh,
     std::vector<ObjCylinder*> &cylinders,
     const std::vector<int> &indexList,
     const std::vector<vcg::Point3f> &pointList,
-    const int cyinderNUm, const int *labels);
+    const int cylinderNum, const int *labels);
 ////////////////////////////////////////////////
 // ------- Multi-Model Fitting with GCO -------
 ////////////////////////////////////////////////
