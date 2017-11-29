@@ -169,7 +169,7 @@ MPFGCOCost MPFGCOGeneratCost(
     if (bHasNorm)
         assert(norms.size() == points.size());
 
-    const double angCost = 30.0;
+    const double angCost = 15.0;
     const double angr = 1.0 / angCost;
 
     const int NPts = points.size();

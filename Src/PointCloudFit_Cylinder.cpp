@@ -152,15 +152,17 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
     //            = 0 , otherwise (i.e. lp = lq).
     // w_{p,q}    = lambda * exp{ - (||p-q||_2) ^ 2 / 2*delta^2} .
     // numNeighbors := KNN numbers of neighbor system N, i.e. |N| .
+	const int TInlier = inlierRatio*pointList.size();
+
     const int maxLoop = 3;
     const int maxGCOIteration = iteration > 0 ? iteration : 10;
-    const int numNeighbors = 7;
-    const int NoiseEnergy = 4;
-    const int LabelEnergy = 500;
-    const int lambda = 20;
-    const int delta = 10;
+    const int numNeighbors = 5;
+    const int NoiseEnergy = Threshold_DisToSurface*2;
+    const int LabelEnergy = TInlier*NoiseEnergy;
+    const int lambda = NoiseEnergy;
+    const int delta = NoiseEnergy;
 
-    const int TInlier = inlierRatio*pointList.size();
+    
     
     int *gcoResult = new int[pointList.size()];
     try {
@@ -237,7 +239,7 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
     }
     
     clyinders.swap(cylCandidates);
-    if (!cylCandidates.empty())
+    // if (!cylCandidates.empty())
     //ExtractCylinders(mesh, clyinders, indexList, pointList, cylCandidates.size(), gcoResult);
 
     // -- Move Back
