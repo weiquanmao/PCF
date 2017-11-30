@@ -206,7 +206,7 @@ std::vector<ObjCylinder*> PCFit::DetectCylinderGCO(const int expCylinderNum, con
                 else
                     inliers.push_back(_inliers);
             }
-            assert(inliers.size() == CylinderInliers.size());
+            assert(inliers.size() == cylCandidates.size());
 
             // -- Merge The Closer
             for (int i = 0; i < cylCandidates.size()-1; ++i) {

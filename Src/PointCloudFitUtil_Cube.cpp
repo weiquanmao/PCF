@@ -117,13 +117,8 @@ bool IsAdjacencyFaces(
     vcg::Point3f O1 = P1->m_O + (P1->m_AX + P1->m_AY) / 2.0;
     vcg::Point3f O2 = P2->m_O + (P2->m_AX + P2->m_AY) / 2.0;
     vcg::Point3f O2O = O2 - O1;
-    vcg::Point3f O2O_1 = O2O - (P1->m_N * (O2O*P1->m_N)) / P1->m_N.SquaredNorm();
-    vcg::Point3f O2O_2 = O2O - (P2->m_N * (O2O*P2->m_N)) / P2->m_N.SquaredNorm();
     vcg::Point3f NN = P1->m_N^P2->m_N;
-    if (!IsPerpendicular(O2O_1, NN, 30.0) ||
-        !IsPerpendicular(O2O_2, NN, 30.0))
-        return false;
-
+    double DisO = O2O*NN / NN.Norm();
     double Dis1 = abs(O2O*P1->m_N);
     double Dis2 = abs(O2O*P2->m_N);
     double l1, u1;
@@ -144,10 +139,11 @@ bool IsAdjacencyFaces(
     }
     if (abs(u1 - u2) / (u1 + u2) > 0.5)
         return false;
-
+    if (DisO*2 / (u1 + u2) > 0.2)
+        return false;
     if (
-        ((Dis1 - l2*0.5) / l2 > TRDis || (l2*0.5 - Dis1) / l2 > TRDis / 2.0) ||
-        ((Dis2 - l1*0.5) / l1 > TRDis || (l1*0.5 - Dis2) / l1 > TRDis / 2.0)
+        ((Dis1 - l2*0.5) / l2 > TRDis || Dis1*2 / l2 < 0.2) ||
+        ((Dis2 - l1*0.5) / l1 > TRDis || Dis2*2 / l1 < 0.2)
         )
         return false;
 
@@ -177,6 +173,10 @@ PlaneRelation EstPlaneRelation(
     const ObjRect *P1, const ObjRect *P2,
     const double TRDis, const double TAng, const double TIoU)
 {
+    if (P1->m_index == 514 && P2->m_index == 523)
+        int a = 1;
+
+
     PlaneRelation  relation = PlaneRelation_NoRetation;
 
     if (IsOppoFaces(P1, P2, TAng, TIoU))
@@ -276,8 +276,8 @@ std::vector<ObjRect*> CubeFaceInferringOne(
     const double TRDis, const double TAng, const double TIoU)
 {
     ObjRect* tempList[6];
-    std::vector<ObjRect*> finalOut;
-    finalOut.reserve(6);
+    ObjRect* betterList[6];
+    int betterCount = 0;
     for (int i = 0; i < Rects.size(); ++i) {
         // Clean
         for (int j = 0; j < 6; ++j)
@@ -298,45 +298,57 @@ std::vector<ObjRect*> CubeFaceInferringOne(
             }
         }
 
+        
         // Less than 2 patches
         if (pNum < 2)
             continue;
         // Have only 2 patches, but not in opposite relation.
-        if (pNum == 2 &&
-            !(
-                (tempList[0] != 0 && tempList[5] != 0) ||
-                (tempList[1] != 0 && tempList[3] != 0) ||
-                (tempList[2] != 0 && tempList[4] != 0))
-            )
+        int oppoN1 = 0;
+        if (tempList[0] != 0 && tempList[5] != 0) oppoN1++;
+        if (tempList[1] != 0 && tempList[3] != 0) oppoN1++;
+        if (tempList[2] != 0 && tempList[4] != 0) oppoN1++;
+        if (pNum == 2 && oppoN1<1)
             continue;
 
-        if (pNum > finalOut.size()) {
+        bool betterOne = false;
+        if (pNum > betterCount)
+            betterOne = true;
+        else if (pNum == betterCount) {
+            int oppoN2 = 0;
+            if (betterList[0] != 0 && betterList[5] != 0) oppoN2++;
+            if (betterList[1] != 0 && betterList[3] != 0) oppoN2++;
+            if (betterList[2] != 0 && betterList[4] != 0) oppoN2++;
+            if (oppoN1 > oppoN2)
+                betterOne = true;
+        }
+        if (betterOne){          
+            for (int j = 0; j < 6; ++j)
+                betterList[j] = tempList[j];
             //------
             flog(
                 "        |--------------------- \n"
                 "        |");
-            //------
-            finalOut.clear();
             for (int j = 0; j < 6; ++j) {
-                if (tempList[j] != 0) {
-                    finalOut.push_back(tempList[j]);
-                    //------
-                    flog(" %d", tempList[j]->m_index);
-                    //------
-                } else {
-                    //------
+                if (betterList[j] != 0)
+                    flog(" %d", betterList[j]->m_index);
+                else
                     flog(" 000");
-                    //------
-                }
             }
-            //------
             flog("\n");
             //------
-            if (finalOut.size() == 6)
+            betterCount = pNum;
+            if (betterCount == 6)
                 break;
         }
+        
     }
-    
+    std::vector<ObjRect*> finalOut;
+    finalOut.reserve(6);
+    if (betterCount >= 2) {
+        for (int i = 0; i < 6; ++i)
+            if (betterList[i] != 0)
+                finalOut.push_back(betterList[i]);
+    }
     return finalOut;
 }
 int CubeFaceInferring(

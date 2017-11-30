@@ -131,7 +131,7 @@ void PCFit::printParams()
 		" | PARAMETERS IN USE:                                   |\n"
 		" |------------------------------------------------------|\n"
 		" | [Threshold_NPts              ]:       < %000008d >   |\n"
-        " | [RefA_Ratio                  ]:       < %0008.3f >   |\n"
+        // " | [RefA_Ratio                  ]:       < %0008.3f >   |\n"
 		" | [DeNoise_MaxIteration        ]:       < %000008d >   |\n"
 		" | [DeNoise_KNNNeighbors        ]:       < %000008d >   |\n"
         " | [DeNoise_GrowNeighbors       ]:       < %000008d >   |\n"
@@ -147,7 +147,7 @@ void PCFit::printParams()
 		" | [Threshold_PRDis             ]:       < %0008.3f >   |\n"
         " | [Threshold_PRIoU             ]:       < %0008.3f >   |\n"		
 		" +------------------------------------------------------+\n",
-		Threshold_NPts, RefA_Ratio,
+		Threshold_NPts, /*RefA_Ratio,*/
 		DeNoise_MaxIteration, DeNoise_KNNNeighbors, DeNoise_GrowNeighbors, DeNoise_DisRatioOfOutlier,
 		Precision_HT, Threshold_MaxModelNumPre, Threshold_MaxModelNum,
         Threshold_NPtsPlane, Threshold_NPtsCylinder,
@@ -172,7 +172,7 @@ void PCFit::setThreadNum(const int nThread)
 void PCFit::initMParams(const char *iniFile)
 {
 	Threshold_NPts    = 100;
-    RefA_Ratio        = 0.01;
+    // RefA_Ratio        = 0.01;
 
 	DeNoise_MaxIteration      = 0;
 	DeNoise_KNNNeighbors      = 50;
@@ -195,15 +195,15 @@ void PCFit::initMParams(const char *iniFile)
     
 	Threshold_PRAng = 15.0;
 	Threshold_PRDis = 0.50;
-    Threshold_PRIoU = 0.75;
+    Threshold_PRIoU = 0.60;
 
 	if (!iniFile && QFileInfo(iniFile).exists()) {
 		QSettings conf(iniFile, QSettings::IniFormat);
 		QStringList keys = conf.allKeys();
 		if (keys.contains("Threshold_NPts"))
 			Threshold_NPts = conf.value("Threshold_NPts").toInt();
-        if (keys.contains("RefA_Ratio"))
-            RefA_Ratio = conf.value("RefA_Ratio").toInt();
+        //if (keys.contains("RefA_Ratio"))
+        //    RefA_Ratio = conf.value("RefA_Ratio").toInt();
 
 		if (keys.contains("DeNoise_MaxIteration"))
 			DeNoise_MaxIteration = conf.value("DeNoise_MaxIteration").toInt();
@@ -442,8 +442,11 @@ void PCFit::autoColor()
 	}
 }
 
-bool PCFit::GEOFit(bool keepAttribute)
+bool PCFit::GEOFit(ProType proType, bool keepAttribute)
 {
+    if (proType == DoNothing)
+        return true;
+
 	if (m_meshDoc.mesh == 0 || m_meshDoc.svn() < Threshold_NPts)
 		return false;
 
@@ -451,7 +454,7 @@ bool PCFit::GEOFit(bool keepAttribute)
 	CMeshO &mesh = m_meshDoc.mesh->cm;
     m_GEOObjSet = new ObjSet();
 
-	// [A+] Add Attribute
+	// [+] Add Attribute
 	bool bAttriAdded = false;
 	{
 		time.restart();
@@ -480,87 +483,90 @@ bool PCFit::GEOFit(bool keepAttribute)
 	}
 
 
-
-	// [1] A Little Preprocessing
-	{
-		// [1.1] Remove Outliers
-		time.restart();
-		flog("\n\n[=DeNoise=]: -->> Remove Outliers <<--  \n");	
+	// [1] Remove Outliers
+    if ((proType & OneStep_RemoveOutlier) != 0)
+    {
+        time.restart();
+        flog("\n\n[=DeNoise=]: -->> Remove Outliers <<--  \n");
         //----[[
 #if 0 // DeNoise by KNN
-		int nNoise = DeNoiseKNN();
+        int nNoise = DeNoiseKNN();
 #else // DeNoise by Region Grow
-		int nNoise = DeNoiseRegGrw();
+        int nNoise = DeNoiseRegGrw();
 #endif
-		//----]]
-		flog("[=DeNoise=]: Done, %d outlier(s ) were removed in %.4f seconds.\n", nNoise, time.elapsed()/1000.0);
-
-
-		// [1.2] Get Dimension Reference Unit
+        //----]]
+        flog("[=DeNoise=]: Done, %d outlier(s ) were removed in %.4f seconds.\n", nNoise, time.elapsed() / 1000.0);
+    }
+   
+    // [2] Get Dimension Reference Unit
+    {
+		// [1.2] 
 		time.restart();
 		flog("\n\n[=RefSize=]: -->> Dimension Reference Unit Ana. <<--  \n");	
         //----[[
 		vcg::Point3f PSize;
 		std::vector<vcg::Point3f> PDirection;
         PCADimensions(PDirection, PSize);
-        double PCASize = PSize.V(2)*RefA_Ratio;
+        double PCASize_x1 = PSize.V(2)*0.01;
+        double PCASize_x3 = PSize.V(2)*0.03;
         double RoughSize = Roughness();
-        m_refa = RoughSize > PCASize ? RoughSize : PCASize;
+        m_refa = RoughSize < PCASize_x1 ? PCASize_x1 : (RoughSize > PCASize_x3 ? PCASize_x3 : RoughSize);
 
 		//----]]
 		flog("[=RefSize=]: Done in %.4f seconds.\n", time.elapsed() / 1000.0);
 	}
-
-    // -- 1.1 Pre Planes Detect
-    std::vector<ObjPatch*> prePlanes;
-    {
-        flog("\n\n[=PrePlaneFit_HT=]: -->> Try to Remove %d Planes by Hough Translation <<--  \n", Threshold_MaxModelNumPre);
-        time.restart();
-        //-------------------------------
-        prePlanes = DetectPlanesHT(Threshold_MaxModelNumPre);
-        //-------------------------------
-        flog("[=PlaneFit_HT=]: Done, %d plane(s) were removed in %.4f seconds.\n", prePlanes.size(), time.elapsed() / 1000.0);
-    }
-
-    // -- 1.2 Detect Cylinder
+    
+    // [3] Detect Cylinders
     std::vector<ObjCylinder*> objCylinder;
-    if (m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL)) {
+    std::vector<ObjPatch*> prePlanes;
+    if ((proType & OneStep_DetectCylinder) != 0) 
+    {
+        // -- 3.1 Pre Planes Detect       
+        {
+            flog("\n\n[=PrePlaneFit_HT=]: -->> Try to Remove %d Planes by Hough Translation <<--  \n", Threshold_MaxModelNumPre);
+            time.restart();
+            //-------------------------------
+            prePlanes = DetectPlanesHT(Threshold_MaxModelNumPre);
+            //-------------------------------
+            flog("[=PlaneFit_HT=]: Done, %d plane(s) were removed in %.4f seconds.\n", prePlanes.size(), time.elapsed() / 1000.0);
+        }
+
+        // -- 3.2 Detect Cylinder
+        
+        if (m_meshDoc.mesh->hasDataMask(vcg::tri::io::Mask::IOM_VERTNORMAL)) {
 #if 0 // Detect Planes by Symmetric Axis Detection with Hough Transform
-        flog("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis Detection <<--  \n");
-        time.restart();
-        //-------------------------------
-        ObjCylinder *oneCly = DetectCylinderSymAxis();
-        //-------------------------------
-        if (oneCly != 0)
-            objCylinder.push_back(oneCly);
-        flog("[=DetectCylinder_SA=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
+            flog("\n\n[=DetectCylinder_SA=]: -->> Try to Detect Cylinder by Symmetric Axis Detection <<--  \n");
+            time.restart();
+            //-------------------------------
+            ObjCylinder *oneCly = DetectCylinderSymAxis();
+            //-------------------------------
+            if (oneCly != 0)
+                objCylinder.push_back(oneCly);
+            flog("[=DetectCylinder_SA=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
 #else // Detect Planes by Multi-Model Fitting with GCO
-        flog("\n\n[=DetectMCF_GCO=]: -->> Try to Detect Cylinder by Energy-based Multi-Model Fitting with GCO ... <<--  \n");
-        time.restart();
-        //-------------------------------
-        objCylinder = DetectCylinderGCO(Threshold_MaxModelNum);
-        //-------------------------------
-        flog("[=DetectMCF_GCO=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
+            flog("\n\n[=DetectMCF_GCO=]: -->> Try to Detect Cylinder by Energy-based Multi-Model Fitting with GCO ... <<--  \n");
+            time.restart();
+            //-------------------------------
+            objCylinder = DetectCylinderGCO(Threshold_MaxModelNum);
+            //-------------------------------
+            flog("[=DetectMCF_GCO=]: Done, %d cylinder is detected in %.4f seconds.\n", objCylinder.size(), time.elapsed() / 1000.0);
 
 #endif
-    }
-    else {
-        flog("\n\n[=DetectCylinder=]: [ ): ] Normals are needed to detected cylinder. \n");
+        }
+        else {
+            flog("\n\n[=DetectCylinder=]: [ ): ] Normals are needed to detected cylinder. \n");
+        }
+        // -- 3.3 Remove Pre-Plane
+        resetType(Pt_OnPlane);
+        
     }
     for (int i = 0; i < objCylinder.size(); ++i)
         m_GEOObjSet->m_SolidList.push_back(objCylinder.at(i));
-	
-	// -- 1.3 Remove Pre-Plane
-	// m_GEOObjSet->m_PlaneList.swap(prePlanes); // It May Be Useful
+    m_GEOObjSet->m_PlaneList.swap(prePlanes); // It May Be Useful
 
-	resetType(Pt_OnPlane);
-	for (int i = 0; i < prePlanes.size(); ++i)
-		delete prePlanes.at(i);
-	
-
- 
-	// -- 2. Detect All Planes
-	std::vector<ObjPatch*> planes;
+	// [4] Detect All Planes
+    std::vector<ObjPatch*> planes;
+    if ((proType & OneStep_DetectPlane) != 0)
 	{
 #if 1 // Detect Planes by Hough Transform
 		flog("\n\n[=PlaneFit_HT=]: -->> Try to Detect %d Planes by Hough Translation <<--  \n", Threshold_MaxModelNum);
@@ -578,29 +584,33 @@ bool PCFit::GEOFit(bool keepAttribute)
         flog("[=PlaneFit_MPFGCO=]: Done, %d plane(s) were detected in %.4f seconds.\n", planes.size(), time.elapsed() / 1000.0);      
 #endif
     }
-   /*
-	// -- 3. Detect Cube from Planes
+   
+	// [5] Detect Cube from Planes
 	std::vector<ObjCube*> cubes;
-	if (planes.size() >= 2) {
-		flog("\n\n[=DetectCube=]: -->> Try to Detect Cube from %d Planes <<--  \n", planes.size());
-		time.restart();
-		//-------------------------------
-        cubes = DetectCubeFromPlanes(planes);
-		//-------------------------------
-		flog("[=DetectCube=]: Done, %d cube(s) is detected in %.4f seconds, the other %d plane(s) are left.\n", cubes.size(), time.elapsed() / 1000.0, planes.size());
-	}
+    if ((proType & OneStep_DetectCube) != 0)
+    {
+        if (planes.size() >= 2) {
+            flog("\n\n[=DetectCube=]: -->> Try to Detect Cube from %d Planes <<--  \n", planes.size());
+            time.restart();
+            //-------------------------------
+            cubes = DetectCubeFromPlanes(planes);
+            //-------------------------------
+            flog("[=DetectCube=]: Done, %d cube(s) is detected in %.4f seconds, the other %d plane(s) are left.\n", cubes.size(), time.elapsed() / 1000.0, planes.size());
+        }
+    }
     for (int i = 0; i < cubes.size(); ++i)
-        m_GEOObjSet->m_SolidList.push_back(cubes.at(i));   
-	*/
-
-	// -- 4. Set Planes
+        m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
+    
+	// [6] Set Planes
 	{
 		flog("\n\n[=PlanesCheck=]: -->> %d plane(s) are left. << -- \n", planes.size());
+        for (int i = 0; i < m_GEOObjSet->m_PlaneList.size(); ++i)
+            delete m_GEOObjSet->m_PlaneList.at(i);
 		m_GEOObjSet->m_PlaneList.swap(planes);
 	}
 
 	
-	// -- *Remove Added Attribute
+	// [-] Remove Added Attribute
 	if (bAttriAdded && !keepAttribute) {
 		flog("\n\n[=CleanPtAttri=]: -->> Delete Point Sate Attribute <<--\n");
 		vcg::tri::Allocator<CMeshO>::DeletePerVertexAttribute(mesh, PtAttri_GeoType);

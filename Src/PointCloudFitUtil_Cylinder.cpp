@@ -776,6 +776,38 @@ double DetectCylinderRansac(
 
     return maxInlierRatio;
 }
+double FineCylinderLength(
+    CMeshO &mesh,
+    ObjCylinder &cyl,
+    std::vector<int> &inlierIdx)
+{
+    CMeshO::VertexIterator vi = mesh.vert.begin();
+    std::vector<std::pair<double, int>> LList;
+    vcg::Point3f N = cyl.m_N;
+    N.normalized();
+    for (int i = 0; i < inlierIdx.size(); ++i) {
+        int idx = inlierIdx.at(i);
+        vcg::Point3f &pt = (vi + idx)->cP();
+        double l = (pt - cyl.m_O)*N;
+        LList.push_back(std::pair<double, int>(l, idx));
+    }
+    std::sort(LList.begin(), LList.end());
+
+    int idxBegin, idxEnd;
+    PatchDimensionOne(LList, idxBegin, idxEnd);
+
+    std::vector<int> _inlierIdx;
+    _inlierIdx.reserve(idxEnd - idxBegin + 1);
+    for (int i = idxBegin; i <= idxEnd; ++i)
+        _inlierIdx.push_back(LList.at(i).second);
+
+    double newLength =abs( LList.at(idxEnd).first - LList.at(idxBegin).first );
+    cyl.m_length = newLength;
+    cyl.m_O = cyl.m_O + N*(LList.at(idxBegin).first + LList.at(idxEnd).first) / 2.0;
+    inlierIdx.swap(_inlierIdx);
+
+    return newLength;
+}
 int AttachToCylinder(
 	CMeshO &mesh,
 	std::vector<ObjCylinder*> &cylinders,
@@ -816,6 +848,7 @@ int AttachToCylinder(
 			k--;			
 		}
 		else {
+            FineCylinderLength(mesh, *cyl, inlierIdx);
 			for (int i = 0; i < inlierIdx.size(); ++i)
 				type_hi[inlierIdx[i]] = Pt_OnCylinder;
 			count += inlierIdx.size();

@@ -312,6 +312,10 @@ double DetectCylinderRansac(
     const double TDis, const double TAng,
     const int maxN = 1, const double inlierRatio = 0.1,
     const vcg::Box3f *constriantBox = 0);
+double FineCylinderLength(
+    CMeshO &mesh,
+    ObjCylinder &cyl,
+    std::vector<int> &inlierIdx);
 int AttachToCylinder(
     CMeshO &mesh,
     std::vector<ObjCylinder*> &cylinders,
