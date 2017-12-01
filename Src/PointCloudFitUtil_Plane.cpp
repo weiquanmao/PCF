@@ -344,6 +344,7 @@ bool PatchDimensionOne(
     int &idxBegin, int &idxEnd,
     double r)
 {
+    const int stepK = 3;
     int n = proList.size();
     int p1 = 0;
     int p2 = n - 1;
@@ -351,33 +352,33 @@ bool PatchDimensionOne(
     bool updated = true;
     while (updated) {
         updated = false;
-        if (n <= 2)
+        if (n <= 1+stepK)
             break;
         
-        // r * (1.0/li) < n / l := r*l<li*n
+        // r * (stepK/li) < n / l := r*l<li*n
         // remove this point
 
         // Move Left      
-        while (p1 < p2) {
-            double l1 = abs(proList.at(p1+1).first - proList.at(p1).first);           
-            if (r*l < l1*n) {
+        while (p1+stepK < p2) {
+            double l1 = abs(proList.at(p1+ stepK).first - proList.at(p1).first);
+            if (r*l*stepK < l1*n) {
                 l -= l1;
-                n--;
-                p1++;
+                n -= stepK;
+                p1 += stepK;
                 updated = true;
             }
             else
                 break;
         }
         // Move Right
-        while (p1 < p2) {
-            double l2 = abs(proList.at(p2).first - proList.at(p2-1).first);
+        while (p1 + stepK< p2) {
+            double l2 = abs(proList.at(p2).first - proList.at(p2- stepK).first);
             // r * (1.0/l1) < n / l := r*l<l1*n
             // remove this point
-            if (r*l < l2*n) {
+            if (r*l*stepK < l2*n) {
                 l -= l2;
-                n--;
-                p2--;
+                n -= stepK;
+                p2 -= stepK;
                 updated = true;
             }
             else

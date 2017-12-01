@@ -69,6 +69,7 @@ bool MeshDocument::loadMesh(QString Path, QString label)
 		return true;
 	}
 	else {
+        printf(vcg::tri::io::Exporter<CMeshO>::ErrorMsg(ret));
 		delete newMesh;
 		return false;	
 	}
@@ -81,8 +82,10 @@ bool MeshDocument::saveMesh(QString Path, bool bSaveAll)
 	std::string filename = Path.toLocal8Bit().data();
 	int mask = mesh->mask();
 	int result = vcg::tri::io::Exporter<CMeshO>::Save(mesh->cm,filename.c_str(),mask);
-	if(result!=0) 
-		return false;
+    if (result != 0) {
+        printf(vcg::tri::io::Exporter<CMeshO>::ErrorMsg(result));
+        return false;
+    }
     else
 		return true;
 }

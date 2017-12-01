@@ -602,6 +602,7 @@ bool PCFit::GEOFit(ProType proType, bool keepAttribute)
         m_GEOObjSet->m_SolidList.push_back(cubes.at(i));
     
 	// [6] Set Planes
+    if ((proType & OneStep_DetectPlane) != 0)
 	{
 		flog("\n\n[=PlanesCheck=]: -->> %d plane(s) are left. << -- \n", planes.size());
         for (int i = 0; i < m_GEOObjSet->m_PlaneList.size(); ++i)
