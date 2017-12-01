@@ -944,10 +944,10 @@ bool MergeToCube(
     double ratio = ptsOnCube.size()*1.0 / (ptsOnCube.size()+ptsOnPlane.size());
     const double T1 = 0.8;
     if (ratio >= T1) {// Have Enogh Cover
-        //for (int i = ptsOnPlane.size() - 1; i >= 0; --i) {
-        //    int index = idxOnPlane.at(i);
-        //    type_hi[index] = Pt_Undefined;
-        //}
+        for (int i = ptsOnPlane.size() - 1; i >= 0; --i) {
+            int index = idxOnPlane.at(i);
+            type_hi[index] = Pt_Undefined;
+        }
         return true;
     }
     else {// Need Cut
