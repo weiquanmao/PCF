@@ -344,7 +344,7 @@ bool PatchDimensionOne(
     int &idxBegin, int &idxEnd,
     double r)
 {
-    const int stepK = 3;
+    const int stepK = 1;
     int n = proList.size();
     int p1 = 0;
     int p2 = n - 1;

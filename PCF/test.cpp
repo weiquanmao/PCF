@@ -20,16 +20,20 @@ const std::string SynOutputDir = "../../../Data/ResultSyn";
 enum ProMe { ProRecon, ProSynAll, ProSynOne };
 
 
-const ProMe proMe = ProRecon;
-PCFit::ProType proType = PCFit::Steps_All;
-const bool bOnlySpecialTar = false;
+const ProMe proMe = ProSynOne;
+PCFit::ProType proType =
+//PCFit::Steps_ToPlane;
+PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_DetectCylinder)));
+//PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_RemoveOutlier)));
+
+const bool bOnlySpecialTar = true;
 
 // For Special Target
-const char SpecialTar[] = "spot.ply";
+const char SpecialTar[] = "radarsat.ply";
 // For One Syn
 const int num_one = 50000;
 const int ndis_one = 0;
-const int nang_one = 5;
+const int nang_one = 0;
 // For All Syn
 const int _K = 5;
 const int _M = 5;
@@ -225,7 +229,7 @@ int main(int argc, char *argv[])
         break;
     }
     SetConsoleTitleA("-- Finished --");
-    MelodyPlay_Notice();
+    //MelodyPlay_Notice();
     system("pause");
     return 0;
 }

@@ -580,8 +580,6 @@ ObjCylinder *EstCylinderTwoPoint(
     vcg::Point3f a1 = p1 - (n1 * lambda1);
     double       r1 = (n1 * lambda1).Norm();
 
-    assert(CheckAng00(VCGAngle(N, a1 - a2))<0.5);
-
     if (abs(r1 - r2) / (r1 + r2) > TDisDeviation)
         return 0;
 

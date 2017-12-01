@@ -118,7 +118,7 @@ bool IsAdjacencyFaces(
     vcg::Point3f O2 = P2->m_O + (P2->m_AX + P2->m_AY) / 2.0;
     vcg::Point3f O2O = O2 - O1;
     vcg::Point3f NN = P1->m_N^P2->m_N;
-    double DisO = O2O*NN / NN.Norm();
+    double DisO = abs( O2O*NN / NN.Norm() );
     double Dis1 = abs(O2O*P1->m_N);
     double Dis2 = abs(O2O*P2->m_N);
     double l1, u1;
@@ -137,13 +137,13 @@ bool IsAdjacencyFaces(
         u2 = P2->width();
         l2 = P2->height();
     }
-    if (abs(u1 - u2) / (u1 + u2) > 0.5)
+    if (abs(u1 - u2) > 0.5*u1 || abs(u1 - u2) > 0.5*u2)
         return false;
-    if (DisO*2 / (u1 + u2) > 0.2)
+    if (DisO > u1*0.25)
         return false;
     if (
-        ((Dis1 - l2*0.5) / l2 > TRDis || Dis1*2 / l2 < 0.2) ||
-        ((Dis2 - l1*0.5) / l1 > TRDis || Dis2*2 / l1 < 0.2)
+        ((Dis1 - l2*0.5) > TRDis*l2 || (l2*0.5 - Dis1) > TRDis*l2*0.5) ||
+        ((Dis2 - l1*0.5) > TRDis*l1 || (l1*0.5 - Dis2) > TRDis*l1*0.5)
         )
         return false;
 
@@ -173,12 +173,8 @@ PlaneRelation EstPlaneRelation(
     const ObjRect *P1, const ObjRect *P2,
     const double TRDis, const double TAng, const double TIoU)
 {
-    if (P1->m_index == 514 && P2->m_index == 523)
-        int a = 1;
-
-
     PlaneRelation  relation = PlaneRelation_NoRetation;
-
+    
     if (IsOppoFaces(P1, P2, TAng, TIoU))
         return PlaneRelation_AtOppo;
     else if (IsAdjacencyFaces(P1, P2, TRDis, TAng, &relation))
@@ -271,76 +267,85 @@ bool BuildBox(
     cubeFace[inloc] = Rect;
     return true;
 }
+int OppoFaceNum(ObjRect *Faces[6]) {
+    int oppoN = 0;
+    if (Faces[0] != 0 && Faces[5] != 0) oppoN++;
+    if (Faces[1] != 0 && Faces[3] != 0) oppoN++;
+    if (Faces[2] != 0 && Faces[4] != 0) oppoN++;
+    return oppoN;
+}
 std::vector<ObjRect*> CubeFaceInferringOne(
     const std::vector<ObjRect*> &Rects,
     const double TRDis, const double TAng, const double TIoU)
 {
     ObjRect* tempList[6];
     ObjRect* betterList[6];
+    for (int k = 0; k < 6; ++k) {
+        tempList[k] = 0;
+        betterList[k] = 0;
+    }
     int betterCount = 0;
-    for (int i = 0; i < Rects.size(); ++i) {
-        // Clean
-        for (int j = 0; j < 6; ++j)
-            tempList[j] = 0;
-        // Init
-        tempList[0] = Rects.at(i);
-        int pNum = 1;
-        for (int j = 0; j < Rects.size(); j++) {
-            if (j == i)
-                continue;
-            if ((i == 0 && j == 2) ||
-                (i == 0 && j == 3))
-                int stopMe = 0;
-            if (BuildBox(tempList, Rects.at(j), TRDis, TAng, TIoU)) {
-                pNum++;
-                if (pNum == 6)
-                    break;
-            }
-        }
-
-        
-        // Less than 2 patches
-        if (pNum < 2)
-            continue;
-        // Have only 2 patches, but not in opposite relation.
-        int oppoN1 = 0;
-        if (tempList[0] != 0 && tempList[5] != 0) oppoN1++;
-        if (tempList[1] != 0 && tempList[3] != 0) oppoN1++;
-        if (tempList[2] != 0 && tempList[4] != 0) oppoN1++;
-        if (pNum == 2 && oppoN1<1)
-            continue;
-
-        bool betterOne = false;
-        if (pNum > betterCount)
-            betterOne = true;
-        else if (pNum == betterCount) {
-            int oppoN2 = 0;
-            if (betterList[0] != 0 && betterList[5] != 0) oppoN2++;
-            if (betterList[1] != 0 && betterList[3] != 0) oppoN2++;
-            if (betterList[2] != 0 && betterList[4] != 0) oppoN2++;
-            if (oppoN1 > oppoN2)
-                betterOne = true;
-        }
-        if (betterOne){          
-            for (int j = 0; j < 6; ++j)
-                betterList[j] = tempList[j];
-            //------
-            flog(
-                "        |--------------------- \n"
-                "        |");
-            for (int j = 0; j < 6; ++j) {
-                if (betterList[j] != 0)
-                    flog(" %d", betterList[j]->m_index);
-                else
-                    flog(" 000");
-            }
-            flog("\n");
-            //------
-            betterCount = pNum;
+    for (int i = 0; i < Rects.size()-1; ++i) {
+        if (betterCount == 6)
+            break;
+        for (int j = i+1; j < Rects.size(); j++) {
             if (betterCount == 6)
                 break;
-        }
-        
+
+            if (EstPlaneRelation(Rects.at(i), Rects.at(j), TRDis, TAng, TIoU) == PlaneRelation_NoRetation)
+                continue;
+
+            // Star With Pair(i,j)
+            tempList[0] = Rects.at(i);
+            if (!BuildBox(tempList, Rects.at(j), TRDis, TAng, TIoU)) {
+                assert(0);
+                break;
+            }
+            int pNum = 2;
+            for (int k = 0; k < Rects.size(); ++k) {
+                if (k == i || k == j)
+                    continue;
+                if (BuildBox(tempList, Rects.at(k), TRDis, TAng, TIoU)) {
+                    pNum++;
+                    if (pNum == 6)
+                        break;
+                }
+            }
+
+            int oppoN1 = OppoFaceNum(tempList);
+            int oppoN2 = OppoFaceNum(betterList);
+            bool betterOne = true;
+            
+            if (pNum < 2) // Less than 2 patches
+                betterOne = false;
+            else if (pNum == 2 && oppoN1<1) // Have only 2 patches, but not in opposite relation.
+                betterOne = false;           
+            
+            if (oppoN1<oppoN2)
+                betterOne = false;
+            else if (oppoN1 == oppoN2 && pNum < betterCount)
+                betterOne = false;
+
+            if (betterOne) {
+                for (int k = 0; k < 6; ++k)
+                    betterList[k] = tempList[k];
+                betterCount = pNum;
+                //------
+                flog(
+                    "        |--------------------- \n"
+                    "        |");
+                for (int k = 0; k < 6; ++k) {
+                    if (betterList[k] != 0) flog(" %d", betterList[k]->m_index);
+                    else                    flog(" 000");
+                }
+                flog("\n");
+                //------
+            }
+
+            // Clean
+            for (int k = 0; k < 6; ++k)
+                tempList[k] = 0;
+        }        
     }
     std::vector<ObjRect*> finalOut;
     finalOut.reserve(6);
