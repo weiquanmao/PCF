@@ -20,21 +20,22 @@ const std::string SynOutputDir = "../../../Data/ResultSyn";
 enum ProMe { ProRecon, ProSynAll, ProSynOne };
 
 
-const ProMe proMe = ProSynAll;
+const ProMe proMe = ProSynOne;
 PCFit::ProType proType =
+PCFit::Steps_ToCyllinder;
 //PCFit::Steps_ToPlane;
-PCFit::Steps_All;
+//PCFit::Steps_All;
 //PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_DetectCylinder)));
 //PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_RemoveOutlier)));
 
-const bool bOnlySpecialTar = false;
+const bool bOnlySpecialTar = true;
 
 // For Special Target
-const char SpecialTar[] = "radarsat.ply";
+const char SpecialTar[] = "gps.ply";
 // For One Syn
-const int num_one = 50000;
-const int ndis_one = 0;
-const int nang_one = 0;
+const int num_one = 20000;
+const int ndis_one = 1;
+const int nang_one = 10;
 // For All Syn
 const int _K = 5;
 const int _M = 5;

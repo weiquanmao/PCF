@@ -5,11 +5,11 @@
 #include <wrap/io_trimesh/io_mask.h>
 
 const unsigned int  nColorChannel = 3;
-const unsigned char Color_Gray[nColorChannel] = { 100, 100, 100 };
-const unsigned char Color_Solid[nColorChannel] = { 255,   0,   0 };
-const unsigned char Color_Solid_Cube[nColorChannel] = { 255,   0,   0 };
-const unsigned char Color_Solid_Cylinder[nColorChannel] = { 255,   0,   0 };
-const unsigned char Color_Noise[nColorChannel] = { 0, 255,   0 };
+const unsigned char Color_Gray[nColorChannel]           = { 100, 100, 100 };
+const unsigned char Color_Solid[nColorChannel]          = { 255,   0,   0 };
+const unsigned char Color_Solid_Cube[nColorChannel]     = { 255,   0,   0 };
+const unsigned char Color_Solid_Cylinder[nColorChannel] = {   0,   0, 255 };
+const unsigned char Color_Noise[nColorChannel]          = {   0, 255,   0 };
 const unsigned char Color_Plane[10][nColorChannel] =
 {
 	{ 215,  55, 101 },

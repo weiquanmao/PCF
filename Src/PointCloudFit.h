@@ -70,6 +70,7 @@ public:
         SpSteps_ToPlane          = 0x06,  // Without Remove Outlier Step
         SpSteps_ToCube           = 0x0E,  // Without Remove Outlier Step
         Steps_OnlyPlane          = 0x05,
+        Steps_ToCyllinder        = 0x03,
         Steps_ToPlane            = 0x07,
         Steps_ToCube             = 0x0F,
         Steps_All                = 0x0F,
