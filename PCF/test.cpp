@@ -20,13 +20,14 @@ const std::string SynOutputDir = "../../../Data/ResultSyn";
 enum ProMe { ProRecon, ProSynAll, ProSynOne };
 
 
-const ProMe proMe = ProSynOne;
+const ProMe proMe = ProSynAll;
 PCFit::ProType proType =
 //PCFit::Steps_ToPlane;
-PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_DetectCylinder)));
+PCFit::Steps_All;
+//PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_DetectCylinder)));
 //PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_RemoveOutlier)));
 
-const bool bOnlySpecialTar = true;
+const bool bOnlySpecialTar = false;
 
 // For Special Target
 const char SpecialTar[] = "radarsat.ply";
@@ -143,7 +144,9 @@ void testSynOne()
         << endl;
     CreateDirectoryA(outFolder.c_str(), NULL);
     double TAng = 15;
-    if (nang_one >= 10)
+    if (nang_one >= 30)
+        TAng = 45;
+    else if (nang_one >= 10)
         TAng = 30;
     setLogFile(outLog.c_str());
     ProFolder(inFolder, outFolder, TAng);
@@ -195,7 +198,9 @@ void testSynAll()
             << endl;
         CreateDirectoryA(outFolder.c_str(), NULL);
         double TAng = 15;
-        if (_nang >= 10)
+        if (_nang >= 30)
+            TAng = 45;
+        else if (_nang >= 10)
             TAng = 30;
         setLogFile(outLog.c_str());
         ProFolder(inFolder, outFolder, TAng);
