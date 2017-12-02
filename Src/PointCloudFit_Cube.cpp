@@ -38,7 +38,7 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPatch*> &patche
         cubes.push_back(oneCube);
     }
 	// D. Attach Planes To Cube
-    int nAdded = AttachToCube(mesh, rects, CubeFaces, cubes, TAng, TDis, true);
+    AttachToCube(mesh, rects, CubeFaces, cubes, TAng, TDis);
    
 	// E. Set Label And Delete Patches Memory
     CMeshO::PerVertexAttributeHandle<PtType> type_hi =

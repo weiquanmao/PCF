@@ -242,8 +242,7 @@ int AttachToCube(
     std::vector<ObjRect*> &rects, 
     std::vector< std::vector<ObjRect*>> &CubeFaces,
     const std::vector<ObjCube*> &cubes,   
-    const double TAng, const double TDis,
-    const bool remove = true);
+    const double TAng, const double TDis);
 
 /////////////////////////////////
 // ------- For Cylinder -------

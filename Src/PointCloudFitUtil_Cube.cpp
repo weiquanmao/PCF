@@ -995,32 +995,31 @@ int AttachToCube(
     std::vector<ObjRect*> &rects,
     std::vector< std::vector<ObjRect*>> &CubeFaces,
     const std::vector<ObjCube*> &cubes,   
-    const double TAng, const double TDis,
-    const bool remove)
+    const double TAng, const double TDis)
 {
-    std::vector<ObjRect*> planesAdded;
-    std::vector<ObjRect*> planesSplit;
-    for (int i = 0; i < rects.size(); i++) {
-        ObjRect *ple = rects.at(i);
-        std::vector<ObjRect*> split;
-        flog("    >> Attach [ ID.%d ] ... \n", ple->m_index);
-        for (int k = 0; k < cubes.size(); ++k) {          
-            if (MergeToCube(mesh, ple, cubes.at(k), split, TAng, TDis)) {
-                flog("    [ -- Attached to the [ No.%d ] cube with [ %d ] split(s) ... -- ]\n", k+1, split.size());
-                CubeFaces.at(k).push_back(ple);
-                planesAdded.push_back(ple);
-                for (int r = 0; r < split.size(); ++r) {
-                    planesSplit.push_back(split.at(r));
-                }
-                break;
+    std::vector<ObjRect*> planesSplit = rects;
+
+    for (int i = 0; i < cubes.size(); ++i) {
+        ObjCube *oneCube = cubes.at(i);
+        std::vector<ObjRect*> split_oneCube;
+        flog("    >> Attach to cube [ ID.%d ] ... \n", oneCube->m_index);
+        for (int j = 0; j < planesSplit.size();++j) {
+            ObjRect *ple = planesSplit.at(j);
+            std::vector<ObjRect*> split_onePlane;
+            if (MergeToCube(mesh, ple, oneCube, split_onePlane, TAng, TDis)) {
+                flog("    [ -- Attached to the [ ID.%d ] plane with [ %d ] split(s) ... -- ]\n", 
+                    ple->m_index, split_onePlane.size());
+                CubeFaces.at(i).push_back(ple);
+                planesSplit.erase(planesSplit.begin() + j);
+                j--;
+                for (int r = 0; r < split_onePlane.size(); ++r)
+                    split_oneCube.push_back(split_onePlane.at(r));
             }
         }
+        for (int r = 0; r < split_oneCube.size(); ++r)
+            planesSplit.push_back(split_oneCube.at(r));
     }
+    rects.swap(planesSplit);
 
-    if (remove)
-        RemovePlanes(rects, planesAdded, false);
-    for (int i = 0; i < planesSplit.size(); ++i) {
-		rects.push_back(planesSplit.at(i));
-    }
-    return planesAdded.size();
+    return rects.size();
 }
