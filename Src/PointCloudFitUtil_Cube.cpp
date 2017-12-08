@@ -137,7 +137,7 @@ bool IsAdjacencyFaces(
         u2 = P2->width();
         l2 = P2->height();
     }
-    if (abs(u1 - u2) > 0.5*u1 || abs(u1 - u2) > 0.5*u2)
+    if (abs(u1 - u2) > 0.8*u1 || abs(u1 - u2) > 0.8*u2)
         return false;
     if (DisO > u1*0.25)
         return false;
@@ -844,6 +844,7 @@ void RobustDimention(
         SIZE.Z(), WEIGHTS.Z(), NZ.X(), NZ.Y(), NZ.Z(),
         time.elapsed() / 1000.0);
 }
+
 
 void CubeMeasure(    
     const std::vector<ObjRect*> &CubePlanes,

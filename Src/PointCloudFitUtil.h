@@ -1,4 +1,6 @@
 #ifndef _POINT_CLOUD_FIT_UTIL_H_FILE_
+#define _POINT_CLOUD_FIT_UTIL_H_FILE_
+
 #include "PointCloudFit.h"
 #include "utility/flog.h"
 #ifdef _USE_OPENMP_
@@ -200,7 +202,6 @@ bool IsAdjacencyFaces(
 PlaneRelation EstPlaneRelation(
     const ObjRect *P1, const ObjRect *P2,
     const double TRDis, const double TAng, const double TIoU);
-
 
 bool BuildBox(
     ObjRect* cubePlane[6], ObjRect* Rect,

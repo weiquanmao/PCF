@@ -24,18 +24,18 @@ const ProMe proMe = ProSynOne;
 PCFit::ProType proType =
 //PCFit::Steps_All;
 //PCFit::Steps_ToPlane;
-PCFit::Steps_All;
-//PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_DetectCylinder)));
+//PCFit::Steps_All;
+PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_DetectCylinder)));
 //PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_RemoveOutlier)));
 
 const bool bOnlySpecialTar = true;
 
 // For Special Target
-const char SpecialTar[] = "spot.ply";
+const char SpecialTar[] = "dsp.ply";
 // For One Syn
-const int num_one = 20000;
-const int ndis_one = 02;
-const int nang_one = 00;
+const int num_one = 50000;
+const int ndis_one = 00;
+const int nang_one = 10;
 // For All Syn
 const int _K = 5;
 const int _M = 5;
