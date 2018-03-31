@@ -139,7 +139,7 @@ bool IsAdjacencyFaces(
     }
     if (abs(u1 - u2) > 0.8*u1 || abs(u1 - u2) > 0.8*u2)
         return false;
-    if (DisO > u1*0.25)
+    if (DisO > u1*0.25 || DisO > u2*0.25)
         return false;
     if (
         ((Dis1 - l2*0.5) > TRDis*l2 || (l2*0.5 - Dis1) > TRDis*l2*0.5) ||
