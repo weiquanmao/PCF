@@ -31,7 +31,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;WIN32;WIN64;QT_DLL;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;../Src;../Src/MeshDoc;../Src/MeshDoc/vcglib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;../Src/MeshDoc;D:/VCG;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWChar_tAsBuiltInType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWChar_tAsBuiltInType>
       <OpenMPSupport Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</OpenMPSupport>
     </ClCompile>
@@ -73,7 +73,7 @@
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;../Src/MeshDoc;../Src/MeshDoc/vcglib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;../Src/MeshDoc;D:/VCG;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -87,14 +87,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\MeshDoc\MeshDoc.cpp" />
-    <ClCompile Include="..\Src\MeshDoc\vcglib\wrap\ply\plylib.cpp" />
+    <ClCompile Include="D:\VCG\wrap\ply\plylib.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\MeshDoc\MeshDoc.h" />
     <ClInclude Include="..\Src\MeshDoc\plyhead.h" />
-    <ClInclude Include="..\Src\MeshDoc\vcglib\wrap\io_trimesh\export.h" />
-    <ClInclude Include="..\Src\MeshDoc\vcglib\wrap\io_trimesh\import.h" />
-    <ClInclude Include="..\Src\MeshDoc\vcglib\wrap\ply\plylib.h" />
+    <ClInclude Include="D:\VCG\wrap\io_trimesh\export.h" />
+    <ClInclude Include="D:\VCG\wrap\io_trimesh\import.h" />
+    <ClInclude Include="D:\VCG\wrap\ply\plylib.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
@@ -104,7 +104,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties MocDir=".\GeneratedFiles\$(ConfigurationName)" UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" lupdateOptions="" lupdateOnBuild="0" lreleaseOptions="" Qt5Version_x0020_x64="msvc2015_5.6.1_64" MocOptions="" />
+      <UserProperties MocDir=".\GeneratedFiles\$(ConfigurationName)" UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" lupdateOptions="" lupdateOnBuild="0" lreleaseOptions="" Qt5Version_x0020_x64="Qt_MSVC2015_64" MocOptions="" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

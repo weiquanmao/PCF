@@ -35,7 +35,7 @@
     <ClCompile Include="..\Src\MeshDoc\MeshDoc.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\MeshDoc\vcglib\wrap\ply\plylib.cpp">
+    <ClCompile Include="D:\VCG\wrap\ply\plylib.cpp">
       <Filter>Src\vcglib</Filter>
     </ClCompile>
   </ItemGroup>
@@ -43,16 +43,16 @@
     <ClInclude Include="..\Src\MeshDoc\MeshDoc.h">
       <Filter>Src</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\MeshDoc\vcglib\wrap\io_trimesh\export.h">
-      <Filter>Src\vcglib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Src\MeshDoc\vcglib\wrap\io_trimesh\import.h">
-      <Filter>Src\vcglib</Filter>
-    </ClInclude>
     <ClInclude Include="..\Src\MeshDoc\plyhead.h">
       <Filter>Src\vcglib</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\MeshDoc\vcglib\wrap\ply\plylib.h">
+    <ClInclude Include="D:\VCG\wrap\ply\plylib.h">
+      <Filter>Src\vcglib</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\VCG\wrap\io_trimesh\import.h">
+      <Filter>Src\vcglib</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\VCG\wrap\io_trimesh\export.h">
       <Filter>Src\vcglib</Filter>
     </ClInclude>
   </ItemGroup>
