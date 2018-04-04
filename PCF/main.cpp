@@ -11,41 +11,13 @@ using std::endl;
 using std::string;
 #pragma comment(lib,"winmm.lib")
 
-const std::string ReconInputDir = "../../../Data/PCModelRecon";
-const std::string ReconOutputDir = "../../../Data/ResultRecon";
+const std::string ReconInputDir = "../TestData/Ply/Recon";
+const std::string ReconOutputDir = "../TestData/Ply/Recon";
 
-const std::string SynInputDir = "../../../Data/PCModelSyn";
-const std::string SynOutputDir = "../../../Data/ResultSyn";
+const std::string SynInputDir = "../TestData/Ply/Syn/50K_00U_00D";
+const std::string SynOutputDir = "../TestData/Ply/Syn/50K_00U_00D";
 
-enum ProMe { ProRecon, ProSynAll, ProSynOne };
-
-
-const ProMe proMe = ProSynOne;
-PCFit::ProType proType =
-//PCFit::Steps_All;
-//PCFit::Steps_ToPlane;
-//PCFit::Steps_All;
-PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_DetectCylinder)));
-//PCFit::ProType((PCFit::Steps_All & (~PCFit::OneStep_RemoveOutlier)));
-
-const bool bOnlySpecialTar = true;
-
-// For Special Target
-const char SpecialTar[] = "dsp.ply";
-// For One Syn
-const int num_one = 50000;
-const int ndis_one = 00;
-const int nang_one = 10;
-// For All Syn
-const int _K = 5;
-const int _M = 5;
-const int _N = 5;
-unsigned int num_all[_K] = { 50000, 20000, 10000, 5000, 2000 };
-unsigned int ndis_all[_M] = { 0, 1, 2, 4, 8 };
-unsigned int nang_all[_N] = { 0, 5, 10, 15, 30 };
-
-
-
+PCFit::ProType proType = PCFit::Steps_All;
 
 int ProFolder(const string &InputDir, const string &OutputDir, const double &TAng = -1)
 {
@@ -63,8 +35,6 @@ int ProFolder(const string &InputDir, const string &OutputDir, const double &TAn
             if ((fileinfo.attrib & _A_ARCH))
             {
                 const string FileName = fileinfo.name;
-                if (bOnlySpecialTar && FileName != SpecialTar)
-                    continue;
                 const string BaseName = FileName.substr(0, FileName.rfind('.'));
                 const string FilePath = InputDir + "/" + FileName;
                 const string FileNameOpt = OutputDir + "/" + BaseName + "_Opt.ply";
@@ -118,125 +88,23 @@ int ProFolder(const string &InputDir, const string &OutputDir, const double &TAn
 
     return 0;
 }
-void testSynOne()
-{
-    DWORD T1, T2;
-    T1 = timeGetTime();
 
-    char _folderName[1024];
-    if (num_one > 1000 && (num_one % 1000) == 0)
-        sprintf(_folderName, "%dK_%02dU_%02dD", num_one / 1000, ndis_one, nang_one);
-    else
-        sprintf(_folderName, "%d_%02dU_%02dD", num_one / 1000, ndis_one, nang_one);
-
-    const string folderName = _folderName;
-    const string inFolder = SynInputDir + "/" + folderName;
-    const string outFolder = SynOutputDir + "/" + folderName;
-    const string outLog = SynOutputDir + "/" + folderName + "/Log.txt";
-    cout
-        << endl
-        << "===============================================================================\n"
-        << "===============================================================================\n"
-        << "[<] " << inFolder << "\n"
-        << "[>] " << outFolder << "\n"
-        << "[>] " << outLog << "\n"
-        << "===============================================================================\n"
-        << "===============================================================================\n"
-        << endl;
-    CreateDirectoryA(outFolder.c_str(), NULL);
-    double TAng = 15;
-    if (nang_one >= 30)
-        TAng = 45;
-    else if (nang_one >= 10)
-        TAng = 30;
-    setLogFile(outLog.c_str());
-    ProFolder(inFolder, outFolder, TAng);
-    T2 = timeGetTime();
-    cout << endl
-        << "===============================================================================\n"
-        << "===============================================================================\n"
-        << " # Total Elapsed Time: " << (T2 - T1)*1.0 / 1000 << " Seconds.\n"
-        << "===============================================================================\n"
-        << "===============================================================================\n"
-        << endl;
-
-}
-void testSynAll()
-{
-    DWORD T1, T2;
-    T1 = timeGetTime();
-
-    const unsigned nnn = _K*_M*_N;
-    unsigned int _num, _ndis, _nang;
-
-    for (int idx = 0; idx < nnn; ++idx) {
-        unsigned k = idx / (_M*_N);
-        unsigned i = (idx % (_M*_N)) / _N;
-        unsigned j = idx % _N;
-        unsigned _num = num_all[k];
-        unsigned _ndis = ndis_all[i];
-        unsigned _nang = nang_all[j];
-
-        char _folderName[1024];
-        if (_num > 1000 && (_num % 1000) == 0)
-            sprintf(_folderName, "%dK_%02dU_%02dD", _num / 1000, _ndis, _nang);
-        else
-            sprintf(_folderName, "%d_%02dU_%02dD", _num / 1000, _ndis, _nang);
-
-        const string folderName = _folderName;
-        const string inFolder = SynInputDir + "/" + folderName;
-        const string outFolder = SynOutputDir + "/" + folderName;
-        const string outLog = SynOutputDir + "/" + folderName + "/Log.txt";
-        cout
-            << endl
-            << "===============================================================================\n"
-            << "===============================================================================\n"
-            << "[<] " << inFolder << "\n"
-            << "[>] " << outFolder << "\n"
-            << "[>] " << outLog << "\n"
-            << "===============================================================================\n"
-            << "===============================================================================\n"
-            << endl;
-        CreateDirectoryA(outFolder.c_str(), NULL);
-        double TAng = 15;
-        if (_nang >= 30)
-            TAng = 45;
-        else if (_nang >= 10)
-            TAng = 30;
-        setLogFile(outLog.c_str());
-        ProFolder(inFolder, outFolder, TAng);
-    }
-    T2 = timeGetTime();
-    cout << endl
-        << "===============================================================================\n"
-        << "===============================================================================\n"
-        << " # Total Elapsed Time: " << (T2 - T1)*1.0 / 1000 << " Seconds.\n"
-        << "===============================================================================\n"
-        << "===============================================================================\n"
-        << endl;
-}
 int main(int argc, char *argv[])
 {
-    switch (proMe)
-    {
-    case ProRecon: {
-        const string outLog = ReconOutputDir + "/" + "/Log.txt";
-        setLogFile(outLog.c_str());
-        ProFolder(ReconInputDir, ReconOutputDir, 30.0);
-        break;
-    }
-    case ProSynOne:
-        testSynOne();
-        break;
-    case ProSynAll:
-        testSynAll();
-        break;
-    default:
-        break;
-    }
-    SetConsoleTitleA("-- Finished --");
-    //MelodyPlay_Notice();
+
+    string outLog;
+
+    outLog = SynOutputDir + "/Log.txt";
+    setLogFile(outLog.c_str());
+    ProFolder(SynInputDir, SynOutputDir, 15.0);
+
+    outLog = ReconOutputDir + "/Log.txt";
+    setLogFile(outLog.c_str());
+    ProFolder(ReconInputDir, ReconOutputDir, 30.0);
+
+    MelodyPlay_Notice();
     system("pause");
     return 0;
-}
 
+}
+  

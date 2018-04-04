@@ -3,24 +3,20 @@
 
 #include "obj2ply.h"
 
-const std::string InputDir = "../../../Data/[MeshModelPruned]";
-const std::string OutputDir = "../../../Data/SynData";
+const std::string InputDir = "../TestData/Obj";
+const std::string OutputDir = "../TestData/Ply/Syn";
 
 int main()
 {
+#if 1
+    obj2ply(InputDir, OutputDir, 50000);
+#else
 	const int _K = 5;
-	const int _M = 5;
-	const int _N = 5;
+	const int _M = 4;
+	const int _N = 4;
 	unsigned int num[_K] = { 50000, 20000, 10000, 5000, 2000 };
-	int ndis[_M] = { 0, 1, 2, 4, 8 };
-	int nang[_N] = { 0, 5, 10, 15, 30 };
-
-	//const int _K = 5;
-	//const int _M = 5;
-	//const int _N = 1;
-	//unsigned int num[_K] = { 50000, 20000, 10000, 5000, 2000 };
-	//int ndis[_M] = { 0, 1, 2, 4, 8 };
-	//int nang[_N] = { 0 };
+	int ndis[_M] = { 0, 1, 2, 4 };
+	int nang[_N] = { 0, 5, 10, 15 };
 
 	const unsigned nnn = _K*_M*_N;
 	unsigned int _num, _ndis, _nang;
@@ -37,6 +33,7 @@ int main()
 		unsigned _nang = nang[j];
 		obj2ply(InputDir, OutputDir, _num, _ndis, _nang);
 	}
+#endif
     system("pause");
     return 0;
 }

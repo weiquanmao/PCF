@@ -1,13 +1,15 @@
 #include "struct2ply.h"
 
-//#include <fstream>
 #include <string>
 #include <io.h>
 
 using namespace std;
 
-const string InDir = "E:/Results/3DRecog/ResultRecon_Cube";
-const string OutDir = "E:/Results/3DRecog/ResultRecon_Cube";
+//const string InDir = "../TestData/Ply/Recon";
+//const string OutDir = "../TestData/Ply/Recon";
+
+const string InDir = "../TestData/Ply/Syn/50K_00U_00D";
+const string OutDir = "../TestData/Ply/Syn/50K_00U_00D";
 
 int main(int argc, char *argv[])
 {

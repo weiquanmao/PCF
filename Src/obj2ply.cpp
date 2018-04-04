@@ -38,10 +38,7 @@ bool obj2ply(
 		<< "[<] " << outReadMe      << "\n"
 		<< "============================================\n"
 		<< endl;
-	if (!CreateDirectoryA(outFolder.c_str(), NULL)) {
-		cout << "[Error] : Failed to Create Folder." << endl;
-		return false;
-	}
+    CreateDirectoryA(outFolder.c_str(), NULL);
 
 	ofstream fReadMeOut(outReadMe, ios::out);
 	if (!fReadMeOut.is_open())

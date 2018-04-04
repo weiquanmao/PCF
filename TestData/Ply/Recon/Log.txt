@@ -1,0 +1,1803 @@
+===============================
+[ ----- Point Cloud Fit ----- ]
+[+] ../TestData/Ply/Recon/dsp.ply
+[-] ../TestData/Ply/Recon/dsp_Opt.ply
+[-] ../TestData/Ply/Recon/dsp_Rej.ply
+[-] ../TestData/Ply/Recon/dsp.struct
+===============================
+
+--------------------------------------------------------------------------------------------
+
+
+    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   
+   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 1.2.0                
+  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA  
+ /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  
+                                                 |  Email: weiqm@buaa.edu.cn  
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ +------------------------------------------------------+
+ | PARAMETERS IN USE:                                   |
+ |------------------------------------------------------|
+ | [Threshold_NPts              ]:       < 00000100 >   |
+ | [DeNoise_MaxIteration        ]:       < 00000000 >   |
+ | [DeNoise_KNNNeighbors        ]:       < 00000050 >   |
+ | [DeNoise_GrowNeighbors       ]:       < 00000020 >   |
+ | [DeNoise_DisRatioOfOutlier   ]:       < 0000.100 >   |
+ | [Precision_HT                ]:       < 0000.010 >   |
+ | [Threshold_MaxModelNumPre    ]:       < 00000010 >   |
+ | [Threshold_MaxModelNum       ]:       < 00000030 >   |
+ | [Threshold_NPtsPlane         ]:       < 0000.050 >   |
+ | [Threshold_NPtsCylinder      ]:       < 0000.100 >   |
+ | [Threshold_DisToSurface      ]:       < 0002.000 >   |
+ | [Threshold_AngToSurface      ]:       < 0030.000 >   |
+ | [Threshold_PRAng             ]:       < 0015.000 >   |
+ | [Threshold_PRDis             ]:       < 0000.500 >   |
+ | [Threshold_PRIoU             ]:       < 0000.600 >   |
+ +------------------------------------------------------+
+
+
+[=LoadPly=]: -->> Loading Points from File: ../TestData/Ply/Recon/dsp.ply <<--  
+[=LoadPly=]: Done, 23511 point(s) were loaded in 0.1280 seconds.
+
+
+[=InitPtAttri=]: -->> Initialize Satellite Point Attribute <<--
+    >> Add Attri ... 
+    >> Set Attri ... 
+[=InitPtAttri=]: Done, 23511 point(s) were setted in 0.0030 seconds.
+
+
+[=DeNoise=]: -->> Remove Outliers <<--  
+    [--DeNoiseRegGrw--]: #nPts-23511 
+      | #NIteration : 0 
+      | #KNNStep    : 20 
+      | #DisRatio   : 0.100 
+      | #Gap        : [1]-0.661-<23471 in 21> [2]-0.661-<23471 in 1> 
+    [--DeNoiseRegGrw--]: Done, found 40 outlier(s) in 0.1180 seconds.
+[=DeNoise=]: Done, 40 outlier(s ) were removed in 0.1190 seconds.
+
+
+[=RefSize=]: -->> Dimension Reference Unit Ana. <<--  
+    [--PCADimensions--] #bPts - 23471/23471 
+       | -- Principal direction vectors, -- 
+       | -- col by decreasing order.     -- 
+       |  -0.0459  0.9947  0.0922 - <  8.5564 > 
+       |  -0.9761 -0.0250 -0.2161 - <  6.7533 > 
+       |   0.2126  0.1000 -0.9720 - <  6.7002 > 
+    [--PCADimensions--]: Done in 0.0010 seconds.
+    [--Roughness--] #bPts - 23471/23471 
+       | RoughnessA - <  0.0802 > 
+    [--Roughness--]: Done in 0.1420 seconds.
+[=RefSize=]: Done in 0.1440 seconds.
+
+
+[=PrePlaneFit_HT=]: -->> Try to Remove 10 Planes by Hough Translation <<--  
+    [--GetBorder--]: #nPts-23471 
+      | #MinPt  : < -15.203,  -4.492,   6.099 > 
+      | #MaxPt  : <  -8.443,   4.238,  12.714 > 
+      | #Center : < -11.823,  -0.127, -11.823 > 
+    [--GetBorder--]: Done in 0.0000 seconds.
+    >> Got #23471 Normalized Pts.
+    >> Detecting the [ No.1 ] plane with #Minimum - [ 586 ] ...
+      [--Plane_HT--]: #nPts-23471 
+        | [#Time- 0.9630]-[X-Seted]: 471-Pts 
+        |  >>  1.0000X +  0.1600Y +  0.5600Z +  1.6832 = 0 |=>  0.8641X +  0.1383Y +  0.4839Z = -1.4545 
+        | [#Time- 0.4690]-[Y-Seted]: 616-Pts 
+        |  >>  0.5200X +  1.0000Y + -0.3200Z +  1.6031 = 0 |=>  0.4438X +  0.8535Y + -0.2731Z = -1.3682 
+        | [#Time- 0.8660]-[Z-Seted]: 427-Pts 
+        |  >> -0.1000X +  0.3300Y +  1.0000Z +  2.1642 = 0 |=> -0.0945X +  0.3120Y +  0.9454Z = -2.0460 
+        | [+][Checked] : [2] #nPts-< 616 > 
+      [--Plane_HT--]: Done in 2.2980 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.1603
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1303 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1303
+        | #Threshold_Dis : 0.1603
+        | #NPts_MaxReg   : 1296
+      [--MaxRegion--]: Done in 0.0040 seconds. 
+      [--Fit_LS--]: #Pts-1296
+        | #Plane    :  0.4397X +  0.8568Y + -0.2692Z = -1.4249 
+        | #FitError : 0.0242
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-1296
+        | #Loc-PCA_X   : <  0.4232,  0.0667,  0.9036 > 
+        | #Loc-PCA_Y   : <  0.7922, -0.5112, -0.3333 > 
+        | #RotAng-S    : < 3 > -<  6.4736 > 
+        | #Loc-Adjed_O : <  0.3919, -2.0019, -0.4388 > 
+        | #Loc-Adjed_X : <  1.1848,  0.1017,  2.2591 > - < 2.5530> - [93.7665]
+        | #Loc-Adjed_Y : <  1.9498, -1.3034, -0.9639 > - < 2.5357> - [89.8473]
+        | #RotAng-S    : < 4 > -<  6.3709 > 
+        | #Loc-Adjed_O : <  0.4061, -1.9866, -0.3670 > 
+        | #Loc-Adjed_X : <  1.2045,  0.0779,  2.2153 > - < 2.5228> - [93.9151]
+        | #Loc-Adjed_Y : <  1.9211, -1.2997, -0.9988 > - < 2.5253> - [89.8568]
+        | #RotAng-S    : < 36 > -<  6.0070 > 
+        | #Loc-Adjed_O : <  0.5510, -1.7718,  0.5537 > 
+        | #Loc-Adjed_X : <  1.9656, -0.5998,  1.3017 > - < 2.4326> - [94.2608]
+        | #Loc-Adjed_Y : <  0.9683, -1.1181, -1.9773 > - < 2.4693> - [92.4250]
+        | #RotAng-S    : < 42 > -<  5.8159 > 
+        | #Loc-Adjed_O : <  0.6495, -1.7758,  0.7016 > 
+        | #Loc-Adjed_X : <  2.0204, -0.6998,  1.0729 > - < 2.3923> - [94.2672]
+        | #Loc-Adjed_Y : <  0.7428, -1.0321, -2.0720 > - < 2.4311> - [93.4587]
+        | #RotAng-S    : < 52 > -<  5.7013 > 
+        | #Loc-Adjed_O : <  0.7930, -1.7965,  0.8703 > 
+        | #Loc-Adjed_X : <  2.1544, -0.8810,  0.7150 > - < 2.4349> - [93.2273]
+        | #Loc-Adjed_Y : <  0.3611, -0.8600, -2.1477 > - < 2.3415> - [96.3238]
+        | #RotAng-S    : < 53 > -<  5.6362 > 
+        | #Loc-Adjed_O : <  0.8267, -1.8074,  0.8905 > 
+        | #Loc-Adjed_X : <  2.1293, -0.8835,  0.6661 > - < 2.3996> - [93.5298]
+        | #Loc-Adjed_Y : <  0.3259, -0.8478, -2.1661 > - < 2.3488> - [96.0539]
+        | #RotAng-S    : < 54 > -<  5.6168 > 
+        | #Loc-Adjed_O : <  0.8598, -1.8166,  0.9153 > 
+        | #Loc-Adjed_X : <  2.1147, -0.8900,  0.6215 > - < 2.3770> - [93.9432]
+        | #Loc-Adjed_Y : <  0.2912, -0.8376, -2.1903 > - < 2.3630> - [95.6277]
+        | #RotAng-S    : < 55 > -<  5.5040 > 
+        | #Loc-Adjed_O : <  0.8929, -1.8247,  0.9436 > 
+        | #Loc-Adjed_X : <  2.0605, -0.8794,  0.5667 > - < 2.3108> - [94.5976]
+        | #Loc-Adjed_Y : <  0.2565, -0.8285, -2.2183 > - < 2.3818> - [95.0262]
+        | #RotAng-S    : < 57 > -<  5.3438 > 
+        | #Loc-Adjed_O : <  0.9635, -1.8527,  0.9698 > 
+        | #Loc-Adjed_X : <  2.0789, -0.9117,  0.4939 > - < 2.3231> - [94.3242]
+        | #Loc-Adjed_Y : <  0.1760, -0.7692, -2.1608 > - < 2.3003> - [96.1418]
+        | #RotAng-S    : < 59 > -<  5.1566 > 
+        | #Loc-Adjed_O : <  1.0320, -1.8776,  1.0026 > 
+        | #Loc-Adjed_X : <  2.0272, -0.9128,  0.4061 > - < 2.2600> - [95.3055]
+        | #Loc-Adjed_Y : <  0.1032, -0.7312, -2.1588 > - < 2.2816> - [96.3454]
+        | #RotAng-S    : < 60 > -<  5.1467 > 
+        | #Loc-Adjed_O : <  1.0304, -1.8728,  1.0153 > 
+        | #Loc-Adjed_X : <  2.0365, -0.9288,  0.3701 > - < 2.2687> - [95.1242]
+        | #Loc-Adjed_Y : <  0.0671, -0.7109, -2.1533 > - < 2.2686> - [96.5648]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  1.0304, -1.8728,  1.0153 > 
+        | #Loc-Adjed_X : <  2.0365, -0.9288,  0.3701 > - < 2.2687> - [95.1242]
+        | #Loc-Adjed_Y : <  0.0671, -0.7109, -2.1533 > - < 2.2686> - [96.5648]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0330 seconds. 
+    >> Detecting the [ No.2 ] plane with #Minimum - [ 554 ] ...
+      [--Plane_HT--]: #nPts-22175 
+        | [#Time- 0.8930]-[X-Seted]: 471-Pts 
+        |  >>  1.0000X +  0.1600Y +  0.5600Z +  1.6832 = 0 |=>  0.8641X +  0.1383Y +  0.4839Z = -1.4545 
+        | [#Time- 0.3510]-[Y-Seted]: 548-Pts 
+        |  >> -0.4200X +  1.0000Y + -0.4500Z +  1.6031 = 0 |=> -0.3577X +  0.8516Y + -0.3832Z = -1.3652 
+        | [#Time- 0.8620]-[Z-Seted]: 427-Pts 
+        |  >> -0.1000X +  0.3300Y +  1.0000Z +  2.1642 = 0 |=> -0.0945X +  0.3120Y +  0.9454Z = -2.0460 
+        | [+][Checked] : [2] #nPts-< 548 > 
+      [--Plane_HT--]: Done in 2.1080 seconds 
+[=PlaneFit_HT=]: Done, 1 plane(s) were removed in 4.5210 seconds.
+
+
+[=DetectMCF_GCO=]: -->> Try to Detect Cylinder by Energy-based Multi-Model Fitting with GCO ... <<--  
+    [--GetBorder--]: #nPts-23471 
+      | #MinPt  : < -15.203,  -4.492,   6.099 > 
+      | #MaxPt  : <  -8.443,   4.238,  12.714 > 
+      | #Center : < -11.823,  -0.127, -11.823 > 
+    [--GetBorder--]: Done in 0.0000 seconds.
+    >> Got #22175 Normalized Pts.
+      [--DetectCylinderRansac--]: #nPts-22175...
+        | #ExpCand    : 30 
+        | #ExpInlier  :  0.1000 
+        | #CanNum     : 30 
+        | #MaxInlier  :  0.3088 
+        | #Iteration  : 10000 - [ 10000 | 23025 ] 
+      [--DetectCylinderRansac--]: Done in 3.6140 seconds. 
+    >> [ No.1 ] loop for MCF-GCO ...
+    >> Quit the [ No.1 ] cylinder with [ 0 < 2217 ] points ...
+    >> Fine Fit the [ No.2 ] cylinder with [ 10932 > 2217 ] points ...
+      [--Fit_Cylinder--]: #Pts-10932
+        | #ID        : 2048
+        | #min error :  0.0118
+        | #Center    : <  0.0907, -0.5260, -0.8569 > 
+        | #direction : < -0.0404, -0.9407,  0.3369 > 
+        | #radius    :  1.1267
+        | #height    :  3.9439
+      [--Fit_Cylinder--]: Done in 73.5390 seconds. 
+    >> Quit the [ No.3 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.4 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.5 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.6 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.7 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.8 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.9 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.10 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.11 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.12 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.13 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.14 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.15 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.16 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.17 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.18 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.19 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.20 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.21 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.22 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.23 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.24 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.25 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.26 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.27 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.28 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.29 ] cylinder with [ 0 < 2217 ] points ...
+    >> Quit the [ No.30 ] cylinder with [ 0 < 2217 ] points ...
+    >> [ No.2 ] loop for MCF-GCO ...
+    >> Fine Fit the [ No.1 ] cylinder with [ 10958 > 2217 ] points ...
+      [--Fit_Cylinder--]: #Pts-10958
+        | #ID        : 2048
+        | #min error :  0.0118
+        | #Center    : <  0.0901, -0.5262, -0.8576 > 
+        | #direction : < -0.0404, -0.9407,  0.3369 > 
+        | #radius    :  1.1258
+        | #height    :  3.9439
+      [--Fit_Cylinder--]: Done in 75.1380 seconds. 
+    >> [ No.3 ] loop for MCF-GCO ...
+    >> Fine Fit the [ No.1 ] cylinder with [ 11100 > 2217 ] points ...
+      [--Fit_Cylinder--]: #Pts-11100
+        | #ID        : 2048
+        | #min error :  0.0134
+        | #Center    : <  0.0958, -0.3793, -0.9090 > 
+        | #direction : < -0.0404, -0.9407,  0.3369 > 
+        | #radius    :  1.1261
+        | #height    :  4.2554
+      [--Fit_Cylinder--]: Done in 74.3480 seconds. 
+      [--AttachToCylinder--]: #NPts-23471...
+        | #InputCyl   : 1 
+        | #TInlier    : 0.1000 
+        | #OutPutCyl  : 1 
+        | #NPts       : 7171 
+      [--AttachToCylinder--]: Done in 0.0040 seconds. 
+[=DetectMCF_GCO=]: Done, 1 cylinder is detected in 243.6760 seconds.
+
+
+[=PlaneFit_HT=]: -->> Try to Detect 30 Planes by Hough Translation <<--  
+    [--GetBorder--]: #nPts-23471 
+      | #MinPt  : < -15.203,  -4.492,   6.099 > 
+      | #MaxPt  : <  -8.443,   4.238,  12.714 > 
+      | #Center : < -11.823,  -0.127, -11.823 > 
+    [--GetBorder--]: Done in 0.0000 seconds.
+    >> Got #16300 Normalized Pts.
+    >> Detecting the [ No.1 ] plane with #Minimum - [ 407 ] ...
+      [--Plane_HT--]: #nPts-16300 
+        | [#Time- 0.5900]-[X-Seted]: 276-Pts 
+        |  >>  1.0000X + -0.0200Y +  0.1500Z +  0.8015 = 0 |=>  0.9887X + -0.0198Y +  0.1483Z = -0.7925 
+        | [#Time- 0.4380]-[Y-Seted]: 616-Pts 
+        |  >>  0.5200X +  1.0000Y + -0.3200Z +  1.6031 = 0 |=>  0.4438X +  0.8535Y + -0.2731Z = -1.3682 
+        | [#Time- 0.5480]-[Z-Seted]: 295-Pts 
+        |  >> -0.1300X + -1.0000Y +  1.0000Z + -1.3626 = 0 |=> -0.0915X + -0.7041Y +  0.7041Z =  0.9595 
+        | [+][Checked] : [2] #nPts-< 616 > 
+      [--Plane_HT--]: Done in 1.5770 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.1603
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1303 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1303
+        | #Threshold_Dis : 0.1603
+        | #NPts_MaxReg   : 1296
+      [--MaxRegion--]: Done in 0.0050 seconds. 
+      [--Fit_LS--]: #Pts-1296
+        | #Plane    :  0.4397X +  0.8568Y + -0.2692Z = -1.4249 
+        | #FitError : 0.0242
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-1296
+        | #Loc-PCA_X   : <  0.4232,  0.0667,  0.9036 > 
+        | #Loc-PCA_Y   : <  0.7922, -0.5112, -0.3333 > 
+        | #RotAng-S    : < 3 > -<  6.4736 > 
+        | #Loc-Adjed_O : <  0.3919, -2.0019, -0.4388 > 
+        | #Loc-Adjed_X : <  1.1848,  0.1017,  2.2591 > - < 2.5530> - [93.7665]
+        | #Loc-Adjed_Y : <  1.9498, -1.3034, -0.9639 > - < 2.5357> - [89.8473]
+        | #RotAng-S    : < 4 > -<  6.3709 > 
+        | #Loc-Adjed_O : <  0.4061, -1.9866, -0.3670 > 
+        | #Loc-Adjed_X : <  1.2045,  0.0779,  2.2153 > - < 2.5228> - [93.9151]
+        | #Loc-Adjed_Y : <  1.9211, -1.2997, -0.9988 > - < 2.5253> - [89.8568]
+        | #RotAng-S    : < 36 > -<  6.0070 > 
+        | #Loc-Adjed_O : <  0.5510, -1.7718,  0.5537 > 
+        | #Loc-Adjed_X : <  1.9656, -0.5998,  1.3017 > - < 2.4326> - [94.2608]
+        | #Loc-Adjed_Y : <  0.9683, -1.1181, -1.9773 > - < 2.4693> - [92.4250]
+        | #RotAng-S    : < 42 > -<  5.8159 > 
+        | #Loc-Adjed_O : <  0.6495, -1.7758,  0.7016 > 
+        | #Loc-Adjed_X : <  2.0204, -0.6998,  1.0729 > - < 2.3923> - [94.2672]
+        | #Loc-Adjed_Y : <  0.7428, -1.0321, -2.0720 > - < 2.4311> - [93.4587]
+        | #RotAng-S    : < 52 > -<  5.7013 > 
+        | #Loc-Adjed_O : <  0.7930, -1.7965,  0.8703 > 
+        | #Loc-Adjed_X : <  2.1544, -0.8810,  0.7150 > - < 2.4349> - [93.2273]
+        | #Loc-Adjed_Y : <  0.3611, -0.8600, -2.1477 > - < 2.3415> - [96.3238]
+        | #RotAng-S    : < 53 > -<  5.6362 > 
+        | #Loc-Adjed_O : <  0.8267, -1.8074,  0.8905 > 
+        | #Loc-Adjed_X : <  2.1293, -0.8835,  0.6661 > - < 2.3996> - [93.5298]
+        | #Loc-Adjed_Y : <  0.3259, -0.8478, -2.1661 > - < 2.3488> - [96.0539]
+        | #RotAng-S    : < 54 > -<  5.6168 > 
+        | #Loc-Adjed_O : <  0.8598, -1.8166,  0.9153 > 
+        | #Loc-Adjed_X : <  2.1147, -0.8900,  0.6215 > - < 2.3770> - [93.9432]
+        | #Loc-Adjed_Y : <  0.2912, -0.8376, -2.1903 > - < 2.3630> - [95.6277]
+        | #RotAng-S    : < 55 > -<  5.5040 > 
+        | #Loc-Adjed_O : <  0.8929, -1.8247,  0.9436 > 
+        | #Loc-Adjed_X : <  2.0605, -0.8794,  0.5667 > - < 2.3108> - [94.5976]
+        | #Loc-Adjed_Y : <  0.2565, -0.8285, -2.2183 > - < 2.3818> - [95.0262]
+        | #RotAng-S    : < 57 > -<  5.3438 > 
+        | #Loc-Adjed_O : <  0.9635, -1.8527,  0.9698 > 
+        | #Loc-Adjed_X : <  2.0789, -0.9117,  0.4939 > - < 2.3231> - [94.3242]
+        | #Loc-Adjed_Y : <  0.1760, -0.7692, -2.1608 > - < 2.3003> - [96.1418]
+        | #RotAng-S    : < 59 > -<  5.1566 > 
+        | #Loc-Adjed_O : <  1.0320, -1.8776,  1.0026 > 
+        | #Loc-Adjed_X : <  2.0272, -0.9128,  0.4061 > - < 2.2600> - [95.3055]
+        | #Loc-Adjed_Y : <  0.1032, -0.7312, -2.1588 > - < 2.2816> - [96.3454]
+        | #RotAng-S    : < 60 > -<  5.1467 > 
+        | #Loc-Adjed_O : <  1.0304, -1.8728,  1.0153 > 
+        | #Loc-Adjed_X : <  2.0365, -0.9288,  0.3701 > - < 2.2687> - [95.1242]
+        | #Loc-Adjed_Y : <  0.0671, -0.7109, -2.1533 > - < 2.2686> - [96.5648]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  1.0304, -1.8728,  1.0153 > 
+        | #Loc-Adjed_X : <  2.0365, -0.9288,  0.3701 > - < 2.2687> - [95.1242]
+        | #Loc-Adjed_Y : <  0.0671, -0.7109, -2.1533 > - < 2.2686> - [96.5648]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0250 seconds. 
+    >> Detecting the [ No.2 ] plane with #Minimum - [ 375 ] ...
+      [--Plane_HT--]: #nPts-15004 
+        | [#Time- 0.5590]-[X-Seted]: 276-Pts 
+        |  >>  1.0000X + -0.0200Y +  0.1500Z +  0.8015 = 0 |=>  0.9887X + -0.0198Y +  0.1483Z = -0.7925 
+        | [#Time- 0.3530]-[Y-Seted]: 548-Pts 
+        |  >> -0.4200X +  1.0000Y + -0.4500Z +  1.6031 = 0 |=> -0.3577X +  0.8516Y + -0.3832Z = -1.3652 
+        | [#Time- 0.5590]-[Z-Seted]: 295-Pts 
+        |  >> -0.1300X + -1.0000Y +  1.0000Z + -1.3626 = 0 |=> -0.0915X + -0.7041Y +  0.7041Z =  0.9595 
+        | [+][Checked] : [2] #nPts-< 548 > 
+      [--Plane_HT--]: Done in 1.4730 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.1603
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1515 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-1515
+        | #Threshold_Dis : 0.1603
+        | #NPts_MaxReg   : 1513
+      [--MaxRegion--]: Done in 0.0030 seconds. 
+      [--Fit_LS--]: #Pts-1513
+        | #Plane    :  0.3531X + -0.8526Y +  0.3852Z =  1.3973 
+        | #FitError : 0.0276
+      [--Fit_LS--]: Done in 0.0010 seconds. 
+      [--ExtractMBR--]: #Pts-1513
+        | #Loc-PCA_X   : < -0.8724, -0.1513,  0.4649 > 
+        | #Loc-PCA_Y   : < -0.3381, -0.5001, -0.7972 > 
+        | #RotAng-S    : < 2 > -<  8.4847 > 
+        | #Loc-Adjed_O : < -0.2895, -1.7471,  0.0257 > 
+        | #Loc-Adjed_X : < -2.7140, -0.5180,  1.3415 > - < 3.0714> - [88.9800]
+        | #Loc-Adjed_Y : < -0.8493, -1.3662, -2.2458 > - < 2.7625> - [90.9225]
+        | #RotAng-S    : < 4 > -<  8.4331 > 
+        | #Loc-Adjed_O : < -0.3399, -1.7375,  0.0932 > 
+        | #Loc-Adjed_X : < -2.7422, -0.5700,  1.2521 > - < 3.0679> - [89.0894]
+        | #Loc-Adjed_Y : < -0.7598, -1.3424, -2.2752 > - < 2.7488> - [90.7728]
+        | #RotAng-S    : < 6 > -<  8.4107 > 
+        | #Loc-Adjed_O : < -0.3945, -1.7309,  0.1578 > 
+        | #Loc-Adjed_X : < -2.7340, -0.6139,  1.1476 > - < 3.0280> - [89.5052]
+        | #Loc-Adjed_Y : < -0.6807, -1.3377, -2.3372 > - < 2.7777> - [90.5122]
+        | #RotAng-S    : < 8 > -<  8.2215 > 
+        | #Loc-Adjed_O : < -0.4529, -1.7274,  0.2192 > 
+        | #Loc-Adjed_X : < -2.7197, -0.6551,  1.0431 > - < 2.9856> - [90.0185]
+        | #Loc-Adjed_Y : < -0.5876, -1.3059, -2.3521 > - < 2.7537> - [90.7674]
+        | #RotAng-S    : < 9 > -<  7.8586 > 
+        | #Loc-Adjed_O : < -0.4835, -1.7268,  0.2485 > 
+        | #Loc-Adjed_X : < -2.6738, -0.6656,  0.9778 > - < 2.9237> - [90.4988]
+        | #Loc-Adjed_Y : < -0.5308, -1.2642, -2.3119 > - < 2.6879> - [91.3986]
+        | #RotAng-S    : < 10 > -<  7.7780 > 
+        | #Loc-Adjed_O : < -0.5150, -1.7270,  0.2770 > 
+        | #Loc-Adjed_X : < -2.6607, -0.6837,  0.9258 > - < 2.8990> - [90.8392]
+        | #Loc-Adjed_Y : < -0.4869, -1.2510, -2.3230 > - < 2.6830> - [91.4428]
+        | #RotAng-S    : < 12 > -<  7.6903 > 
+        | #Loc-Adjed_O : < -0.5801, -1.7288,  0.3326 > 
+        | #Loc-Adjed_X : < -2.6297, -0.7174,  0.8227 > - < 2.8473> - [91.5684]
+        | #Loc-Adjed_Y : < -0.4033, -1.2364, -2.3672 > - < 2.7009> - [91.7205]
+        | #RotAng-S    : < 13 > -<  7.4139 > 
+        | #Loc-Adjed_O : < -0.6142, -1.7322,  0.3564 > 
+        | #Loc-Adjed_X : < -2.6133, -0.7334,  0.7721 > - < 2.8219> - [91.8902]
+        | #Loc-Adjed_Y : < -0.3499, -1.1909, -2.3155 > - < 2.6272> - [92.1864]
+        | #RotAng-S    : < 15 > -<  7.3049 > 
+        | #Loc-Adjed_O : < -0.6839, -1.7395,  0.4042 > 
+        | #Loc-Adjed_X : < -2.5759, -0.7631,  0.6721 > - < 2.7693> - [92.3264]
+        | #Loc-Adjed_Y : < -0.2659, -1.1711, -2.3486 > - < 2.6378> - [92.3056]
+        | #RotAng-S    : < 16 > -<  7.1902 > 
+        | #Loc-Adjed_O : < -0.7197, -1.7443,  0.4264 > 
+        | #Loc-Adjed_X : < -2.5463, -0.7741,  0.6207 > - < 2.7328> - [92.7752]
+        | #Loc-Adjed_Y : < -0.2224, -1.1552, -2.3534 > - < 2.6311> - [92.4973]
+        | #RotAng-S    : < 17 > -<  7.0828 > 
+        | #Loc-Adjed_O : < -0.7561, -1.7498,  0.4475 > 
+        | #Loc-Adjed_X : < -2.5286, -0.7883,  0.5731 > - < 2.7099> - [93.0244]
+        | #Loc-Adjed_Y : < -0.1784, -1.1345, -2.3479 > - < 2.6137> - [92.6553]
+        | #RotAng-S    : < 18 > -<  6.9037 > 
+        | #Loc-Adjed_O : < -0.7910, -1.7551,  0.4678 > 
+        | #Loc-Adjed_X : < -2.5092, -0.8016,  0.5258 > - < 2.6861> - [93.4215]
+        | #Loc-Adjed_Y : < -0.1336, -1.1024, -2.3179 > - < 2.5701> - [93.0239]
+        | #RotAng-S    : < 19 > -<  6.7148 > 
+        | #Loc-Adjed_O : < -0.8270, -1.7620,  0.4855 > 
+        | #Loc-Adjed_X : < -2.4859, -0.8133,  0.4786 > - < 2.6590> - [93.5955]
+        | #Loc-Adjed_Y : < -0.0900, -1.0698, -2.2857 > - < 2.5253> - [93.3897]
+        | #RotAng-S    : < 20 > -<  6.6599 > 
+        | #Loc-Adjed_O : < -0.8659, -1.7701,  0.5032 > 
+        | #Loc-Adjed_X : < -2.4605, -0.8239,  0.4318 > - < 2.6305> - [93.7967]
+        | #Loc-Adjed_Y : < -0.0490, -1.0589, -2.2992 > - < 2.5318> - [93.3761]
+        | #RotAng-S    : < 21 > -<  6.4514 > 
+        | #Loc-Adjed_O : < -0.9064, -1.7794,  0.5199 > 
+        | #Loc-Adjed_X : < -2.4325, -0.8332,  0.3856 > - < 2.6000> - [94.0426]
+        | #Loc-Adjed_Y : < -0.0075, -1.0241, -2.2601 > - < 2.4813> - [93.7374]
+        | #RotAng-S    : < 24 > -<  5.9961 > 
+        | #Loc-Adjed_O : < -1.0230, -1.8090,  0.5612 > 
+        | #Loc-Adjed_X : < -2.3026, -0.8418,  0.2475 > - < 2.4641> - [95.3628]
+        | #Loc-Adjed_Y : <  0.1118, -0.9621, -2.2323 > - < 2.4333> - [94.8022]
+        | #RotAng-S    : < 25 > -<  5.9669 > 
+        | #Loc-Adjed_O : < -1.0557, -1.8177,  0.5718 > 
+        | #Loc-Adjed_X : < -2.3099, -0.8623,  0.2088 > - < 2.4744> - [95.3222]
+        | #Loc-Adjed_Y : <  0.1501, -0.9389, -2.2161 > - < 2.4114> - [94.9978]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -1.0557, -1.8177,  0.5718 > 
+        | #Loc-Adjed_X : < -2.3099, -0.8623,  0.2088 > - < 2.4744> - [95.3222]
+        | #Loc-Adjed_Y : <  0.1501, -0.9389, -2.2161 > - < 2.4114> - [94.9978]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0300 seconds. 
+    >> Detecting the [ No.3 ] plane with #Minimum - [ 337 ] ...
+      [--Plane_HT--]: #nPts-13491 
+        | [#Time- 0.5120]-[X-Seted]: 276-Pts 
+        |  >>  1.0000X + -0.0200Y +  0.1500Z +  0.8015 = 0 |=>  0.9887X + -0.0198Y +  0.1483Z = -0.7925 
+        | [#Time- 0.2530]-[Y-Seted]: 490-Pts 
+        |  >>  0.1300X +  1.0000Y + -0.9100Z +  1.4428 = 0 |=>  0.0957X +  0.7362Y + -0.6700Z = -1.0622 
+        | [#Time- 0.5570]-[Z-Seted]: 295-Pts 
+        |  >> -0.1300X + -1.0000Y +  1.0000Z + -1.3626 = 0 |=> -0.0915X + -0.7041Y +  0.7041Z =  0.9595 
+        | [+][Checked] : [2] #nPts-< 490 > 
+      [--Plane_HT--]: Done in 1.3240 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.1603
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1617 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1617
+        | #Threshold_Dis : 0.1603
+        | #NPts_MaxReg   : 1614
+      [--MaxRegion--]: Done in 0.0060 seconds. 
+      [--Fit_LS--]: #Pts-1614
+        | #Plane    : -0.0922X + -0.7354Y +  0.6713Z =  1.0903 
+        | #FitError : 0.0312
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-1614
+        | #Loc-PCA_X   : < -0.3562, -0.6052, -0.7119 > 
+        | #Loc-PCA_Y   : <  0.9298, -0.3048, -0.2062 > 
+        | #RotAng-S    : < 1 > -<  8.5328 > 
+        | #Loc-Adjed_O : < -0.3235, -2.0541, -0.6704 > 
+        | #Loc-Adjed_X : < -1.0438, -1.8744, -2.1966 > - < 3.0705> - [90.0506]
+        | #Loc-Adjed_Y : <  2.6009, -0.8176, -0.5383 > - < 2.7790> - [91.7220]
+        | #RotAng-S    : < 3 > -<  8.1459 > 
+        | #Loc-Adjed_O : < -0.4348, -2.0691, -0.7021 > 
+        | #Loc-Adjed_X : < -0.9330, -1.8847, -2.1926 > - < 3.0381> - [90.3053]
+        | #Loc-Adjed_Y : <  2.5397, -0.7313, -0.4521 > - < 2.6813> - [92.3626]
+        | #RotAng-S    : < 7 > -<  8.0570 > 
+        | #Loc-Adjed_O : < -0.7504, -2.1658, -0.8513 > 
+        | #Loc-Adjed_X : < -0.6827, -1.8123, -2.0790 > - < 2.8412> - [91.8717]
+        | #Loc-Adjed_Y : <  2.7402, -0.6488, -0.3342 > - < 2.8357> - [91.0155]
+        | #RotAng-S    : < 8 > -<  7.9791 > 
+        | #Loc-Adjed_O : < -0.6444, -2.1423, -0.8111 > 
+        | #Loc-Adjed_X : < -0.6669, -1.9160, -2.1904 > - < 2.9856> - [91.0379]
+        | #Loc-Adjed_Y : <  2.5934, -0.5816, -0.2808 > - < 2.6726> - [92.4713]
+        | #RotAng-S    : < 9 > -<  7.7856 > 
+        | #Loc-Adjed_O : < -0.6058, -2.2105, -0.8804 > 
+        | #Loc-Adjed_X : < -0.6012, -1.8800, -2.1419 > - < 2.9126> - [91.4746]
+        | #Loc-Adjed_Y : <  2.6039, -0.5517, -0.2466 > - < 2.6731> - [92.8796]
+        | #RotAng-S    : < 12 > -<  7.6671 > 
+        | #Loc-Adjed_O : < -0.7636, -2.2466, -0.9417 > 
+        | #Loc-Adjed_X : < -0.4405, -1.8611, -2.0991 > - < 2.8398> - [92.0796]
+        | #Loc-Adjed_Y : <  2.6556, -0.4653, -0.1448 > - < 2.6999> - [92.5211]
+        | #RotAng-S    : < 13 > -<  7.4047 > 
+        | #Loc-Adjed_O : < -0.7950, -2.3004, -1.0050 > 
+        | #Loc-Adjed_X : < -0.3810, -1.8183, -2.0441 > - < 2.7622> - [92.8504]
+        | #Loc-Adjed_Y : <  2.6436, -0.4312, -0.1092 > - < 2.6808> - [92.7463]
+        | #RotAng-S    : < 14 > -<  7.3442 > 
+        | #Loc-Adjed_O : < -0.8089, -2.2750, -0.9791 > 
+        | #Loc-Adjed_X : < -0.3385, -1.8536, -2.0769 > - < 2.8043> - [92.5235]
+        | #Loc-Adjed_Y : <  2.5885, -0.3911, -0.0728 > - < 2.6189> - [93.4404]
+        | #RotAng-S    : < 15 > -<  7.0537 > 
+        | #Loc-Adjed_O : < -0.8370, -2.3327, -1.0461 > 
+        | #Loc-Adjed_X : < -0.2806, -1.7995, -2.0097 > - < 2.7122> - [93.2389]
+        | #Loc-Adjed_Y : <  2.5756, -0.3584, -0.0387 > - < 2.6007> - [93.3692]
+        | #RotAng-S    : < 16 > -<  6.9247 > 
+        | #Loc-Adjed_O : < -0.8494, -2.3535, -1.0706 > 
+        | #Loc-Adjed_X : < -0.2318, -1.7911, -1.9938 > - < 2.6902> - [93.5106]
+        | #Loc-Adjed_Y : <  2.5534, -0.3248, -0.0050 > - < 2.5740> - [93.4314]
+        | #RotAng-S    : < 18 > -<  6.9073 > 
+        | #Loc-Adjed_O : < -0.9091, -2.3686, -1.0953 > 
+        | #Loc-Adjed_X : < -0.1389, -1.8071, -1.9985 > - < 2.6980> - [93.5521]
+        | #Loc-Adjed_Y : <  2.5459, -0.2634,  0.0613 > - < 2.5602> - [93.8325]
+        | #RotAng-S    : < 19 > -<  6.6026 > 
+        | #Loc-Adjed_O : < -0.9195, -2.4340, -1.1683 > 
+        | #Loc-Adjed_X : < -0.0891, -1.7531, -1.9325 > - < 2.6107> - [94.0645]
+        | #Loc-Adjed_Y : <  2.5168, -0.2306,  0.0932 > - < 2.5290> - [94.1544]
+        | #RotAng-S    : < 21 > -<  6.3412 > 
+        | #Loc-Adjed_O : < -0.9400, -2.4796, -1.2211 > 
+        | #Loc-Adjed_X : <  0.0016, -1.7274, -1.8920 > - < 2.5620> - [94.7583]
+        | #Loc-Adjed_Y : <  2.4646, -0.1675,  0.1551 > - < 2.4751> - [94.7754]
+        | #RotAng-S    : < 22 > -<  6.3214 > 
+        | #Loc-Adjed_O : < -0.9627, -2.4850, -1.2301 > 
+        | #Loc-Adjed_X : <  0.0461, -1.7277, -1.8862 > - < 2.5583> - [94.9863]
+        | #Loc-Adjed_Y : <  2.4600, -0.1381,  0.1867 > - < 2.4709> - [94.9977]
+        | #RotAng-S    : < 23 > -<  6.2501 > 
+        | #Loc-Adjed_O : < -0.9720, -2.4863, -1.2328 > 
+        | #Loc-Adjed_X : <  0.0907, -1.7326, -1.8854 > - < 2.5623> - [95.1002]
+        | #Loc-Adjed_Y : <  2.4273, -0.1076,  0.2156 > - < 2.4393> - [95.2926]
+        | #RotAng-S    : < 24 > -<  6.0910 > 
+        | #Loc-Adjed_O : < -0.9660, -2.5333, -1.2835 > 
+        | #Loc-Adjed_X : <  0.1319, -1.6922, -1.8355 > - < 2.5000> - [95.9565]
+        | #Loc-Adjed_Y : <  2.4226, -0.0787,  0.2466 > - < 2.4364> - [95.3752]
+        | #RotAng-S    : < 25 > -<  6.0714 > 
+        | #Loc-Adjed_O : < -1.0050, -2.5419, -1.2983 > 
+        | #Loc-Adjed_X : <  0.1750, -1.6907, -1.8279 > - < 2.4960> - [95.8565]
+        | #Loc-Adjed_Y : <  2.4160, -0.0498,  0.2774 > - < 2.4324> - [95.3923]
+        | #RotAng-S    : < 26 > -<  5.6946 > 
+        | #Loc-Adjed_O : < -0.9388, -2.5859, -1.3374 > 
+        | #Loc-Adjed_X : <  0.2140, -1.6585, -1.7873 > - < 2.4477> - [96.3922]
+        | #Loc-Adjed_Y : <  2.3077, -0.0201,  0.2950 > - < 2.3266> - [97.5599]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.9388, -2.5859, -1.3374 > 
+        | #Loc-Adjed_X : <  0.2140, -1.6585, -1.7873 > - < 2.4477> - [96.3922]
+        | #Loc-Adjed_Y : <  2.3077, -0.0201,  0.2950 > - < 2.3266> - [97.5599]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0420 seconds. 
+    >> Detecting the [ No.4 ] plane with #Minimum - [ 296 ] ...
+      [--Plane_HT--]: #nPts-11877 
+        | [#Time- 0.5400]-[X-Seted]: 276-Pts 
+        |  >>  1.0000X + -0.0200Y +  0.1500Z +  0.8015 = 0 |=>  0.9887X + -0.0198Y +  0.1483Z = -0.7925 
+        | [#Time- 0.1780]-[Y-Seted]: 72-Pts 
+        |  >> -0.1100X +  1.0000Y +  0.6100Z +  0.0802 = 0 |=> -0.0935X +  0.8500Y +  0.5185Z = -0.0681 
+        | [#Time- 0.4940]-[Z-Seted]: 191-Pts 
+        |  >>  0.8000X +  0.3000Y +  1.0000Z + -0.1603 = 0 |=>  0.6082X +  0.2281Y +  0.7603Z =  0.1219 
+        | [+][Checked] : [1] #nPts-< 276 > 
+      [--Plane_HT--]: Done in 1.2130 seconds 
+[=PlaneFit_HT=]: Done, 3 plane(s) were detected in 5.8170 seconds.
+
+
+[=DetectCube=]: -->> Try to Detect Cube from 3 Planes <<--  
+    >> Split [ 3 ] patch(es) with [ 3 ] rectangle(s) and [ 0 ] circles
+    >> Infer cubes for [ 3 ] planes ... 
+      [--Cube_Infer--]: #Ple-3
+        | #TRDis   : 0.5000 
+        | #TAng    : 15.0000 
+        |===================== 
+        | #Cube    : 0 
+        | #LeftPle : 3 
+      [--Cube_Infer--]: Done in 0.0000 seconds. 
+[=DetectCube=]: Done, 0 cube(s) is detected in 0.0020 seconds, the other 3 plane(s) are left.
+
+
+[=PlanesCheck=]: -->> 3 plane(s) are left. << -- 
+
+
+[=SavePly=]: -->> Svae Points as Ply File: ../TestData/Ply/Recon/dsp_Opt.ply <<--
+[=SavePly=]: Done, 23511 point(s) were saved in 0.1300 seconds.
+
+
+[=SavePly=]: -->> Svae Points as Ply File: ../TestData/Ply/Recon/dsp_Rej.ply <<--
+[=SavePly=]: Done, 23511 point(s) were saved in 0.1320 seconds.
+
+--------------------------------------------------------------------------------------------
+
+
+=============================
+ # Elapsed Time: 254.693 Seconds.
+=============================
+
+
+===============================
+[ ----- Point Cloud Fit ----- ]
+[+] ../TestData/Ply/Recon/radarsat.ply
+[-] ../TestData/Ply/Recon/radarsat_Opt.ply
+[-] ../TestData/Ply/Recon/radarsat_Rej.ply
+[-] ../TestData/Ply/Recon/radarsat.struct
+===============================
+
+--------------------------------------------------------------------------------------------
+
+
+    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   
+   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 1.2.0                
+  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA  
+ /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  
+                                                 |  Email: weiqm@buaa.edu.cn  
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ +------------------------------------------------------+
+ | PARAMETERS IN USE:                                   |
+ |------------------------------------------------------|
+ | [Threshold_NPts              ]:       < 00000100 >   |
+ | [DeNoise_MaxIteration        ]:       < 00000000 >   |
+ | [DeNoise_KNNNeighbors        ]:       < 00000050 >   |
+ | [DeNoise_GrowNeighbors       ]:       < 00000020 >   |
+ | [DeNoise_DisRatioOfOutlier   ]:       < 0000.100 >   |
+ | [Precision_HT                ]:       < 0000.010 >   |
+ | [Threshold_MaxModelNumPre    ]:       < 00000010 >   |
+ | [Threshold_MaxModelNum       ]:       < 00000030 >   |
+ | [Threshold_NPtsPlane         ]:       < 0000.050 >   |
+ | [Threshold_NPtsCylinder      ]:       < 0000.100 >   |
+ | [Threshold_DisToSurface      ]:       < 0002.000 >   |
+ | [Threshold_AngToSurface      ]:       < 0030.000 >   |
+ | [Threshold_PRAng             ]:       < 0015.000 >   |
+ | [Threshold_PRDis             ]:       < 0000.500 >   |
+ | [Threshold_PRIoU             ]:       < 0000.600 >   |
+ +------------------------------------------------------+
+
+
+[=LoadPly=]: -->> Loading Points from File: ../TestData/Ply/Recon/radarsat.ply <<--  
+[=LoadPly=]: Done, 28314 point(s) were loaded in 0.1450 seconds.
+
+
+[=InitPtAttri=]: -->> Initialize Satellite Point Attribute <<--
+    >> Add Attri ... 
+    >> Set Attri ... 
+[=InitPtAttri=]: Done, 28314 point(s) were setted in 0.0020 seconds.
+
+
+[=DeNoise=]: -->> Remove Outliers <<--  
+    [--DeNoiseRegGrw--]: #nPts-28314 
+      | #NIteration : 0 
+      | #KNNStep    : 20 
+      | #DisRatio   : 0.100 
+      | #Gap        : [1]-0.100-<28176 in 20> [2]-0.099-<28176 in 1> 
+    [--DeNoiseRegGrw--]: Done, found 138 outlier(s) in 0.1330 seconds.
+[=DeNoise=]: Done, 138 outlier(s ) were removed in 0.1330 seconds.
+
+
+[=RefSize=]: -->> Dimension Reference Unit Ana. <<--  
+    [--PCADimensions--] #bPts - 28176/28176 
+       | -- Principal direction vectors, -- 
+       | -- col by decreasing order.     -- 
+       |   0.9690  0.0003  0.2471 - <  3.2328 > 
+       |  -0.0040 -0.9999  0.0167 - <  2.0686 > 
+       |   0.2470 -0.0171 -0.9689 - <  1.0054 > 
+    [--PCADimensions--]: Done in 0.0020 seconds.
+    [--Roughness--] #bPts - 28176/28176 
+       | RoughnessA - <  0.0253 > 
+    [--Roughness--]: Done in 0.1950 seconds.
+[=RefSize=]: Done in 0.1970 seconds.
+
+
+[=PrePlaneFit_HT=]: -->> Try to Remove 10 Planes by Hough Translation <<--  
+    [--GetBorder--]: #nPts-28176 
+      | #MinPt  : <   2.389,  -1.100,  -4.657 > 
+      | #MaxPt  : <   5.663,   0.979,  -3.664 > 
+      | #Center : <   4.026,  -0.060,   4.026 > 
+    [--GetBorder--]: Done in 0.0000 seconds.
+    >> Got #28176 Normalized Pts.
+    >> Detecting the [ No.1 ] plane with #Minimum - [ 704 ] ...
+      [--Plane_HT--]: #nPts-28176 
+        | [#Time- 0.6080]-[X-Seted]: 1520-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.0800Z + -0.1263 = 0 |=>  0.9968X + -0.0100Y +  0.0797Z =  0.1259 
+        | [#Time- 0.1910]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 1.9120]-[Z-Seted]: 4208-Pts 
+        |  >> -0.1100X +  0.0000Y +  1.0000Z +  0.1768 = 0 |=> -0.1093X +  0.0000Y +  0.9940Z = -0.1757 
+        | [+][Checked] : [3] #nPts-< 4208 > 
+      [--Plane_HT--]: Done in 2.7130 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 6595 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-6595
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 5989
+      [--MaxRegion--]: Done in 0.1060 seconds. 
+      [--Fit_LS--]: #Pts-5989
+        | #Plane    : -0.0940X + -0.0003Y +  0.9956Z = -0.1973 
+        | #FitError : 0.0091
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-5989
+        | #Loc-PCA_X   : <  0.9853, -0.1436,  0.0930 > 
+        | #Loc-PCA_Y   : <  0.1429,  0.9896,  0.0138 > 
+        | #RotAng-S    : < 1 > -<  2.5584 > 
+        | #Loc-Adjed_O : < -1.6578, -0.4687, -0.3549 > 
+        | #Loc-Adjed_X : <  1.7865, -0.2284,  0.1687 > - < 1.8089> - [95.5989]
+        | #Loc-Adjed_Y : <  0.1778,  1.4030,  0.0172 > - < 1.4143> - [87.3369]
+        | #RotAng-S    : < 2 > -<  2.4845 > 
+        | #Loc-Adjed_O : < -1.6410, -0.4757, -0.3533 > 
+        | #Loc-Adjed_X : <  1.7863, -0.1966,  0.1687 > - < 1.8050> - [95.6828]
+        | #Loc-Adjed_Y : <  0.1493,  1.3683,  0.0145 > - < 1.3765> - [87.8685]
+        | #RotAng-S    : < 4 > -<  2.4708 > 
+        | #Loc-Adjed_O : < -1.6042, -0.5315, -0.3499 > 
+        | #Loc-Adjed_X : <  1.7642, -0.1318,  0.1666 > - < 1.7769> - [95.9802]
+        | #Loc-Adjed_Y : <  0.1027,  1.3867,  0.0101 > - < 1.3905> - [87.4788]
+        | #RotAng-S    : < 7 > -<  2.4590 > 
+        | #Loc-Adjed_O : < -1.5580, -0.6524, -0.3455 > 
+        | #Loc-Adjed_X : <  1.7125, -0.0377,  0.1617 > - < 1.7205> - [97.5295]
+        | #Loc-Adjed_Y : <  0.0311,  1.4289,  0.0033 > - < 1.4292> - [87.0853]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -1.5580, -0.6524, -0.3455 > 
+        | #Loc-Adjed_X : <  1.7125, -0.0377,  0.1617 > - < 1.7205> - [97.5295]
+        | #Loc-Adjed_Y : <  0.0311,  1.4289,  0.0033 > - < 1.4292> - [87.0853]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.1050 seconds. 
+    >> Detecting the [ No.2 ] plane with #Minimum - [ 554 ] ...
+      [--Plane_HT--]: #nPts-22187 
+        | [#Time- 0.5870]-[X-Seted]: 1520-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.0800Z + -0.1263 = 0 |=>  0.9968X + -0.0100Y +  0.0797Z =  0.1259 
+        | [#Time- 0.1840]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 1.3770]-[Z-Seted]: 3517-Pts 
+        |  >> -0.1200X + -0.0100Y +  1.0000Z + -0.2778 = 0 |=> -0.1191X + -0.0099Y +  0.9928Z =  0.2758 
+        | [+][Checked] : [3] #nPts-< 3517 > 
+      [--Plane_HT--]: Done in 2.1490 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 5743 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-5743
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 5211
+      [--MaxRegion--]: Done in 0.0890 seconds. 
+      [--Fit_LS--]: #Pts-5211
+        | #Plane    :  0.1127X + -0.0018Y + -0.9936Z = -0.2653 
+        | #FitError : 0.0089
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-5211
+        | #Loc-PCA_X   : <  0.9936,  0.0097,  0.1127 > 
+        | #Loc-PCA_Y   : <  0.0094, -1.0000,  0.0029 > 
+        | #RotAng-S    : < 2 > -<  1.3822 > 
+        | #Loc-Adjed_O : <  0.1218,  0.7391,  0.2795 > 
+        | #Loc-Adjed_X : <  1.4297, -0.0363,  0.1622 > - < 1.4393> - [97.0592]
+        | #Loc-Adjed_Y : < -0.0242, -0.9600, -0.0010 > - < 0.9603> - [96.2500]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  0.1218,  0.7391,  0.2795 > 
+        | #Loc-Adjed_X : <  1.4297, -0.0363,  0.1622 > - < 1.4393> - [97.0592]
+        | #Loc-Adjed_Y : < -0.0242, -0.9600, -0.0010 > - < 0.9603> - [96.2500]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.1020 seconds. 
+    >> Detecting the [ No.3 ] plane with #Minimum - [ 424 ] ...
+      [--Plane_HT--]: #nPts-16976 
+        | [#Time- 0.5760]-[X-Seted]: 1520-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.0800Z + -0.1263 = 0 |=>  0.9968X + -0.0100Y +  0.0797Z =  0.1259 
+        | [#Time- 0.1640]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.9390]-[Z-Seted]: 1164-Pts 
+        |  >> -0.1200X +  0.0000Y +  1.0000Z + -0.2273 = 0 |=> -0.1191X +  0.0000Y +  0.9929Z =  0.2256 
+        | [+][Checked] : [1] #nPts-< 1520 > 
+      [--Plane_HT--]: Done in 1.6820 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1729 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-1729
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 1718
+      [--MaxRegion--]: Done in 0.0060 seconds. 
+      [--Fit_LS--]: #Pts-1718
+        | #Plane    :  0.9954X +  0.0003Y +  0.0956Z =  0.1188 
+        | #FitError : 0.0043
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-1718
+        | #Loc-PCA_X   : <  0.0021, -0.9998, -0.0185 > 
+        | #Loc-PCA_Y   : <  0.0955,  0.0187, -0.9952 > 
+        | #RotAng-S    : < 1 > -<  0.7533 > 
+        | #Loc-Adjed_O : <  0.0905,  0.7816,  0.2981 > 
+        | #Loc-Adjed_X : <  0.0061, -1.6012, -0.0575 > - < 1.6023> - [96.3027]
+        | #Loc-Adjed_Y : <  0.0449,  0.0170, -0.4677 > - < 0.4702> - [93.6318]
+        | #RotAng-S    : < 89 > -<  0.7495 > 
+        | #Loc-Adjed_O : <  0.0937, -0.8143,  0.2708 > 
+        | #Loc-Adjed_X : <  0.0454,  0.0006, -0.4732 > - < 0.4754> - [93.3816]
+        | #Loc-Adjed_Y : < -0.0007,  1.5766,  0.0018 > - < 1.5766> - [96.7996]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  0.0937, -0.8143,  0.2708 > 
+        | #Loc-Adjed_X : <  0.0454,  0.0006, -0.4732 > - < 0.4754> - [93.3816]
+        | #Loc-Adjed_Y : < -0.0007,  1.5766,  0.0018 > - < 1.5766> - [96.7996]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0350 seconds. 
+    >> Detecting the [ No.4 ] plane with #Minimum - [ 381 ] ...
+      [--Plane_HT--]: #nPts-15258 
+        | [#Time- 0.4310]-[X-Seted]: 1039-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.1000Z +  0.1263 = 0 |=>  0.9950X + -0.0099Y +  0.0995Z = -0.1256 
+        | [#Time- 0.1780]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.9540]-[Z-Seted]: 1164-Pts 
+        |  >> -0.1200X +  0.0000Y +  1.0000Z + -0.2273 = 0 |=> -0.1191X +  0.0000Y +  0.9929Z =  0.2256 
+        | [+][Checked] : [3] #nPts-< 1164 > 
+      [--Plane_HT--]: Done in 1.5640 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1974 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1974
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 1258
+      [--MaxRegion--]: Done in 0.0210 seconds. 
+      [--Fit_LS--]: #Pts-1258
+        | #Plane    : -0.0815X + -0.0010Y +  0.9967Z =  0.2050 
+        | #FitError : 0.0064
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-1258
+        | #Loc-PCA_X   : <  0.0034, -1.0000, -0.0008 > 
+        | #Loc-PCA_Y   : <  0.9967,  0.0033,  0.0815 > 
+        | #RotAng-S    : < 88 > -<  0.4533 > 
+        | #Loc-Adjed_O : < -0.2227, -0.7012,  0.1867 > 
+        | #Loc-Adjed_X : <  0.3038, -0.0096,  0.0248 > - < 0.3050> - [89.9177]
+        | #Loc-Adjed_Y : <  0.0467,  1.4856,  0.0054 > - < 1.4864> - [96.7409]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.2227, -0.7012,  0.1867 > 
+        | #Loc-Adjed_X : <  0.3038, -0.0096,  0.0248 > - < 0.3050> - [89.9177]
+        | #Loc-Adjed_Y : <  0.0467,  1.4856,  0.0054 > - < 1.4864> - [96.7409]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0260 seconds. 
+    >> Detecting the [ No.5 ] plane with #Minimum - [ 350 ] ...
+      [--Plane_HT--]: #nPts-14000 
+        | [#Time- 0.4240]-[X-Seted]: 1039-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.1000Z +  0.1263 = 0 |=>  0.9950X + -0.0099Y +  0.0995Z = -0.1256 
+        | [#Time- 0.1700]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.8460]-[Z-Seted]: 744-Pts 
+        |  >> -0.1100X +  0.3200Y +  1.0000Z +  0.0758 = 0 |=> -0.1042X +  0.3031Y +  0.9472Z = -0.0718 
+        | [+][Checked] : [1] #nPts-< 1039 > 
+      [--Plane_HT--]: Done in 1.4420 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1503 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-1503
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 1476
+      [--MaxRegion--]: Done in 0.0140 seconds. 
+      [--Fit_LS--]: #Pts-1476
+        | #Plane    :  0.9937X + -0.0001Y +  0.1121Z = -0.1275 
+        | #FitError : 0.0045
+      [--Fit_LS--]: Done in 0.0010 seconds. 
+      [--ExtractMBR--]: #Pts-1476
+        | #Loc-PCA_X   : < -0.0012, -0.9999,  0.0104 > 
+        | #Loc-PCA_Y   : <  0.1121, -0.0104, -0.9936 > 
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.1519,  0.7991,  0.2099 > 
+        | #Loc-Adjed_X : < -0.0020, -1.6204,  0.0168 > - < 1.6205> - [96.0055]
+        | #Loc-Adjed_Y : <  0.0477, -0.0044, -0.4229 > - < 0.4257> - [93.0962]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0320 seconds. 
+    >> Detecting the [ No.6 ] plane with #Minimum - [ 313 ] ...
+      [--Plane_HT--]: #nPts-12524 
+        | [#Time- 0.3140]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1690]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.7740]-[Z-Seted]: 744-Pts 
+        |  >> -0.1100X +  0.3200Y +  1.0000Z +  0.0758 = 0 |=> -0.1042X +  0.3031Y +  0.9472Z = -0.0718 
+        | [+][Checked] : [3] #nPts-< 744 > 
+      [--Plane_HT--]: Done in 1.2590 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 2526 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-2526
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 867
+      [--MaxRegion--]: Done in 0.0340 seconds. 
+      [--Fit_LS--]: #Pts-867
+        | #Plane    : -0.0737X +  0.3146Y +  0.9463Z = -0.1023 
+        | #FitError : 0.0118
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-867
+        | #Loc-PCA_X   : <  0.9926, -0.0686,  0.1001 > 
+        | #Loc-PCA_Y   : <  0.0964,  0.9467, -0.3072 > 
+        | #RotAng-S    : < 2 > -<  0.4757 > 
+        | #Loc-Adjed_O : < -0.9622, -0.7828,  0.0772 > 
+        | #Loc-Adjed_X : <  0.7630, -0.0272,  0.0685 > - < 0.7666> - [88.4460]
+        | #Loc-Adjed_Y : <  0.0383,  0.5886, -0.1927 > - < 0.6206> - [88.4067]
+        | #RotAng-S    : < 6 > -<  0.4590 > 
+        | #Loc-Adjed_O : < -0.9403, -0.7821,  0.0787 > 
+        | #Loc-Adjed_X : <  0.7833,  0.0241,  0.0530 > - < 0.7854> - [87.7316]
+        | #Loc-Adjed_Y : < -0.0046,  0.5544, -0.1847 > - < 0.5843> - [90.2152]
+        | #RotAng-S    : < 7 > -<  0.4456 > 
+        | #Loc-Adjed_O : < -0.9346, -0.7772,  0.0775 > 
+        | #Loc-Adjed_X : <  0.7829,  0.0371,  0.0486 > - < 0.7853> - [87.8056]
+        | #Loc-Adjed_Y : < -0.0143,  0.5380, -0.1800 > - < 0.5675> - [91.3230]
+        | #RotAng-S    : < 8 > -<  0.4053 > 
+        | #Loc-Adjed_O : < -0.9354, -0.7796,  0.0783 > 
+        | #Loc-Adjed_X : <  0.7155,  0.0458,  0.0405 > - < 0.7181> - [89.4425]
+        | #Loc-Adjed_Y : < -0.0241,  0.5345, -0.1796 > - < 0.5644> - [91.5122]
+        | #RotAng-S    : < 81 > -<  0.4015 > 
+        | #Loc-Adjed_O : < -0.2987, -0.8245,  0.1428 > 
+        | #Loc-Adjed_X : <  0.1388,  0.5120, -0.1594 > - < 0.5539> - [91.0817]
+        | #Loc-Adjed_Y : < -0.6997,  0.1565, -0.1065 > - < 0.7249> - [90.7733]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.2987, -0.8245,  0.1428 > 
+        | #Loc-Adjed_X : <  0.1388,  0.5120, -0.1594 > - < 0.5539> - [91.0817]
+        | #Loc-Adjed_Y : < -0.6997,  0.1565, -0.1065 > - < 0.7249> - [90.7733]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0170 seconds. 
+    >> Detecting the [ No.7 ] plane with #Minimum - [ 291 ] ...
+      [--Plane_HT--]: #nPts-11657 
+        | [#Time- 0.3200]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1850]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.7430]-[Z-Seted]: 506-Pts 
+        |  >> -0.1100X + -0.3000Y +  1.0000Z + -0.1010 = 0 |=> -0.1048X + -0.2858Y +  0.9526Z =  0.0962 
+        | [+][Checked] : [3] #nPts-< 506 > 
+      [--Plane_HT--]: Done in 1.2500 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1782 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-1782
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 740
+      [--MaxRegion--]: Done in 0.0200 seconds. 
+      [--Fit_LS--]: #Pts-740
+        | #Plane    : -0.0609X + -0.2874Y +  0.9559Z =  0.1173 
+        | #FitError : 0.0187
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-740
+        | #Loc-PCA_X   : <  0.5616, -0.8015, -0.2052 > 
+        | #Loc-PCA_Y   : <  0.8251,  0.5243,  0.2103 > 
+        | #RotAng-S    : < 1 > -<  0.3821 > 
+        | #Loc-Adjed_O : <  0.1627, -0.3546,  0.0265 > 
+        | #Loc-Adjed_X : <  0.3839, -0.5281, -0.1343 > - < 0.6666> - [93.3129]
+        | #Loc-Adjed_Y : <  0.4672,  0.3085,  0.1225 > - < 0.5731> - [86.4261]
+        | #RotAng-S    : < 2 > -<  0.3740 > 
+        | #Loc-Adjed_O : <  0.1635, -0.3565,  0.0260 > 
+        | #Loc-Adjed_X : <  0.3888, -0.5158, -0.1303 > - < 0.6590> - [93.6164]
+        | #Loc-Adjed_Y : <  0.4569,  0.3133,  0.1233 > - < 0.5676> - [86.1970]
+        | #RotAng-S    : < 3 > -<  0.3495 > 
+        | #Loc-Adjed_O : <  0.1902, -0.3397,  0.0327 > 
+        | #Loc-Adjed_X : <  0.3987, -0.5103, -0.1280 > - < 0.6601> - [93.8612]
+        | #Loc-Adjed_Y : <  0.4207,  0.2994,  0.1169 > - < 0.5295> - [89.2453]
+        | #RotAng-S    : < 4 > -<  0.3466 > 
+        | #Loc-Adjed_O : <  0.1903, -0.3409,  0.0324 > 
+        | #Loc-Adjed_X : <  0.4085, -0.5045, -0.1257 > - < 0.6612> - [94.0216]
+        | #Loc-Adjed_Y : <  0.4110,  0.3035,  0.1175 > - < 0.5242> - [89.4977]
+        | #RotAng-S    : < 5 > -<  0.3340 > 
+        | #Loc-Adjed_O : <  0.2071, -0.3295,  0.0369 > 
+        | #Loc-Adjed_X : <  0.4250, -0.5067, -0.1253 > - < 0.6731> - [94.0115]
+        | #Loc-Adjed_Y : <  0.3836,  0.2939,  0.1128 > - < 0.4963> - [90.9430]
+        | #RotAng-S    : < 6 > -<  0.3240 > 
+        | #Loc-Adjed_O : <  0.2142, -0.3248,  0.0388 > 
+        | #Loc-Adjed_X : <  0.4344, -0.5001, -0.1227 > - < 0.6737> - [94.1430]
+        | #Loc-Adjed_Y : <  0.3665,  0.2911,  0.1109 > - < 0.4810> - [91.8092]
+        | #RotAng-S    : < 14 > -<  0.3160 > 
+        | #Loc-Adjed_O : <  0.1945, -0.4021,  0.0142 > 
+        | #Loc-Adjed_X : <  0.4693, -0.4103, -0.0934 > - < 0.6303> - [95.5810]
+        | #Loc-Adjed_Y : <  0.3332,  0.3522,  0.1271 > - < 0.5013> - [92.3079]
+        | #RotAng-S    : < 16 > -<  0.3135 > 
+        | #Loc-Adjed_O : <  0.1765, -0.3763,  0.0209 > 
+        | #Loc-Adjed_X : <  0.5078, -0.4143, -0.0922 > - < 0.6619> - [95.1187]
+        | #Loc-Adjed_Y : <  0.3023,  0.3433,  0.1225 > - < 0.4736> - [93.7337]
+        | #RotAng-S    : < 32 > -<  0.3080 > 
+        | #Loc-Adjed_O : <  0.1642, -0.5592, -0.0349 > 
+        | #Loc-Adjed_X : <  0.5275, -0.2321, -0.0362 > - < 0.5774> - [95.4679]
+        | #Loc-Adjed_Y : <  0.2145,  0.4638,  0.1531 > - < 0.5334> - [94.4779]
+        | #RotAng-S    : < 33 > -<  0.3043 > 
+        | #Loc-Adjed_O : <  0.1628, -0.5718, -0.0388 > 
+        | #Loc-Adjed_X : <  0.5282, -0.2219, -0.0331 > - < 0.5739> - [95.4201]
+        | #Loc-Adjed_Y : <  0.2048,  0.4647,  0.1528 > - < 0.5303> - [94.7623]
+        | #RotAng-S    : < 37 > -<  0.3030 > 
+        | #Loc-Adjed_O : <  0.1627, -0.5997, -0.0472 > 
+        | #Loc-Adjed_X : <  0.5364, -0.1842, -0.0212 > - < 0.5676> - [94.8019]
+        | #Loc-Adjed_Y : <  0.1713,  0.4810,  0.1555 > - < 0.5338> - [94.8391]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  0.1627, -0.5997, -0.0472 > 
+        | #Loc-Adjed_X : <  0.5364, -0.1842, -0.0212 > - < 0.5676> - [94.8019]
+        | #Loc-Adjed_Y : <  0.1713,  0.4810,  0.1555 > - < 0.5338> - [94.8391]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0180 seconds. 
+    >> Detecting the [ No.8 ] plane with #Minimum - [ 272 ] ...
+      [--Plane_HT--]: #nPts-10917 
+        | [#Time- 0.2920]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1780]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.7020]-[Z-Seted]: 374-Pts 
+        |  >> -0.1200X +  0.3700Y +  1.0000Z +  0.1010 = 0 |=> -0.1118X +  0.3448Y +  0.9320Z = -0.0941 
+        | [+][Checked] : [3] #nPts-< 374 > 
+      [--Plane_HT--]: Done in 1.1730 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1301 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1301
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 926
+      [--MaxRegion--]: Done in 0.0100 seconds. 
+      [--Fit_LS--]: #Pts-926
+        | #Plane    : -0.0899X +  0.4180Y +  0.9040Z = -0.1700 
+        | #FitError : 0.0138
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-926
+        | #Loc-PCA_X   : <  0.9919, -0.0438,  0.1189 > 
+        | #Loc-PCA_Y   : <  0.0893,  0.9074, -0.4107 > 
+        | #RotAng-S    : < 87 > -<  1.1814 > 
+        | #Loc-Adjed_O : <  1.3609, -1.1825,  0.4942 > 
+        | #Loc-Adjed_X : <  0.0583,  0.3738, -0.1671 > - < 0.4136> - [93.1047]
+        | #Loc-Adjed_Y : < -2.8162,  0.2605, -0.4006 > - < 2.8565> - [95.1616]
+        | #RotAng-S    : < 88 > -<  1.1421 > 
+        | #Loc-Adjed_O : <  1.3716, -1.1403,  0.4758 > 
+        | #Loc-Adjed_X : <  0.0495,  0.3616, -0.1623 > - < 0.3994> - [91.8775]
+        | #Loc-Adjed_Y : < -2.8256,  0.2156, -0.3808 > - < 2.8593> - [95.1616]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  1.3716, -1.1403,  0.4758 > 
+        | #Loc-Adjed_X : <  0.0495,  0.3616, -0.1623 > - < 0.3994> - [91.8775]
+        | #Loc-Adjed_Y : < -2.8256,  0.2156, -0.3808 > - < 2.8593> - [95.1616]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0160 seconds. 
+    >> Detecting the [ No.9 ] plane with #Minimum - [ 249 ] ...
+      [--Plane_HT--]: #nPts-9991 
+        | [#Time- 0.2830]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1650]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.5740]-[Z-Seted]: 298-Pts 
+        |  >> -0.1100X +  0.0100Y +  1.0000Z +  0.2273 = 0 |=> -0.1093X +  0.0099Y +  0.9940Z = -0.2259 
+        | [+][Checked] : [3] #nPts-< 298 > 
+      [--Plane_HT--]: Done in 1.0230 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 679 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-679
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 106
+      [--MaxRegion--]: Done in 0.0050 seconds. 
+      [ -- The number of the max region is too small,       -- ] 
+      [ -- and this region result will be DISCARD.          -- ] 
+      [ -- Detection of the [ No.09 ] plane wil be retired. -- ] 
+    >> Detecting the [ No.9 ] plane with #Minimum - [ 247 ] ...
+      [--Plane_HT--]: #nPts-9885 
+        | [#Time- 0.3330]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1840]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.5920]-[Z-Seted]: 283-Pts 
+        |  >> -0.1100X + -0.3000Y +  1.0000Z + -0.1010 = 0 |=> -0.1048X + -0.2858Y +  0.9526Z =  0.0962 
+        | [+][Checked] : [3] #nPts-< 283 > 
+      [--Plane_HT--]: Done in 1.1090 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1029 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1029
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 201
+      [--MaxRegion--]: Done in 0.0080 seconds. 
+      [ -- The number of the max region is too small,       -- ] 
+      [ -- and this region result will be DISCARD.          -- ] 
+      [ -- Detection of the [ No.09 ] plane wil be retired. -- ] 
+    >> Detecting the [ No.9 ] plane with #Minimum - [ 242 ] ...
+      [--Plane_HT--]: #nPts-9684 
+        | [#Time- 0.2910]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1590]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.5960]-[Z-Seted]: 269-Pts 
+        |  >> -0.5800X +  0.2400Y +  1.0000Z + -0.2525 = 0 |=> -0.4912X +  0.2033Y +  0.8470Z =  0.2139 
+        | [+][Checked] : [3] #nPts-< 269 > 
+      [--Plane_HT--]: Done in 1.0480 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 696 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-696
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 386
+      [--MaxRegion--]: Done in 0.0030 seconds. 
+      [--Fit_LS--]: #Pts-386
+        | #Plane    :  0.5294X + -0.2549Y + -0.8092Z = -0.2245 
+        | #FitError : 0.0110
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-386
+        | #Loc-PCA_X   : < -0.7262, -0.6294, -0.2768 > 
+        | #Loc-PCA_Y   : < -0.4387,  0.7341, -0.5183 > 
+        | #RotAng-S    : < 1 > -<  0.1253 > 
+        | #Loc-Adjed_O : < -0.7206, -0.4444, -0.0540 > 
+        | #Loc-Adjed_X : < -0.5290, -0.4445, -0.2061 > - < 0.7210> - [93.9413]
+        | #Loc-Adjed_Y : < -0.0740,  0.1295, -0.0892 > - < 0.1738> - [92.3542]
+        | #RotAng-S    : < 3 > -<  0.1169 > 
+        | #Loc-Adjed_O : < -0.7268, -0.4512, -0.0559 > 
+        | #Loc-Adjed_X : < -0.5336, -0.4208, -0.2165 > - < 0.7132> - [93.8218]
+        | #Loc-Adjed_Y : < -0.0656,  0.1256, -0.0825 > - < 0.1640> - [93.4745]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.7268, -0.4512, -0.0559 > 
+        | #Loc-Adjed_X : < -0.5336, -0.4208, -0.2165 > - < 0.7132> - [93.8218]
+        | #Loc-Adjed_Y : < -0.0656,  0.1256, -0.0825 > - < 0.1640> - [93.4745]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0100 seconds. 
+    >> Detecting the [ No.10 ] plane with #Minimum - [ 232 ] ...
+      [--Plane_HT--]: #nPts-9298 
+        | [#Time- 0.2980]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1780]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.5770]-[Z-Seted]: 251-Pts 
+        |  >> -0.4700X + -0.1700Y +  1.0000Z +  0.1515 = 0 |=> -0.4204X + -0.1521Y +  0.8945Z = -0.1355 
+        | [+][Checked] : [3] #nPts-< 251 > 
+      [--Plane_HT--]: Done in 1.0540 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 816 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-816
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 423
+      [--MaxRegion--]: Done in 0.0060 seconds. 
+      [--Fit_LS--]: #Pts-423
+        | #Plane    : -0.4684X + -0.1909Y +  0.8626Z = -0.1750 
+        | #FitError : 0.0123
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-423
+        | #Loc-PCA_X   : <  0.7204, -0.6478,  0.2478 > 
+        | #Loc-PCA_Y   : <  0.5116,  0.7375,  0.4410 > 
+        | #RotAng-S    : < 1 > -<  0.1305 > 
+        | #Loc-Adjed_O : <  0.6399, -0.3746,  0.0617 > 
+        | #Loc-Adjed_X : <  0.5709, -0.4971,  0.2000 > - < 0.7830> - [94.5263]
+        | #Loc-Adjed_Y : <  0.0831,  0.1247,  0.0727 > - < 0.1666> - [92.1266]
+        | #RotAng-S    : < 2 > -<  0.1278 > 
+        | #Loc-Adjed_O : <  0.6275, -0.3660,  0.0569 > 
+        | #Loc-Adjed_X : <  0.5920, -0.4988,  0.2110 > - < 0.8024> - [94.0612]
+        | #Loc-Adjed_Y : <  0.0774,  0.1210,  0.0688 > - < 0.1593> - [93.8658]
+        | #RotAng-S    : < 3 > -<  0.1260 > 
+        | #Loc-Adjed_O : <  0.6286, -0.3674,  0.0572 > 
+        | #Loc-Adjed_X : <  0.5980, -0.4876,  0.2168 > - < 0.8015> - [94.0612]
+        | #Loc-Adjed_Y : <  0.0744,  0.1211,  0.0672 > - < 0.1572> - [94.4908]
+        | #RotAng-S    : < 87 > -<  0.1178 > 
+        | #Loc-Adjed_O : <  1.1919, -0.8833,  0.2489 > 
+        | #Loc-Adjed_X : <  0.0887,  0.1136,  0.0733 > - < 0.1616> - [91.2226]
+        | #Loc-Adjed_Y : < -0.5048,  0.4997, -0.1635 > - < 0.7289> - [96.2778]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  1.1919, -0.8833,  0.2489 > 
+        | #Loc-Adjed_X : <  0.0887,  0.1136,  0.0733 > - < 0.1616> - [91.2226]
+        | #Loc-Adjed_Y : < -0.5048,  0.4997, -0.1635 > - < 0.7289> - [96.2778]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0140 seconds. 
+[=PlaneFit_HT=]: Done, 10 plane(s) were removed in 18.7920 seconds.
+
+
+[=DetectMCF_GCO=]: -->> Try to Detect Cylinder by Energy-based Multi-Model Fitting with GCO ... <<--  
+    [--GetBorder--]: #nPts-28176 
+      | #MinPt  : <   2.389,  -1.100,  -4.657 > 
+      | #MaxPt  : <   5.663,   0.979,  -3.664 > 
+      | #Center : <   4.026,  -0.060,   4.026 > 
+    [--GetBorder--]: Done in 0.0000 seconds.
+    >> Got #9182 Normalized Pts.
+      [--DetectCylinderRansac--]: #nPts-9182...
+        | #ExpCand    : 30 
+        | #ExpInlier  :  0.1000 
+        | #CanNum     : 0 
+        | #MaxInlier  :  0.0000 
+        | #Iteration  : 10000 - [ 10000 | 23025 ] 
+      [--DetectCylinderRansac--]: Done in 0.6210 seconds. 
+[=DetectMCF_GCO=]: Done, 0 cylinder is detected in 0.6240 seconds.
+
+
+[=PlaneFit_HT=]: -->> Try to Detect 30 Planes by Hough Translation <<--  
+    [--GetBorder--]: #nPts-28176 
+      | #MinPt  : <   2.389,  -1.100,  -4.657 > 
+      | #MaxPt  : <   5.663,   0.979,  -3.664 > 
+      | #Center : <   4.026,  -0.060,   4.026 > 
+    [--GetBorder--]: Done in 0.0000 seconds.
+    >> Got #28176 Normalized Pts.
+    >> Detecting the [ No.1 ] plane with #Minimum - [ 704 ] ...
+      [--Plane_HT--]: #nPts-28176 
+        | [#Time- 0.6140]-[X-Seted]: 1520-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.0800Z + -0.1263 = 0 |=>  0.9968X + -0.0100Y +  0.0797Z =  0.1259 
+        | [#Time- 0.2030]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 2.1130]-[Z-Seted]: 4208-Pts 
+        |  >> -0.1100X +  0.0000Y +  1.0000Z +  0.1768 = 0 |=> -0.1093X +  0.0000Y +  0.9940Z = -0.1757 
+        | [+][Checked] : [3] #nPts-< 4208 > 
+      [--Plane_HT--]: Done in 2.9310 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 6595 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-6595
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 5989
+      [--MaxRegion--]: Done in 0.1650 seconds. 
+      [--Fit_LS--]: #Pts-5989
+        | #Plane    : -0.0940X + -0.0003Y +  0.9956Z = -0.1973 
+        | #FitError : 0.0091
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-5989
+        | #Loc-PCA_X   : <  0.9853, -0.1436,  0.0930 > 
+        | #Loc-PCA_Y   : <  0.1429,  0.9896,  0.0138 > 
+        | #RotAng-S    : < 1 > -<  2.5584 > 
+        | #Loc-Adjed_O : < -1.6578, -0.4687, -0.3549 > 
+        | #Loc-Adjed_X : <  1.7865, -0.2284,  0.1687 > - < 1.8089> - [95.5989]
+        | #Loc-Adjed_Y : <  0.1778,  1.4030,  0.0172 > - < 1.4143> - [87.3369]
+        | #RotAng-S    : < 2 > -<  2.4845 > 
+        | #Loc-Adjed_O : < -1.6410, -0.4757, -0.3533 > 
+        | #Loc-Adjed_X : <  1.7863, -0.1966,  0.1687 > - < 1.8050> - [95.6828]
+        | #Loc-Adjed_Y : <  0.1493,  1.3683,  0.0145 > - < 1.3765> - [87.8685]
+        | #RotAng-S    : < 4 > -<  2.4708 > 
+        | #Loc-Adjed_O : < -1.6042, -0.5315, -0.3499 > 
+        | #Loc-Adjed_X : <  1.7642, -0.1318,  0.1666 > - < 1.7769> - [95.9802]
+        | #Loc-Adjed_Y : <  0.1027,  1.3867,  0.0101 > - < 1.3905> - [87.4788]
+        | #RotAng-S    : < 7 > -<  2.4590 > 
+        | #Loc-Adjed_O : < -1.5580, -0.6524, -0.3455 > 
+        | #Loc-Adjed_X : <  1.7125, -0.0377,  0.1617 > - < 1.7205> - [97.5295]
+        | #Loc-Adjed_Y : <  0.0311,  1.4289,  0.0033 > - < 1.4292> - [87.0853]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -1.5580, -0.6524, -0.3455 > 
+        | #Loc-Adjed_X : <  1.7125, -0.0377,  0.1617 > - < 1.7205> - [97.5295]
+        | #Loc-Adjed_Y : <  0.0311,  1.4289,  0.0033 > - < 1.4292> - [87.0853]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.1450 seconds. 
+    >> Detecting the [ No.2 ] plane with #Minimum - [ 554 ] ...
+      [--Plane_HT--]: #nPts-22187 
+        | [#Time- 0.6250]-[X-Seted]: 1520-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.0800Z + -0.1263 = 0 |=>  0.9968X + -0.0100Y +  0.0797Z =  0.1259 
+        | [#Time- 0.2290]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 1.5090]-[Z-Seted]: 3517-Pts 
+        |  >> -0.1200X + -0.0100Y +  1.0000Z + -0.2778 = 0 |=> -0.1191X + -0.0099Y +  0.9928Z =  0.2758 
+        | [+][Checked] : [3] #nPts-< 3517 > 
+      [--Plane_HT--]: Done in 2.3650 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 5743 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-5743
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 5211
+      [--MaxRegion--]: Done in 0.0960 seconds. 
+      [--Fit_LS--]: #Pts-5211
+        | #Plane    :  0.1127X + -0.0018Y + -0.9936Z = -0.2653 
+        | #FitError : 0.0089
+      [--Fit_LS--]: Done in 0.0010 seconds. 
+      [--ExtractMBR--]: #Pts-5211
+        | #Loc-PCA_X   : <  0.9936,  0.0097,  0.1127 > 
+        | #Loc-PCA_Y   : <  0.0094, -1.0000,  0.0029 > 
+        | #RotAng-S    : < 2 > -<  1.3822 > 
+        | #Loc-Adjed_O : <  0.1218,  0.7391,  0.2795 > 
+        | #Loc-Adjed_X : <  1.4297, -0.0363,  0.1622 > - < 1.4393> - [97.0592]
+        | #Loc-Adjed_Y : < -0.0242, -0.9600, -0.0010 > - < 0.9603> - [96.2500]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  0.1218,  0.7391,  0.2795 > 
+        | #Loc-Adjed_X : <  1.4297, -0.0363,  0.1622 > - < 1.4393> - [97.0592]
+        | #Loc-Adjed_Y : < -0.0242, -0.9600, -0.0010 > - < 0.9603> - [96.2500]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.1180 seconds. 
+    >> Detecting the [ No.3 ] plane with #Minimum - [ 424 ] ...
+      [--Plane_HT--]: #nPts-16976 
+        | [#Time- 0.6100]-[X-Seted]: 1520-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.0800Z + -0.1263 = 0 |=>  0.9968X + -0.0100Y +  0.0797Z =  0.1259 
+        | [#Time- 0.2200]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.9540]-[Z-Seted]: 1164-Pts 
+        |  >> -0.1200X +  0.0000Y +  1.0000Z + -0.2273 = 0 |=> -0.1191X +  0.0000Y +  0.9929Z =  0.2256 
+        | [+][Checked] : [1] #nPts-< 1520 > 
+      [--Plane_HT--]: Done in 1.7850 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1729 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-1729
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 1718
+      [--MaxRegion--]: Done in 0.0080 seconds. 
+      [--Fit_LS--]: #Pts-1718
+        | #Plane    :  0.9954X +  0.0003Y +  0.0956Z =  0.1188 
+        | #FitError : 0.0043
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-1718
+        | #Loc-PCA_X   : <  0.0021, -0.9998, -0.0185 > 
+        | #Loc-PCA_Y   : <  0.0955,  0.0187, -0.9952 > 
+        | #RotAng-S    : < 1 > -<  0.7533 > 
+        | #Loc-Adjed_O : <  0.0905,  0.7816,  0.2981 > 
+        | #Loc-Adjed_X : <  0.0061, -1.6012, -0.0575 > - < 1.6023> - [96.3027]
+        | #Loc-Adjed_Y : <  0.0449,  0.0170, -0.4677 > - < 0.4702> - [93.6318]
+        | #RotAng-S    : < 89 > -<  0.7495 > 
+        | #Loc-Adjed_O : <  0.0937, -0.8143,  0.2708 > 
+        | #Loc-Adjed_X : <  0.0454,  0.0006, -0.4732 > - < 0.4754> - [93.3816]
+        | #Loc-Adjed_Y : < -0.0007,  1.5766,  0.0018 > - < 1.5766> - [96.7996]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  0.0937, -0.8143,  0.2708 > 
+        | #Loc-Adjed_X : <  0.0454,  0.0006, -0.4732 > - < 0.4754> - [93.3816]
+        | #Loc-Adjed_Y : < -0.0007,  1.5766,  0.0018 > - < 1.5766> - [96.7996]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0340 seconds. 
+    >> Detecting the [ No.4 ] plane with #Minimum - [ 381 ] ...
+      [--Plane_HT--]: #nPts-15258 
+        | [#Time- 0.4040]-[X-Seted]: 1039-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.1000Z +  0.1263 = 0 |=>  0.9950X + -0.0099Y +  0.0995Z = -0.1256 
+        | [#Time- 0.1690]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.9070]-[Z-Seted]: 1164-Pts 
+        |  >> -0.1200X +  0.0000Y +  1.0000Z + -0.2273 = 0 |=> -0.1191X +  0.0000Y +  0.9929Z =  0.2256 
+        | [+][Checked] : [3] #nPts-< 1164 > 
+      [--Plane_HT--]: Done in 1.4800 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1974 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1974
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 1258
+      [--MaxRegion--]: Done in 0.0210 seconds. 
+      [--Fit_LS--]: #Pts-1258
+        | #Plane    : -0.0815X + -0.0010Y +  0.9967Z =  0.2050 
+        | #FitError : 0.0064
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-1258
+        | #Loc-PCA_X   : <  0.0034, -1.0000, -0.0008 > 
+        | #Loc-PCA_Y   : <  0.9967,  0.0033,  0.0815 > 
+        | #RotAng-S    : < 88 > -<  0.4533 > 
+        | #Loc-Adjed_O : < -0.2227, -0.7012,  0.1867 > 
+        | #Loc-Adjed_X : <  0.3038, -0.0096,  0.0248 > - < 0.3050> - [89.9177]
+        | #Loc-Adjed_Y : <  0.0467,  1.4856,  0.0054 > - < 1.4864> - [96.7409]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.2227, -0.7012,  0.1867 > 
+        | #Loc-Adjed_X : <  0.3038, -0.0096,  0.0248 > - < 0.3050> - [89.9177]
+        | #Loc-Adjed_Y : <  0.0467,  1.4856,  0.0054 > - < 1.4864> - [96.7409]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0190 seconds. 
+    >> Detecting the [ No.5 ] plane with #Minimum - [ 350 ] ...
+      [--Plane_HT--]: #nPts-14000 
+        | [#Time- 0.4040]-[X-Seted]: 1039-Pts 
+        |  >>  1.0000X + -0.0100Y +  0.1000Z +  0.1263 = 0 |=>  0.9950X + -0.0099Y +  0.0995Z = -0.1256 
+        | [#Time- 0.1680]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.7710]-[Z-Seted]: 744-Pts 
+        |  >> -0.1100X +  0.3200Y +  1.0000Z +  0.0758 = 0 |=> -0.1042X +  0.3031Y +  0.9472Z = -0.0718 
+        | [+][Checked] : [1] #nPts-< 1039 > 
+      [--Plane_HT--]: Done in 1.3440 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1503 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-1503
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 1476
+      [--MaxRegion--]: Done in 0.0080 seconds. 
+      [--Fit_LS--]: #Pts-1476
+        | #Plane    :  0.9937X + -0.0001Y +  0.1121Z = -0.1275 
+        | #FitError : 0.0045
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-1476
+        | #Loc-PCA_X   : < -0.0012, -0.9999,  0.0104 > 
+        | #Loc-PCA_Y   : <  0.1121, -0.0104, -0.9936 > 
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.1519,  0.7991,  0.2099 > 
+        | #Loc-Adjed_X : < -0.0020, -1.6204,  0.0168 > - < 1.6205> - [96.0055]
+        | #Loc-Adjed_Y : <  0.0477, -0.0044, -0.4229 > - < 0.4257> - [93.0962]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0280 seconds. 
+    >> Detecting the [ No.6 ] plane with #Minimum - [ 313 ] ...
+      [--Plane_HT--]: #nPts-12524 
+        | [#Time- 0.2900]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1700]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.8040]-[Z-Seted]: 744-Pts 
+        |  >> -0.1100X +  0.3200Y +  1.0000Z +  0.0758 = 0 |=> -0.1042X +  0.3031Y +  0.9472Z = -0.0718 
+        | [+][Checked] : [3] #nPts-< 744 > 
+      [--Plane_HT--]: Done in 1.2670 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 2526 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-2526
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 867
+      [--MaxRegion--]: Done in 0.0400 seconds. 
+      [--Fit_LS--]: #Pts-867
+        | #Plane    : -0.0737X +  0.3146Y +  0.9463Z = -0.1023 
+        | #FitError : 0.0118
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-867
+        | #Loc-PCA_X   : <  0.9926, -0.0686,  0.1001 > 
+        | #Loc-PCA_Y   : <  0.0964,  0.9467, -0.3072 > 
+        | #RotAng-S    : < 2 > -<  0.4757 > 
+        | #Loc-Adjed_O : < -0.9622, -0.7828,  0.0772 > 
+        | #Loc-Adjed_X : <  0.7630, -0.0272,  0.0685 > - < 0.7666> - [88.4460]
+        | #Loc-Adjed_Y : <  0.0383,  0.5886, -0.1927 > - < 0.6206> - [88.4067]
+        | #RotAng-S    : < 6 > -<  0.4590 > 
+        | #Loc-Adjed_O : < -0.9403, -0.7821,  0.0787 > 
+        | #Loc-Adjed_X : <  0.7833,  0.0241,  0.0530 > - < 0.7854> - [87.7316]
+        | #Loc-Adjed_Y : < -0.0046,  0.5544, -0.1847 > - < 0.5843> - [90.2152]
+        | #RotAng-S    : < 7 > -<  0.4456 > 
+        | #Loc-Adjed_O : < -0.9346, -0.7772,  0.0775 > 
+        | #Loc-Adjed_X : <  0.7829,  0.0371,  0.0486 > - < 0.7853> - [87.8056]
+        | #Loc-Adjed_Y : < -0.0143,  0.5380, -0.1800 > - < 0.5675> - [91.3230]
+        | #RotAng-S    : < 8 > -<  0.4053 > 
+        | #Loc-Adjed_O : < -0.9354, -0.7796,  0.0783 > 
+        | #Loc-Adjed_X : <  0.7155,  0.0458,  0.0405 > - < 0.7181> - [89.4425]
+        | #Loc-Adjed_Y : < -0.0241,  0.5345, -0.1796 > - < 0.5644> - [91.5122]
+        | #RotAng-S    : < 81 > -<  0.4015 > 
+        | #Loc-Adjed_O : < -0.2987, -0.8245,  0.1428 > 
+        | #Loc-Adjed_X : <  0.1388,  0.5120, -0.1594 > - < 0.5539> - [91.0817]
+        | #Loc-Adjed_Y : < -0.6997,  0.1565, -0.1065 > - < 0.7249> - [90.7733]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.2987, -0.8245,  0.1428 > 
+        | #Loc-Adjed_X : <  0.1388,  0.5120, -0.1594 > - < 0.5539> - [91.0817]
+        | #Loc-Adjed_Y : < -0.6997,  0.1565, -0.1065 > - < 0.7249> - [90.7733]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0160 seconds. 
+    >> Detecting the [ No.7 ] plane with #Minimum - [ 291 ] ...
+      [--Plane_HT--]: #nPts-11657 
+        | [#Time- 0.2880]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1980]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.7000]-[Z-Seted]: 506-Pts 
+        |  >> -0.1100X + -0.3000Y +  1.0000Z + -0.1010 = 0 |=> -0.1048X + -0.2858Y +  0.9526Z =  0.0962 
+        | [+][Checked] : [3] #nPts-< 506 > 
+      [--Plane_HT--]: Done in 1.1880 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1782 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1782
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 740
+      [--MaxRegion--]: Done in 0.0260 seconds. 
+      [--Fit_LS--]: #Pts-740
+        | #Plane    : -0.0609X + -0.2874Y +  0.9559Z =  0.1173 
+        | #FitError : 0.0187
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-740
+        | #Loc-PCA_X   : <  0.5616, -0.8015, -0.2052 > 
+        | #Loc-PCA_Y   : <  0.8251,  0.5243,  0.2103 > 
+        | #RotAng-S    : < 1 > -<  0.3821 > 
+        | #Loc-Adjed_O : <  0.1627, -0.3546,  0.0265 > 
+        | #Loc-Adjed_X : <  0.3839, -0.5281, -0.1343 > - < 0.6666> - [93.3129]
+        | #Loc-Adjed_Y : <  0.4672,  0.3085,  0.1225 > - < 0.5731> - [86.4261]
+        | #RotAng-S    : < 2 > -<  0.3740 > 
+        | #Loc-Adjed_O : <  0.1635, -0.3565,  0.0260 > 
+        | #Loc-Adjed_X : <  0.3888, -0.5158, -0.1303 > - < 0.6590> - [93.6164]
+        | #Loc-Adjed_Y : <  0.4569,  0.3133,  0.1233 > - < 0.5676> - [86.1970]
+        | #RotAng-S    : < 3 > -<  0.3495 > 
+        | #Loc-Adjed_O : <  0.1902, -0.3397,  0.0327 > 
+        | #Loc-Adjed_X : <  0.3987, -0.5103, -0.1280 > - < 0.6601> - [93.8612]
+        | #Loc-Adjed_Y : <  0.4207,  0.2994,  0.1169 > - < 0.5295> - [89.2453]
+        | #RotAng-S    : < 4 > -<  0.3466 > 
+        | #Loc-Adjed_O : <  0.1903, -0.3409,  0.0324 > 
+        | #Loc-Adjed_X : <  0.4085, -0.5045, -0.1257 > - < 0.6612> - [94.0216]
+        | #Loc-Adjed_Y : <  0.4110,  0.3035,  0.1175 > - < 0.5242> - [89.4977]
+        | #RotAng-S    : < 5 > -<  0.3340 > 
+        | #Loc-Adjed_O : <  0.2071, -0.3295,  0.0369 > 
+        | #Loc-Adjed_X : <  0.4250, -0.5067, -0.1253 > - < 0.6731> - [94.0115]
+        | #Loc-Adjed_Y : <  0.3836,  0.2939,  0.1128 > - < 0.4963> - [90.9430]
+        | #RotAng-S    : < 6 > -<  0.3240 > 
+        | #Loc-Adjed_O : <  0.2142, -0.3248,  0.0388 > 
+        | #Loc-Adjed_X : <  0.4344, -0.5001, -0.1227 > - < 0.6737> - [94.1430]
+        | #Loc-Adjed_Y : <  0.3665,  0.2911,  0.1109 > - < 0.4810> - [91.8092]
+        | #RotAng-S    : < 14 > -<  0.3160 > 
+        | #Loc-Adjed_O : <  0.1945, -0.4021,  0.0142 > 
+        | #Loc-Adjed_X : <  0.4693, -0.4103, -0.0934 > - < 0.6303> - [95.5810]
+        | #Loc-Adjed_Y : <  0.3332,  0.3522,  0.1271 > - < 0.5013> - [92.3079]
+        | #RotAng-S    : < 16 > -<  0.3135 > 
+        | #Loc-Adjed_O : <  0.1765, -0.3763,  0.0209 > 
+        | #Loc-Adjed_X : <  0.5078, -0.4143, -0.0922 > - < 0.6619> - [95.1187]
+        | #Loc-Adjed_Y : <  0.3023,  0.3433,  0.1225 > - < 0.4736> - [93.7337]
+        | #RotAng-S    : < 32 > -<  0.3080 > 
+        | #Loc-Adjed_O : <  0.1642, -0.5592, -0.0349 > 
+        | #Loc-Adjed_X : <  0.5275, -0.2321, -0.0362 > - < 0.5774> - [95.4679]
+        | #Loc-Adjed_Y : <  0.2145,  0.4638,  0.1531 > - < 0.5334> - [94.4779]
+        | #RotAng-S    : < 33 > -<  0.3043 > 
+        | #Loc-Adjed_O : <  0.1628, -0.5718, -0.0388 > 
+        | #Loc-Adjed_X : <  0.5282, -0.2219, -0.0331 > - < 0.5739> - [95.4201]
+        | #Loc-Adjed_Y : <  0.2048,  0.4647,  0.1528 > - < 0.5303> - [94.7623]
+        | #RotAng-S    : < 37 > -<  0.3030 > 
+        | #Loc-Adjed_O : <  0.1627, -0.5997, -0.0472 > 
+        | #Loc-Adjed_X : <  0.5364, -0.1842, -0.0212 > - < 0.5676> - [94.8019]
+        | #Loc-Adjed_Y : <  0.1713,  0.4810,  0.1555 > - < 0.5338> - [94.8391]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  0.1627, -0.5997, -0.0472 > 
+        | #Loc-Adjed_X : <  0.5364, -0.1842, -0.0212 > - < 0.5676> - [94.8019]
+        | #Loc-Adjed_Y : <  0.1713,  0.4810,  0.1555 > - < 0.5338> - [94.8391]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0180 seconds. 
+    >> Detecting the [ No.8 ] plane with #Minimum - [ 272 ] ...
+      [--Plane_HT--]: #nPts-10917 
+        | [#Time- 0.3020]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1700]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.6290]-[Z-Seted]: 374-Pts 
+        |  >> -0.1200X +  0.3700Y +  1.0000Z +  0.1010 = 0 |=> -0.1118X +  0.3448Y +  0.9320Z = -0.0941 
+        | [+][Checked] : [3] #nPts-< 374 > 
+      [--Plane_HT--]: Done in 1.1040 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1301 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-1301
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 926
+      [--MaxRegion--]: Done in 0.0110 seconds. 
+      [--Fit_LS--]: #Pts-926
+        | #Plane    : -0.0899X +  0.4180Y +  0.9040Z = -0.1700 
+        | #FitError : 0.0138
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-926
+        | #Loc-PCA_X   : <  0.9919, -0.0438,  0.1189 > 
+        | #Loc-PCA_Y   : <  0.0893,  0.9074, -0.4107 > 
+        | #RotAng-S    : < 87 > -<  1.1814 > 
+        | #Loc-Adjed_O : <  1.3609, -1.1825,  0.4942 > 
+        | #Loc-Adjed_X : <  0.0583,  0.3738, -0.1671 > - < 0.4136> - [93.1047]
+        | #Loc-Adjed_Y : < -2.8162,  0.2605, -0.4006 > - < 2.8565> - [95.1616]
+        | #RotAng-S    : < 88 > -<  1.1421 > 
+        | #Loc-Adjed_O : <  1.3716, -1.1403,  0.4758 > 
+        | #Loc-Adjed_X : <  0.0495,  0.3616, -0.1623 > - < 0.3994> - [91.8775]
+        | #Loc-Adjed_Y : < -2.8256,  0.2156, -0.3808 > - < 2.8593> - [95.1616]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  1.3716, -1.1403,  0.4758 > 
+        | #Loc-Adjed_X : <  0.0495,  0.3616, -0.1623 > - < 0.3994> - [91.8775]
+        | #Loc-Adjed_Y : < -2.8256,  0.2156, -0.3808 > - < 2.8593> - [95.1616]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0170 seconds. 
+    >> Detecting the [ No.9 ] plane with #Minimum - [ 249 ] ...
+      [--Plane_HT--]: #nPts-9991 
+        | [#Time- 0.2870]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1720]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.5870]-[Z-Seted]: 298-Pts 
+        |  >> -0.1100X +  0.0100Y +  1.0000Z +  0.2273 = 0 |=> -0.1093X +  0.0099Y +  0.9940Z = -0.2259 
+        | [+][Checked] : [3] #nPts-< 298 > 
+      [--Plane_HT--]: Done in 1.0470 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 679 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-679
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 106
+      [--MaxRegion--]: Done in 0.0040 seconds. 
+      [ -- The number of the max region is too small,       -- ] 
+      [ -- and this region result will be DISCARD.          -- ] 
+      [ -- Detection of the [ No.09 ] plane wil be retired. -- ] 
+    >> Detecting the [ No.9 ] plane with #Minimum - [ 247 ] ...
+      [--Plane_HT--]: #nPts-9885 
+        | [#Time- 0.3020]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1710]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.5790]-[Z-Seted]: 283-Pts 
+        |  >> -0.1100X + -0.3000Y +  1.0000Z + -0.1010 = 0 |=> -0.1048X + -0.2858Y +  0.9526Z =  0.0962 
+        | [+][Checked] : [3] #nPts-< 283 > 
+      [--Plane_HT--]: Done in 1.0530 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 1029 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-1029
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 201
+      [--MaxRegion--]: Done in 0.0070 seconds. 
+      [ -- The number of the max region is too small,       -- ] 
+      [ -- and this region result will be DISCARD.          -- ] 
+      [ -- Detection of the [ No.09 ] plane wil be retired. -- ] 
+    >> Detecting the [ No.9 ] plane with #Minimum - [ 242 ] ...
+      [--Plane_HT--]: #nPts-9684 
+        | [#Time- 0.2820]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1740]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.5440]-[Z-Seted]: 269-Pts 
+        |  >> -0.5800X +  0.2400Y +  1.0000Z + -0.2525 = 0 |=> -0.4912X +  0.2033Y +  0.8470Z =  0.2139 
+        | [+][Checked] : [3] #nPts-< 269 > 
+      [--Plane_HT--]: Done in 1.0010 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 696 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-696
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 386
+      [--MaxRegion--]: Done in 0.0020 seconds. 
+      [--Fit_LS--]: #Pts-386
+        | #Plane    :  0.5294X + -0.2549Y + -0.8092Z = -0.2245 
+        | #FitError : 0.0110
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-386
+        | #Loc-PCA_X   : < -0.7262, -0.6294, -0.2768 > 
+        | #Loc-PCA_Y   : < -0.4387,  0.7341, -0.5183 > 
+        | #RotAng-S    : < 1 > -<  0.1253 > 
+        | #Loc-Adjed_O : < -0.7206, -0.4444, -0.0540 > 
+        | #Loc-Adjed_X : < -0.5290, -0.4445, -0.2061 > - < 0.7210> - [93.9413]
+        | #Loc-Adjed_Y : < -0.0740,  0.1295, -0.0892 > - < 0.1738> - [92.3542]
+        | #RotAng-S    : < 3 > -<  0.1169 > 
+        | #Loc-Adjed_O : < -0.7268, -0.4512, -0.0559 > 
+        | #Loc-Adjed_X : < -0.5336, -0.4208, -0.2165 > - < 0.7132> - [93.8218]
+        | #Loc-Adjed_Y : < -0.0656,  0.1256, -0.0825 > - < 0.1640> - [93.4745]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : < -0.7268, -0.4512, -0.0559 > 
+        | #Loc-Adjed_X : < -0.5336, -0.4208, -0.2165 > - < 0.7132> - [93.8218]
+        | #Loc-Adjed_Y : < -0.0656,  0.1256, -0.0825 > - < 0.1640> - [93.4745]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0080 seconds. 
+    >> Detecting the [ No.10 ] plane with #Minimum - [ 232 ] ...
+      [--Plane_HT--]: #nPts-9298 
+        | [#Time- 0.2880]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1780]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.4900]-[Z-Seted]: 251-Pts 
+        |  >> -0.4700X + -0.1700Y +  1.0000Z +  0.1515 = 0 |=> -0.4204X + -0.1521Y +  0.8945Z = -0.1355 
+        | [+][Checked] : [3] #nPts-< 251 > 
+      [--Plane_HT--]: Done in 0.9580 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 816 
+      [--AttachToPlane--]: Done in 0.0000 seconds. 
+      [--MaxRegion--]: #Pts-816
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 423
+      [--MaxRegion--]: Done in 0.0040 seconds. 
+      [--Fit_LS--]: #Pts-423
+        | #Plane    : -0.4684X + -0.1909Y +  0.8626Z = -0.1750 
+        | #FitError : 0.0123
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-423
+        | #Loc-PCA_X   : <  0.7204, -0.6478,  0.2478 > 
+        | #Loc-PCA_Y   : <  0.5116,  0.7375,  0.4410 > 
+        | #RotAng-S    : < 1 > -<  0.1305 > 
+        | #Loc-Adjed_O : <  0.6399, -0.3746,  0.0617 > 
+        | #Loc-Adjed_X : <  0.5709, -0.4971,  0.2000 > - < 0.7830> - [94.5263]
+        | #Loc-Adjed_Y : <  0.0831,  0.1247,  0.0727 > - < 0.1666> - [92.1266]
+        | #RotAng-S    : < 2 > -<  0.1278 > 
+        | #Loc-Adjed_O : <  0.6275, -0.3660,  0.0569 > 
+        | #Loc-Adjed_X : <  0.5920, -0.4988,  0.2110 > - < 0.8024> - [94.0612]
+        | #Loc-Adjed_Y : <  0.0774,  0.1210,  0.0688 > - < 0.1593> - [93.8658]
+        | #RotAng-S    : < 3 > -<  0.1260 > 
+        | #Loc-Adjed_O : <  0.6286, -0.3674,  0.0572 > 
+        | #Loc-Adjed_X : <  0.5980, -0.4876,  0.2168 > - < 0.8015> - [94.0612]
+        | #Loc-Adjed_Y : <  0.0744,  0.1211,  0.0672 > - < 0.1572> - [94.4908]
+        | #RotAng-S    : < 87 > -<  0.1178 > 
+        | #Loc-Adjed_O : <  1.1919, -0.8833,  0.2489 > 
+        | #Loc-Adjed_X : <  0.0887,  0.1136,  0.0733 > - < 0.1616> - [91.2226]
+        | #Loc-Adjed_Y : < -0.5048,  0.4997, -0.1635 > - < 0.7289> - [96.2778]
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  1.1919, -0.8833,  0.2489 > 
+        | #Loc-Adjed_X : <  0.0887,  0.1136,  0.0733 > - < 0.1616> - [91.2226]
+        | #Loc-Adjed_Y : < -0.5048,  0.4997, -0.1635 > - < 0.7289> - [96.2778]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0100 seconds. 
+    >> Detecting the [ No.11 ] plane with #Minimum - [ 221 ] ...
+      [--Plane_HT--]: #nPts-8875 
+        | [#Time- 0.3050]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1820]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.4750]-[Z-Seted]: 232-Pts 
+        |  >> -0.1100X +  0.0100Y +  1.0000Z +  0.2273 = 0 |=> -0.1093X +  0.0099Y +  0.9940Z = -0.2259 
+        | [+][Checked] : [3] #nPts-< 232 > 
+      [--Plane_HT--]: Done in 0.9630 seconds 
+      [--AttachToPlane--]: Attach points to planes...
+        | #Threshold_Dis : 0.0505
+        | #Threshold_Ang : 30.0000-[1]
+        | #nPts-OnPlane  : 571 
+      [--AttachToPlane--]: Done in 0.0010 seconds. 
+      [--MaxRegion--]: #Pts-571
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 66
+      [--MaxRegion--]: Done in 0.0020 seconds. 
+      [ -- The number of the max region is too small,       -- ] 
+      [ -- and this region result will be DISCARD.          -- ] 
+      [ -- Detection of the [ No.11 ] plane wil be retired. -- ] 
+    >> Detecting the [ No.11 ] plane with #Minimum - [ 220 ] ...
+      [--Plane_HT--]: #nPts-8809 
+        | [#Time- 0.2900]-[X-Seted]: 115-Pts 
+        |  >>  1.0000X +  0.0000Y + -0.5000Z +  0.0000 = 0 |=>  0.8944X +  0.0000Y + -0.4472Z = -0.0000 
+        | [#Time- 0.1790]-[Y-Seted]: 98-Pts 
+        |  >> -0.0400X +  1.0000Y +  0.5000Z +  0.7323 = 0 |=> -0.0358X +  0.8939Y +  0.4469Z = -0.6546 
+        | [#Time- 0.4390]-[Z-Seted]: 216-Pts 
+        |  >> -0.1100X +  0.0100Y +  1.0000Z +  0.2273 = 0 |=> -0.1093X +  0.0099Y +  0.9940Z = -0.2259 
+        | [+][Checked] : [3] #nPts-< 216 > 
+      [--Plane_HT--]: Done in 0.9080 seconds 
+[=PlaneFit_HT=]: Done, 10 plane(s) were detected in 20.9260 seconds.
+
+
+[=DetectCube=]: -->> Try to Detect Cube from 10 Planes <<--  
+    >> Split [ 10 ] patch(es) with [ 10 ] rectangle(s) and [ 0 ] circles
+    >> Infer cubes for [ 10 ] planes ... 
+      [--Cube_Infer--]: #Ple-10
+        | #TRDis   : 0.5000 
+        | #TAng    : 15.0000 
+        |--------------------- 
+        | 514 000 000 000 515 516
+        |--------------------- 
+        | 514 000 000 000 515 516
+        |--------------------- 
+        | 515 000 514 000 516 000
+        |===================== 
+        | #Cube    : 1 
+        | #LeftPle : 7 
+      [--Cube_Infer--]: Done in 0.0030 seconds. 
+    >> Estimate [ No.1 ] cube ... 
+      [--Cube_Orientation--]: #Ple-3
+        | #TAng  : 15.0000 
+        | #NX    : < 0.9957, -0.0049, 0.0925 > 
+        | #NY    : < 0.0050, 1.0000, -0.0005 > 
+        | #NZ    : < -0.0925, 0.0010, 0.9957 > 
+      [--Cube_Orientation--]: Done in 0.0000 seconds. 
+      [--Cube_Dimention--]: #Ple-3
+        | #TAng  : 15.0000 
+        | #OP    : < 3.9134, -0.8735, -4.3745 > 
+        | #NX    : 0.2467 - [0.9603] - < 0.9957, -0.0049, 0.0925 > 
+        | #NY    : 1.5929 - [0.8397] - < 0.0050, 1.0000, -0.0005 > 
+        | #NZ    : 0.4092 - [0.9276] - < -0.0925, 0.0010, 0.9957 > 
+      [--Cube_Dimention--]: Done in 0.0000 seconds. 
+    >> Attach to cube [ ID.1536 ] ... 
+      [--MaxRegion--]: #Pts-4736
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 4736
+      [--MaxRegion--]: Done in 0.0250 seconds. 
+      [--Fit_LS--]: #Pts-4736
+        | #Plane    : -0.0975X +  0.0004Y +  0.9952Z = -4.7265 
+        | #FitError : 0.0097
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-4736
+        | #Loc-PCA_X   : < -0.9942, -0.0454, -0.0974 > 
+        | #Loc-PCA_Y   : <  0.0452, -0.9990,  0.0048 > 
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  3.7946,  0.6797, -4.3775 > 
+        | #Loc-Adjed_X : < -1.3386, -0.0612, -0.1312 > - < 1.3464> - [97.6705]
+        | #Loc-Adjed_Y : <  0.0427, -0.9448,  0.0045 > - < 0.9458> - [96.1014]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0830 seconds. 
+    [ -- Attached to the [ ID.512 ] plane with [ 1 ] split(s) ... -- ]
+      [--MaxRegion--]: #Pts-4956
+        | #Threshold_Dis : 0.0505
+        | #NPts_MaxReg   : 4956
+      [--MaxRegion--]: Done in 0.0250 seconds. 
+      [--Fit_LS--]: #Pts-4956
+        | #Plane    : -0.1126X +  0.0017Y +  0.9936Z = -4.3216 
+        | #FitError : 0.0088
+      [--Fit_LS--]: Done in 0.0000 seconds. 
+      [--ExtractMBR--]: #Pts-4956
+        | #Loc-PCA_X   : < -0.9935, -0.0172, -0.1125 > 
+        | #Loc-PCA_Y   : <  0.0169, -0.9999,  0.0036 > 
+        | #------------------------------------- 
+        | #Loc-Adjed_O : <  5.5579,  0.6548, -3.7208 > 
+        | #Loc-Adjed_X : < -1.3484, -0.0233, -0.1527 > - < 1.3572> - [97.4923]
+        | #Loc-Adjed_Y : <  0.0162, -0.9580,  0.0035 > - < 0.9581> - [96.6760]
+        | #------------------------------------- 
+      [--ExtractMBR--]: Done in 0.0910 seconds. 
+    [ -- Attached to the [ ID.513 ] plane with [ 1 ] split(s) ... -- ]
+[=DetectCube=]: Done, 1 cube(s) is detected in 0.2360 seconds, the other 7 plane(s) are left.
+
+
+[=PlanesCheck=]: -->> 7 plane(s) are left. << -- 
+
+
+[=SavePly=]: -->> Svae Points as Ply File: ../TestData/Ply/Recon/radarsat_Opt.ply <<--
+[=SavePly=]: Done, 28314 point(s) were saved in 0.1780 seconds.
+
+
+[=SavePly=]: -->> Svae Points as Ply File: ../TestData/Ply/Recon/radarsat_Rej.ply <<--
+[=SavePly=]: Done, 28314 point(s) were saved in 0.1590 seconds.
+
+--------------------------------------------------------------------------------------------
+
+
+=============================
+ # Elapsed Time: 41.413 Seconds.
+=============================
+
+
+
+
+===========================================
+ # Total Elapsed Time: 296.136 Seconds.
+===========================================
+
+
