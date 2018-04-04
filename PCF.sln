@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PCF", "PCF\PCF.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Obj2Ply", "Obj2Ply\Obj2Ply.vcxproj", "{7BB5E296-5D78-4A0A-8E4E-E7FE8883202E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{67B9EF29-52A7-455F-92F5-15624565342E} = {67B9EF29-52A7-455F-92F5-15624565342E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshDoc", "MeshDoc\MeshDoc.vcxproj", "{67B9EF29-52A7-455F-92F5-15624565342E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Struct2Ply", "Struct2Ply\Struct2Ply.vcxproj", "{1BFB53D2-CF01-4BF2-87D9-F5384F11C755}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.ActiveCfg = Debug|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.Build.0 = Debug|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.Build.0 = Release|x64
+		{7BB5E296-5D78-4A0A-8E4E-E7FE8883202E}.Debug|x64.ActiveCfg = Debug|x64
+		{7BB5E296-5D78-4A0A-8E4E-E7FE8883202E}.Debug|x64.Build.0 = Debug|x64
+		{7BB5E296-5D78-4A0A-8E4E-E7FE8883202E}.Release|x64.ActiveCfg = Release|x64
+		{7BB5E296-5D78-4A0A-8E4E-E7FE8883202E}.Release|x64.Build.0 = Release|x64
+		{67B9EF29-52A7-455F-92F5-15624565342E}.Debug|x64.ActiveCfg = Debug|x64
+		{67B9EF29-52A7-455F-92F5-15624565342E}.Debug|x64.Build.0 = Debug|x64
+		{67B9EF29-52A7-455F-92F5-15624565342E}.Release|x64.ActiveCfg = Release|x64
+		{67B9EF29-52A7-455F-92F5-15624565342E}.Release|x64.Build.0 = Release|x64
+		{1BFB53D2-CF01-4BF2-87D9-F5384F11C755}.Debug|x64.ActiveCfg = Debug|x64
+		{1BFB53D2-CF01-4BF2-87D9-F5384F11C755}.Debug|x64.Build.0 = Debug|x64
+		{1BFB53D2-CF01-4BF2-87D9-F5384F11C755}.Release|x64.ActiveCfg = Release|x64
+		{1BFB53D2-CF01-4BF2-87D9-F5384F11C755}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
