@@ -110,7 +110,7 @@ void SaveObjSet(ObjSet *objSet, const char *file)
                 out << cir->m_O.X() << '\t' << cir->m_O.Y() << '\t' << cir->m_O.Z() << '\t' << cir->m_radius << '\n'
                     << cir->m_N.X() << '\t' << cir->m_N.Y() << '\t' << cir->m_N.Z() << '\t' << cir->m_varN << '\n';
             }
-            if (patch->type() == Patch_Arbitary) { // Arbitary
+            if (patch->type() == Patch_Arbitary) { // Arbitrary
                 out << "3" << "\n";
             }
 
@@ -179,7 +179,7 @@ ObjSet* LoadObjSet(const char *file)
 
                 objSet->m_PlaneList.push_back(cir);
             }
-            if (patchType == 3) { // Arbitary
+            if (patchType == 3) { // Arbitrary
                                   //
             }
         }

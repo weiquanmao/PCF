@@ -79,7 +79,7 @@ int _GetObjCode(_PtType type)
         break;
     }
 	if (_code_ > MaxModelNum)
-		flog("[=_GetObjCode=]: [Warrning] Model Num Exceed the Maximum %d.\n", MaxModelNum);
+		flog("[=_GetObjCode=]: [Warning] Model Number Exceed the Maximum %d.\n", MaxModelNum);
 
     return type+_code_;
 }
@@ -115,7 +115,7 @@ void PCFit::printLogo()
 	flog(
 		"\n\n"
 		"    ______  ______         ______  __  _______   |  PCFit - Point Cloud Fit   \n"
-		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Ver. 1.2.0                \n"
+		"   /  _  / / ____/  ___   / ____/ / / /__  __/   |  Version 1.2.0             \n"
 		"  / ____/ / /___   /__/  / ___/  / /    / /      |  November 2017 @ IPC.BUAA  \n"
 		" /_/     /_____/        /_/     /_/    /_/       |  By WeiQM                  \n"
 		"                                                 |  Email: weiqm@buaa.edu.cn  \n"
@@ -269,7 +269,7 @@ bool PCFit::savePly(const char *plyFilePath)
 {
 	QTime time;
 	time.start();
-	flog("\n\n[=SavePly=]: -->> Svae Points as Ply File: %s <<--\n", plyFilePath);	
+	flog("\n\n[=SavePly=]: -->> Save Points as Ply File: %s <<--\n", plyFilePath);	
     //----[[
 	bool bSave = m_meshDoc.saveMesh(plyFilePath, false);
 	//----]]
@@ -479,7 +479,7 @@ bool PCFit::GEOFit(ProType proType, bool keepAttribute)
 			type_hi[i] = Pt_Undefined;
 		}
 		//-----]]
-		flog("[=InitPtAttri=]: Done, %d point(s) were setted in %.4f seconds.\n", mesh.vn, time.elapsed() / 1000.0);
+		flog("[=InitPtAttri=]: Done, %d point(s) were set in %.4f seconds.\n", mesh.vn, time.elapsed() / 1000.0);
 	}
 
 
@@ -495,7 +495,7 @@ bool PCFit::GEOFit(ProType proType, bool keepAttribute)
         int nNoise = DeNoiseRegGrw();
 #endif
         //----]]
-        flog("[=DeNoise=]: Done, %d outlier(s ) were removed in %.4f seconds.\n", nNoise, time.elapsed() / 1000.0);
+        flog("[=DeNoise=]: Done, %d outliers were removed in %.4f seconds.\n", nNoise, time.elapsed() / 1000.0);
     }
    
     // [2] Get Dimension Reference Unit

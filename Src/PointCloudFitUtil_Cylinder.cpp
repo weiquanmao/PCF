@@ -81,7 +81,7 @@ bool DetectSymAxis(
 
 
     
-    // -- Pick Candicate Points (& Calculate Centroid)
+    // -- Pick Candidate Points (& Calculate Centroid)
     std::vector<double> vX, vY, vZ;
     std::vector<int> weight;
     double ux = 0.0;

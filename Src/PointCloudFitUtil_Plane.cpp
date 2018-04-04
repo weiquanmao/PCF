@@ -130,7 +130,7 @@ int HoughPlaneOne(
     Plane.Set(N, -pc);
 
     flog(
-        "        | [#Time-%7.4f]-[%c-Seted]: %d-Pts \n"
+        "        | [#Time-%7.4f]-[%c-Set]: %d-Pts \n"
         "        |  >> %7.4fX + %7.4fY + %7.4fZ + %7.4f = 0 |=> %7.4fX + %7.4fY + %7.4fZ = %7.4f \n",
         time.elapsed() / 1000.0, 
         fix == FixedAxis_X ? 'X' : (fix == FixedAxis_Y ? 'Y' : 'Z'),
@@ -706,9 +706,9 @@ int DetectHTPlanes(
         PicMaxRegion(pointList, planeVerList, TDis);
         if (planeVerList.size() < TNPtsHard) {
             flog(
-                "      [ -- The number of the max region is too small,       -- ] \n"
-                "      [ -- and this region result will be DISCARD.          -- ] \n"
-                "      [ -- Detection of the [ No.%02d ] plane wil be retired. -- ] \n", 
+                "      [ -- The number of the max region is too small,        -- ] \n"
+                "      [ -- and this region result will be DISCARD.           -- ] \n"
+                "      [ -- Detection of the [ No.%02d ] plane will be retired. -- ] \n", 
                 planeNum + 1);
         }
         else {

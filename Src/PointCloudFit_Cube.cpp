@@ -11,7 +11,7 @@ std::vector<ObjCube*> PCFit::DetectCubeFromPlanes(std::vector<ObjPatch*> &patche
     const double TIoU = Threshold_PRIoU;
     const double TDis = m_refa*Threshold_DisToSurface;
 
-    // A. Split Rect and Circle
+    // A. Split Rectangle and Circle
     std::vector<ObjRect*> rects;
     std::vector<ObjCircle*> circles;
     for (int i = 0; i < patches.size(); ++i) {

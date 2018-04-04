@@ -25,7 +25,7 @@ int RegionGrow(
     assert(dis >= 0);
     assert(stepn >= 3);
 
-    // 0. Bulid KD-Tree
+    // 0. Build KD-Tree
     vcg::VertexConstDataWrapper<CMeshO> ww(mesh);
     vcg::KdTree<float> KDTree(ww);
     vcg::KdTree<float>::PriorityQueue queue;
@@ -219,7 +219,7 @@ int PCFit::DeNoiseKNN()
 	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 
 	//----]]
-	flog("\n    [--DeNoiseKNN--]: Done, %d outlier(s) were found in %.4f seconds.\n",
+	flog("\n    [--DeNoiseKNN--]: Done, %d outliers were found in %.4f seconds.\n",
 		nNoise, time.elapsed()/1000.0);
 
 	return nNoise;
@@ -277,7 +277,7 @@ int PCFit::DeNoiseRegGrw()
 	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 
 	//----]]
-	flog("\n    [--DeNoiseRegGrw--]: Done, found %d outlier(s) in %.4f seconds.\n",
+	flog("\n    [--DeNoiseRegGrw--]: Done, found %d outliers in %.4f seconds.\n",
 		nNoise, time.elapsed() / 1000.0);
 
 	return nNoise;
@@ -367,7 +367,7 @@ double PCFit::Roughness()
 
     // 2. Fit at Each Point
     // Key Parameter
-    // rafa = a*miu + b*std	
+    // refa = a*miu + b*std	
     const int knn = 30;
 	const int a = 1.0;
 	const int b = 3.0;

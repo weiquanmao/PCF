@@ -638,7 +638,7 @@ void RobustOrientation(
 }
 
 
-// [2.2] Estimate Dimenstion
+// [2.2] Estimate Dimension
 typedef std::pair< double, double > WLoc;
 typedef std::pair< WLoc, WLoc > WLocPair;
 WLoc FaceInter(
@@ -944,7 +944,7 @@ bool MergeToCube(
     }
     double ratio = ptsOnCube.size()*1.0 / (ptsOnCube.size()+ptsOnPlane.size());
     const double T1 = 0.8;
-    if (ratio >= T1) {// Have Enogh Cover
+    if (ratio >= T1) {// Have Enough Cover
         for (int i = ptsOnPlane.size() - 1; i >= 0; --i) {
             int index = idxOnPlane.at(i);
             type_hi[index] = Pt_Undefined;
