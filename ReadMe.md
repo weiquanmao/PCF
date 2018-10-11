@@ -1,10 +1,10 @@
 # PCF - Point Cloud Fit
 
 ```txt
-     ______  ______         ______  __  _______   
-    /  _  / / ____/  ___   / ____/ / / /__  __/   
-   / ____/ / /___   /__/  / ___/  / /    / /      
-  /_/     /_____/        /_/     /_/    /_/       
+     ______  ______         ______  __  _______
+    /  _  / / ____/  ___   / ____/ / / /__  __/
+   / ____/ / /___   /__/  / ___/  / /    / /
+  /_/     /_____/        /_/     /_/    /_/
 ```
 
 PCF - Point Cloud Fit, is a robust automatic detection scheme for geometric primitives such as planes, cylinders and cuboids.
