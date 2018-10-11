@@ -1,3 +1,6 @@
 [submodule "IoU"]
-    path = Src/IoU
-    url = https://github.com/CheckBoxStudio/IoU.git
+	path = Src/IoU
+	url = https://github.com/CheckBoxStudio/IoU.git
+[submodule "Src/IoU"]
+	path = Src/IoU
+	url = https://github.com/CheckBoxStudio/IoU.git
